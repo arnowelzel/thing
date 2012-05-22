@@ -7,9 +7,9 @@ contact: Dirk Klemmt - dirk.klemmt@gmx.de
 How to compile Thing?
 =======================================================================
 
-To be able successfully compile everything you need at least PureC 1.1
-with a (PureC) pcgemlib.lib containing appl_getinfo and installed
-MiNTLibs PL46 or newer.
+To be able to successfully compile everything you need at least
+PureC 1.1 with a (PureC) pcgemlib.lib containing "appl_getinfo" and
+installed MiNTLibs PL46 or newer.
 
 Step 1:
 -----------------------------------------------------------------------
@@ -33,21 +33,27 @@ Stuff in directory "external":
 	copy "tos2gem/tos2gem.h" to PureC include directory
 - extract archive "xhdi_130.zip" and copy all into "Thing/Source/xhdi"
 
-optional
+optional:
 
 To debug memory leaks Thing uses Memdebug. It's optional but really
-useful. Just extract archive "memdebug-1.5.tgz" and copy everything
-into "external/memdebug". Compile memdebug using the PureC project file
+useful but shouldn't be compiled into a release version of Thing. Just
+extract archive "memdebug-1.5.tgz" and copy everything into
+"external/memdebug". Compile memdebug using the PureC project file
 "memdebug.prj". Copy "memdebug.h" to PureC include directory and
 "memdebug.lib" to PureC lib directory afterwards.
 
-For use in Thing you have to enable it in the project file accordingly.
+To include it you have to enable it in the project file accordingly.
 
 Stuff in directory "source":
 
-- copy or link "cicon/dracicn.h" to PureC include directory
+- copy or link "cicon/drawcicn.h" to PureC include directory
 - copy or link "cicon/new_rsc.h" to PureC include directory
 - copy or link "ThingImg/include/thingimg.h" to PureC include directory
+
+!Important note!
+
+The included ColorIcon stuff in "cicon" is a special version for Thing
+only. So be sure to use this one and not the original archive.
 
 Step 2:
 -----------------------------------------------------------------------
@@ -82,6 +88,3 @@ Contact:
 Dirk Klemmt - dirk.klemmt@gmx.de
 
 =======================================================================
-$Author$
-$Date$
-
