@@ -29,19 +29,19 @@
 
 #define BUFFER_LENGTH	256
 
-BOOLEAN loadRsrc(VOID);
-static void redraw_card(OBJECT *body_tree, int body, int x, int y, int w, int h);
+BOOLEAN loadRsrc(void);
+static void redrawCard(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h);
 
-int appl_id, vdi_handle;
 OBJECT *example;
 
 void main(void) {
-	int exit_obj;
+	int appl_id, vdi_handle;
+	int objectExitIdx;
 	WORD work_in[11] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 }, work_out[57];
 	LONG du;
 	GRECT size;
 
-	CARD *example_card = NULL;
+	CARD *exampleCard = NULL;
 
 	graf_mouse(ARROW, NULL);
 
@@ -49,6 +49,38 @@ void main(void) {
 	appl_id = appl_init();
 	if (appl_id < 0) {
 		form_alert(1, "[3]Application Initialization|Error!][Exit]");
+		exit(1);
+	}
+
+	/* Resource-Datei laden. */
+	if (loadRsrc() == FALSE) {
+		form_alert(1, "[3][Can't load RSC-File !][Cancel]");
+		exit(1);
+	}
+
+	/* Die einzelnen Karteikarten zusammenhaengen. */
+	if (cardAdd(&exampleCard, example, BUTTON_BACKGRD, example, BOX_BACKGRD) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		exit(1);
+	}
+	if (cardAdd(&exampleCard, example, BUTTON_BUTTON, example, BOX_BUTTON) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		cardRemoveAll(exampleCard);
+		exit(1);
+	}
+	if (cardAdd(&exampleCard, example, BUTTON_HEADLINE, example, BOX_HEADLINE) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		cardRemoveAll(exampleCard);
+		exit(1);
+	}
+	if (cardAdd(&exampleCard, example, BUTTON_RAHMEN, example, BOX_RAHMEN) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		cardRemoveAll(exampleCard);
+		exit(1);
+	}
+	if (cardAdd(&exampleCard, example, BUTTON_SEPARATOR, example, BOX_SEPARATOR) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		cardRemoveAll(exampleCard);
 		exit(1);
 	}
 
@@ -64,72 +96,60 @@ void main(void) {
 		exit(1);
 	}
 
-	/* Resource-Datei laden. */
-	if (loadRsrc() == FALSE) {
-		form_alert(1, "[3][Can't load RSC-File !][Cancel]");
-		exit(1);
-	}
-
 	/* Userdefs im Dialog installieren. */
 	setUserdefs(example, FALSE);
 /*	set3dLook(FALSE);*/
 	setBackgroundBorderLine(example, 0, TRUE);
 /*	setBackgroundBorder(FALSE);*/
 
-	/* Die einzelnen Karteikarten zusammenhaengen. */
-	cardAdd(&example_card, example, BUTTON_BACKGRD, example, BOX_BACKGRD, redraw_card);
-	cardAdd(&example_card, example, BUTTON_BUTTON, example, BOX_BUTTON, redraw_card);
-	cardAdd(&example_card, example, BUTTON_HEADLINE, example, BOX_HEADLINE, redraw_card);
-	cardAdd(&example_card, example, BUTTON_RAHMEN, example, BOX_RAHMEN, redraw_card);
-	cardAdd(&example_card, example, BUTTON_SEPARATOR, example, BOX_SEPARATOR, redraw_card);
-
-	/* Karteikarte nach vorne bringen. */
-	setActiveCard(example_card, BUTTON_BACKGRD, FALSE);
+#if 0
+	/* Ueberschreiben der internen Zeichenfunktion der Karteikarte. */
+	setCardRedraw(exampleCard, redrawCard);
+#endif
 
 	/* Dialog zeichnen */
 	wind_update(BEG_UPDATE);
 	wind_update(BEG_MCTRL);
 
 	form_center(example, &size.g_x, &size.g_y, &size.g_w, &size.g_h);
-	form_dial(FMD_START, size.g_x, size.g_y, size.g_w, size.g_h, size.g_x,
-			size.g_y, size.g_w, size.g_h);
+	form_dial(FMD_START, size.g_x, size.g_y, size.g_w, size.g_h, size.g_x, size.g_y, size.g_w, size.g_h);
 
 	objc_draw(example, ROOT, MAX_DEPTH, size.g_x, size.g_y, size.g_w, size.g_h);
+
+	/* Hauptschleife */
 	do {
-		exit_obj = form_do(example, ROOT) & 0x7FFF;
-		switch (exit_obj) {
+		objectExitIdx = form_do(example, ROOT) & 0x7FFF;
+		switch (objectExitIdx) {
 		case BUTTON_BACKGRD:
-			setActiveCard(example_card, BUTTON_BACKGRD, TRUE);
+			setActiveCard(exampleCard, BUTTON_BACKGRD, TRUE);
 			break;
 
 		case BUTTON_BUTTON:
-			setActiveCard(example_card, BUTTON_BUTTON, TRUE);
+			setActiveCard(exampleCard, BUTTON_BUTTON, TRUE);
 			break;
 
 		case BUTTON_HEADLINE:
-			setActiveCard(example_card, BUTTON_HEADLINE, TRUE);
+			setActiveCard(exampleCard, BUTTON_HEADLINE, TRUE);
 			break;
 
 		case BUTTON_RAHMEN:
-			setActiveCard(example_card, BUTTON_RAHMEN, TRUE);
+			setActiveCard(exampleCard, BUTTON_RAHMEN, TRUE);
 			break;
 
 		case BUTTON_SEPARATOR:
-			setActiveCard(example_card, BUTTON_SEPARATOR, TRUE);
+			setActiveCard(exampleCard, BUTTON_SEPARATOR, TRUE);
 			break;
 		}
-	} while (exit_obj != ENDE);
+	} while (objectExitIdx != ENDE);
 
-	form_dial(FMD_FINISH, size.g_x, size.g_y, size.g_w, size.g_h, size.g_x,
-			size.g_y, size.g_w, size.g_h);
-
-	example[exit_obj].ob_state &= (~SELECTED);
+	form_dial(FMD_FINISH, size.g_x, size.g_y, size.g_w, size.g_h, size.g_x, size.g_y, size.g_w, size.g_h);
+	setObjectState(example, objectExitIdx, SELECTED, FALSE);
 
 	wind_update(END_UPDATE);
 	wind_update(END_MCTRL);
 
 	/* Karteikarten freigeben. */
-	cardRemove(example_card);
+	cardRemoveAll(exampleCard);
 
 	/* Userdefs aus dem Dialog entfernen. */
 	unsetUserdefs(example);
@@ -146,7 +166,12 @@ void main(void) {
 	exit(0);
 }
 
-LOCAL BOOLEAN loadRsrc(void) {
+/**
+ * Resource-File laden.
+ *
+ * @return True - hat geklappt, False sonst
+ */
+BOOLEAN loadRsrc(void) {
 	graf_mouse(BUSYBEE, NULL);
 	if (rsrc_load("example.rsc") == FALSE) {
 		graf_mouse(ARROW, NULL);
@@ -159,6 +184,16 @@ LOCAL BOOLEAN loadRsrc(void) {
 	return (TRUE);
 }
 
-static void redraw_card(OBJECT *body_tree, int body, int x, int y, int w, int h) {
-	objc_draw(body_tree, body, MAX_DEPTH, x, y, w, h);
+/**
+ * Beispiel-Methode wie die interne Zeichenfunktion durch eine eigene ersetzt werden kann.
+ *
+ * @param *objectTree Zeiger auf Objekt-Baum
+ * @param objectBodyIdx Objekt-Index des Objekts
+ * @param x x-Position des zu zeichnenden Karteikarten-Objektes
+ * @param y y-Position respektiv
+ * @param w dessen Breite
+ * @param h dessen Hoehe
+ */
+static void redrawCard(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h) {
+	objc_draw(objectBodyTree, objectBodyIdx, MAX_DEPTH, x, y, w, h);
 }
