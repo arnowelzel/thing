@@ -70,16 +70,16 @@ void setBackgroundBorder(BOOLEAN flag) {
  * @param WORD w
  * @param WORD h
  */
-void setBackgroundBorderOffset(OBJECT *tree, WORD objectIdx, WORD x, WORD y, WORD w, WORD h) {
+void setBackgroundBorderOffset(OBJECT *objectTree, WORD objectIdx, WORD x, WORD y, WORD w, WORD h) {
 	UBPARM *ubparm;
 
-	if (tree == NULL)
+	if (objectTree == NULL)
 		return;
 
-	if ((tree[objectIdx].ob_type & 0xFF) != G_USERDEF)
+	if ((objectTree[objectIdx].ob_type & 0xFF) != G_USERDEF)
 		return;
 
-	ubparm = (UBPARM *) tree[objectIdx].ob_spec.userblk->ub_parm;
+	ubparm = (UBPARM *) objectTree[objectIdx].ob_spec.userblk->ub_parm;
 	if (ubparm != NULL && ubparm->magic == 'DIRK') {
 		ubparm->backgrdoffset[0] = x;
 		ubparm->backgrdoffset[1] = y;
@@ -97,16 +97,16 @@ void setBackgroundBorderOffset(OBJECT *tree, WORD objectIdx, WORD x, WORD y, WOR
  *
  * @return TRUE - Linie zeichnen, FALSE sonst
  */
-BOOLEAN getBackgroundBorderLine(OBJECT *tree, WORD objectIdx) {
+BOOLEAN getBackgroundBorderLine(OBJECT *objectTree, WORD objectIdx) {
 	UBPARM *ubparm;
 
-	if (tree == NULL)
+	if (objectTree == NULL)
 		return (FALSE);
 
-	if ((tree[objectIdx].ob_type & 0xFF) != G_USERDEF)
+	if ((objectTree[objectIdx].ob_type & 0xFF) != G_USERDEF)
 		return (FALSE);
 
-	ubparm = (UBPARM *) tree[objectIdx].ob_spec.userblk->ub_parm;
+	ubparm = (UBPARM *) objectTree[objectIdx].ob_spec.userblk->ub_parm;
 	if (ubparm->magic == 'DIRK')
 		return (ubparm->backgrdborderline);
 
@@ -122,16 +122,16 @@ BOOLEAN getBackgroundBorderLine(OBJECT *tree, WORD objectIdx) {
  * @param object Index des Objekts im Objekt-Baum
  * @param flag TRUE - Linie zeichnen, FALSE sonst
  */
-void setBackgroundBorderLine(OBJECT *tree, WORD objectIdx, BOOLEAN flag) {
+void setBackgroundBorderLine(OBJECT *objectTree, WORD objectIdx, BOOLEAN flag) {
 	UBPARM *ubparm;
 
-	if (tree == NULL)
+	if (objectTree == NULL)
 		return;
 
-	if ((tree[objectIdx].ob_type & 0xFF) != G_USERDEF)
+	if ((objectTree[objectIdx].ob_type & 0xFF) != G_USERDEF)
 		return;
 
-	ubparm = (UBPARM *) tree[objectIdx].ob_spec.userblk->ub_parm;
+	ubparm = (UBPARM *) objectTree[objectIdx].ob_spec.userblk->ub_parm;
 	if (ubparm->magic == 'DIRK')
 		ubparm->backgrdborderline = flag;
 }
@@ -141,6 +141,12 @@ void setBackgroundBorderLine(OBJECT *tree, WORD objectIdx, BOOLEAN flag) {
 /*------------------------------------------------------------------*/
 #define RAHMENDICKE	3
 
+/**
+ * Diese Methode zeichnet die Dialoghintergrundbox.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl backgrdbox(PARMBLK *parmblock) {
 	WORD pxy[10];
 	UBPARM *ubparm;

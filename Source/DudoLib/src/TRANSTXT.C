@@ -26,6 +26,13 @@
 /*------------------------------------------------------------------*/
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
+
+/**
+ * Diese Methode zeichnet transparenten Text.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl transtext(PARMBLK *parmblock) {
 	WORD text_effects, tx, du;
 	UBPARM *ubparm;
@@ -49,7 +56,6 @@ WORD cdecl transtext(PARMBLK *parmblock) {
 
 	vswr_mode(userdef->vdi_handle, MD_TRANS);
 	vst_alignment(userdef->vdi_handle, ubparm->te_just, TA_TOP, &du, &du);
-/*	vst_effects(userdef->vdi_handle, TF_NORMAL);*/
 
 	if (get3dLook() == TRUE && (parmblock->pb_currstate & DISABLED)) {
 		text_effects = TF_LIGHTENED;
@@ -93,6 +99,5 @@ WORD cdecl transtext(PARMBLK *parmblock) {
 
 	clipping(parmblock, FALSE);
 
-/*	parmblock->pb_currstate &= ~SELECTED;*/
 	return (parmblock->pb_currstate);
 }

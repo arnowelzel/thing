@@ -27,8 +27,11 @@ extern UWORD arupnorm[64], arupnormdis[64], arupsel[64], ardnnorm[64],
 		ardnnormdis[64], ardnsel[64], arltnorm[64], arltnormdis[64],
 		arltsel[64], arrtnorm[64], arrtnormdis[64], arrtsel[64];
 
+/**
+ *
+ */
 WORD cdecl arrowbutton(PARMBLK *parmblock) {
-	WORD pxy[8], cppxy[8], box_breite, color_index[] = { BLACK, WHITE };
+	WORD pxy[4], cppxy[8], box_breite, color_index[] = { BLACK, WHITE };
 	UBPARM *ubparm;
 	MFDB screen, arrow;
 

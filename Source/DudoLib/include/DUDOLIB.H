@@ -58,11 +58,13 @@
 #define NIL			-1
 #endif
 
+#ifndef __AHCC__
 #ifndef min(a, b)
 #define min(a, b)  ((a) < (b) ? (a) : (b))
 #endif
 #ifndef max(a, b)
 #define max(a, b)  ((a) > (b) ? (a) : (b))
+#endif
 #endif
 
 #ifdef __GNUC__
@@ -193,8 +195,7 @@ typedef struct card
 	OBJECT		*head_tree,
 				*body_tree;
 	WORD		state_list[MAXOBJECTS];
-	void		(*redraw)(OBJECT *body_tree, WORD body, WORD x, WORD y, WORD w, WORD h);
-
+	void		(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h);
 	struct card *next;				/* Zeiger auf naechste Karteikarte */
 } CARD;
 
@@ -206,6 +207,7 @@ typedef struct card
 #define USR_NOTINSTALLED	2
 #define USR_OUTOFMEMORY		3
 #define USR_NOOBJECT		4
+#define USR_UNKNOWNUSERDEF	5
 
 /*
  * Erweiterte Objekttypen fuer die Userdefined Objects.
@@ -241,8 +243,8 @@ WORD cdecl underline(PARMBLK *parmblock);
 /* Module 'dudolib.c' */
 WORD initDudolib(void);
 void releaseDudolib(void);
-WORD setUserdefs(OBJECT *tree, BOOLEAN is_menu);
-WORD unsetUserdefs(OBJECT *tree);
+WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu);
+WORD unsetUserdefs(OBJECT *objectTree);
 WORD appl_xgetinfo(WORD type, WORD *out1, WORD *out2, WORD *out3, WORD *out4);
 #ifdef __GNUC__
 U_OB_SPEC get_obspec(OBJECT *tree, WORD object);
@@ -258,7 +260,7 @@ WORD getShortcutLineColor(void);
 
 void clearObject(PARMBLK *parmblock);
 void v_xgtext(WORD x, WORD y, WORD text_effects, UBPARM *ubparm, PARMBLK *parmblk);
-void clipping(PARMBLK *parmblock, BOOLEAN clip_on);
+void clipping(PARMBLK *parmblock, BOOLEAN useClipping);
 
 /* Module 'objhelp.c' */
 BYTE *getObjectText(OBJECT *objectTree, WORD objectIdx);
@@ -276,9 +278,9 @@ void unsetObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState);
 /* Module 'backgrd.c' */
 BOOLEAN getBackgroundBorder(void);
 void setBackgroundBorder(BOOLEAN flag);
-void setBackgroundBorderOffset(OBJECT *tree, WORD object, WORD x, WORD y, WORD w, WORD h);
-BOOLEAN getBackgroundBorderLine(OBJECT *tree, WORD object);
-void setBackgroundBorderLine(OBJECT *tree, WORD object, BOOLEAN flag);
+void setBackgroundBorderOffset(OBJECT *objectTree, WORD objectIdx, WORD x, WORD y, WORD w, WORD h);
+BOOLEAN getBackgroundBorderLine(OBJECT *objectTree, WORD objectIdx);
+void setBackgroundBorderLine(OBJECT *objectTree, WORD objectIdx, BOOLEAN flag);
 
 /* Module 'dialkeys.c' */
 DIALKEYS *create_dialkeys(OBJECT *tree);
@@ -291,11 +293,14 @@ WORD find_object(DIALKEYS *dialkeys, char *keystring);
 void get_menue_item(DIALKEYS *dialkeys, char *keystring, WORD *title, WORD *item);
 
 /* Module 'card.c' */
-int cardAdd(CARD **card, OBJECT *head_tree, int head, OBJECT *body_tree, int body,
-			 void (*redraw)(OBJECT *body_tree, int body, int x, int y, int w, int h));
+int cardAdd(CARD **card, OBJECT *head_tree, int head, OBJECT *body_tree, int body);
 void cardRemove(CARD *card);
+void cardRemoveAll(CARD *card);
+void setCardRedraw(CARD *card, void(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h));
+void cardDisable(CARD *card, WORD objectHeadIdx);
+void cardEnable(CARD *card, WORD objectHeadIdx);
 CARD *getActiveCard(CARD *card);
-void setActiveCard(CARD *card, int head, BOOLEAN redraw);
+void setActiveCard(CARD *card, int objectHeadIdx, BOOLEAN redraw);
 
 #ifdef _USR_EDITFIELD_
 WORD getScrollOffset(OBJECT *tree, WORD object);

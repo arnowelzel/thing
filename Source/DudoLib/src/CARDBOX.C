@@ -28,8 +28,22 @@
 /*------------------------------------------------------------------*/
 static int off = 2;
 
+/**
+ * Diese Methode zeichnet den unteren Teil der Karteikarte.
+ *
+ *  +-----+
+ *  |     |
+ * +---------------+
+ * |/ / / / / / / /|
+ * |/ / / / / / / /|
+ * |/ / / / / / / /|
+ * +---------------+
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl cardbox(PARMBLK *parmblock) {
-	WORD pxy[10];
+	WORD pxy[8];
 
 	clipping(parmblock, TRUE);
 
@@ -38,6 +52,7 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 	pxy[2] = pxy[0] + parmblock->pb_w - 1;
 	pxy[3] = pxy[1] + parmblock->pb_h - 2;
 
+	/* Hintergrund */
 	vswr_mode(userdef->vdi_handle, MD_REPLACE);
 	vsf_interior(userdef->vdi_handle, FIS_SOLID);
 	vsf_color(userdef->vdi_handle, userdef->backgrd_color);
@@ -73,12 +88,14 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 		pxy[4] = pxy[2];
 		v_pline(userdef->vdi_handle, 3, pxy);
 	} else {
+		/* weisser Lichteffekt */
 		pxy[0] += 1;
 		pxy[2] = pxy[0];
-		pxy[3] = pxy[1] + parmblock->pb_h - 5;
+		pxy[3] = pxy[1] + parmblock->pb_h - 3;
 		vsl_color(userdef->vdi_handle, WHITE);
 		v_pline(userdef->vdi_handle, 2, pxy);
 
+		/* dunkelgrauer Schatteneffekt */
 		pxy[0] = parmblock->pb_x + 1;
 		pxy[1] = parmblock->pb_y + parmblock->pb_h - 2;
 		pxy[2] = parmblock->pb_x + parmblock->pb_w - 2 - 2;
@@ -94,6 +111,20 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 	return (0);
 }
 
+/**
+ * Diese Methode zeichnet den Reiter der Karteikarte.
+ *
+ *  +-----+
+ *  |/ / /|
+ * +---------------+
+ * |               |
+ * |               |
+ * |               |
+ * +---------------+
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl cardtitle(PARMBLK *parmblock) {
 	WORD pxy[12], extent[8], xpos, ypos, text_effects, du;
 	UBPARM *ubparm;
@@ -234,8 +265,22 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 	return (0);
 }
 
-int cdecl cardline(PARMBLK *parmblock) {
-	int pxy[6];
+/**
+ * Diese Methode zeichnet den horizontale Linie falls keine Reiter vorhanden sind.
+ *
+ *  +-----+
+ *  |     |
+ * +-------/-/-/-/-+
+ * |               |
+ * |               |
+ * |               |
+ * +---------------+
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
+WORD cdecl cardline(PARMBLK *parmblock) {
+	int pxy[4];
 
 	clipping(parmblock, TRUE);
 

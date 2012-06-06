@@ -26,8 +26,15 @@
 /*------------------------------------------------------------------*/
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
+
+/**
+ * Diese Methode zeichnet Exit-Buttons.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl exitbutton(PARMBLK *parmblock) {
-	WORD pxy[10], pxy1[6], extent[8], xpos, ypos, text_effects, du, frame_size,
+	WORD pxy[6], pxy1[6], extent[8], xPos, yPos, text_effects, du, frame_size,
 			i;
 	UBPARM *ubparm;
 
@@ -48,10 +55,8 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	 * Vergroesserung der Buttons vor dem Redraw berechnet werden).
 	 */
 	vqt_extent(userdef->vdi_handle, ubparm->text, extent);
-	xpos = parmblock->pb_x + 3
-			+ (parmblock->pb_w - 6 - extent[4] - extent[6]) / 2;
-	ypos = parmblock->pb_y + 3
-			+ (parmblock->pb_h - 6 - extent[1] - extent[7]) / 2;
+	xPos = parmblock->pb_x + 3 + (parmblock->pb_w - 6 - extent[4] - extent[6]) / 2;
+	yPos = parmblock->pb_y + 3 + (parmblock->pb_h - 6 - extent[1] - extent[7]) / 2;
 
 	pxy[0] = parmblock->pb_x;
 	pxy[1] = parmblock->pb_y;
@@ -126,8 +131,8 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 		v_pline(userdef->vdi_handle, 3, pxy1);
 
 		if (parmblock->pb_currstate & SELECTED) {
-			xpos++;
-			ypos++;
+			xPos++;
+			yPos++;
 		}
 		ubparm->te_textcol = BLACK;
 	}
@@ -135,11 +140,11 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	vswr_mode(userdef->vdi_handle, MD_TRANS);
 	if (get3dLook() == TRUE && (parmblock->pb_currstate & DISABLED)) {
 		text_effects = TF_LIGHTENED;
-		v_xgtext(xpos, ypos, text_effects, ubparm, parmblock);
+		v_xgtext(xPos, yPos, text_effects, ubparm, parmblock);
 		parmblock->pb_currstate &= ~DISABLED;
 	} else {
 		text_effects = TF_NORMAL;
-		v_xgtext(xpos, ypos, text_effects, ubparm, parmblock);
+		v_xgtext(xPos, yPos, text_effects, ubparm, parmblock);
 	}
 
 	clipping(parmblock, FALSE);

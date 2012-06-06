@@ -26,6 +26,13 @@
 /*------------------------------------------------------------------*/
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
+
+/**
+ * Diese Methode zeichnet den Unterstrich bei tastaturbedienbaren Elementen.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl underline(PARMBLK *parmblock) {
 	WORD pxy[4], x_pos, du;
 	UBPARM *ubparm;

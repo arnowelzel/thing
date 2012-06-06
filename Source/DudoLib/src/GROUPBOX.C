@@ -26,6 +26,19 @@
 /*------------------------------------------------------------------*/
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
+
+/**
+ * Diese Methode zeichnet Gruppenboxen mit zugehoeriger Ueberschrift.
+ *
+ * +- Test --------+
+ * |  o aaaaa      |
+ * |  o bbbbb      |
+ * |  o ccccc      |
+ * +---------------+
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl groupbox(PARMBLK *parmblock) {
 	WORD pxy[12], extent[8], text_width, x_pos, du;
 	UBPARM *ubparm;

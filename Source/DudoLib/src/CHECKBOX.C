@@ -29,13 +29,20 @@ extern UWORD CheckBoxSelected[64], CheckBoxNormalDisabled[64],
 /*------------------------------------------------------------------*/
 /*  local function prototypes                                       */
 /*------------------------------------------------------------------*/
-static VOID draw_kreuz(PARMBLK *parmblock);
+static void drawCross(PARMBLK *parmblock);
 
 /*------------------------------------------------------------------*/
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
+
+/**
+ * Diese Methode zeichnet Checkboxen.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
+ */
 WORD cdecl checkbox(PARMBLK *parmblock) {
-	WORD pxy[8], cppxy[8], color_index[] = { BLACK, WHITE }, text_effects, du;
+	WORD pxy[6], cppxy[8], color_index[] = { BLACK, WHITE }, text_effects, du;
 	MFDB screen, checkbox = { NULL, 16, 0, 1, 0, 1 };
 	UBPARM *ubparm;
 
@@ -115,7 +122,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 			else
 				vsl_color(userdef->vdi_handle, WHITE);
 
-			draw_kreuz(parmblock);
+			drawCross(parmblock);
 		} else if (parmblock->pb_currstate & SELECTED) {
 			checkbox.fd_addr = (void *) CheckBoxSelected;
 			vrt_cpyfm(userdef->vdi_handle, MD_TRANS, cppxy, &checkbox, &screen, color_index);
@@ -134,20 +141,20 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		if (parmblock->pb_currstate & SELECTED) {
 			if (userdef->img_size == IMGSIZE_NONE) {
 				vsl_color(userdef->vdi_handle, BLACK);
-				draw_kreuz(parmblock);
+				drawCross(parmblock);
 			} else {
 				if (parmblock->pb_currstate & DISABLED)
-					checkbox.fd_addr = (VOID *) CheckBoxSelectedDisabled;
+					checkbox.fd_addr = (void *) CheckBoxSelectedDisabled;
 				else
-					checkbox.fd_addr = (VOID *) CheckBoxSelected;
+					checkbox.fd_addr = (void *) CheckBoxSelected;
 				vrt_cpyfm(userdef->vdi_handle, MD_TRANS, cppxy, &checkbox, &screen, color_index);
 			}
 		} else {
 			if (userdef->img_size == IMGSIZE_NONE) {
 				vsl_color(userdef->vdi_handle, userdef->backgrd_color);
-				draw_kreuz(parmblock);
+				drawCross(parmblock);
 			} else if (parmblock->pb_currstate & DISABLED) {
-				checkbox.fd_addr = (VOID *) CheckBoxNormalDisabled;
+				checkbox.fd_addr = (void *) CheckBoxNormalDisabled;
 				vrt_cpyfm(userdef->vdi_handle, MD_TRANS, cppxy, &checkbox, &screen, color_index);
 			}
 		}
@@ -165,7 +172,13 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 	}
 }
 
-static VOID draw_kreuz(PARMBLK *parmblock) {
+/**
+ * Zeichnet das Kreuz in der Checkbox, falls keine Images benutzt
+ * werden koennen.
+ *
+ * @param *parmblock Zeiger auf die Parmblock-Struktur
+ */
+static void drawCross(PARMBLK *parmblock) {
 	WORD pxy[4];
 
 	/* RO->LU */
