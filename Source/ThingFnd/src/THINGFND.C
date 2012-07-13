@@ -30,7 +30,6 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
-#include <assert.h>
 #include <nkcc.h>
 #include <thingtbx.h>
 #include <vaproto.h>
@@ -41,24 +40,24 @@
 #define pfree	free
 #endif
 #include <new_rsc.h>
-#include "rsrc\thingfnd.h"
-#include "..\include\proto.h"
+#include "rsrc\thgfndde.h"
+#include "..\include\thingfnd.h"
 #include <dudolib.h>
 
 /*------------------------------------------------------------------*/
 /*  global functions                                                */
 /*------------------------------------------------------------------*/
-
 /*------------------------------------------------------------------*/
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
-char *aesbuf, *aesapname, *altitle = "ThingFnd", almsg[256];
+char *aesapname, *altitle = "ThingFnd", almsg[256];
 int aesmsg[8];
 EVENT mevent;
 GLOB glob;
 RSINFO rinfo;
 FIND_DATA find;
 long lasthits;
+CARD *mainCard = NULL;
 
 FORMINFO fi_about = { 0L, ABOUT, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 0, "%about", -1, ABHELP };
 FORMINFO fi_find = { 0L, FIND, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 0, "%find", FCANCEL, FHELP };
@@ -67,19 +66,19 @@ FORMINFO fi_status = { 0L, STATUS, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 0, "%status", SC
 /*------------------------------------------------------------------*/
 /*  external variables                                              */
 /*------------------------------------------------------------------*/
+extern BYTE *aesBuffer;
+
 /*------------------------------------------------------------------*/
 /*  local functions                                                 */
 /*------------------------------------------------------------------*/
 /*------------------------------------------------------------------*/
 /*  local variables                                                 */
 /*------------------------------------------------------------------*/
-
 /*------------------------------------------------------------------*/
 /*  local definitions                                               */
 /*------------------------------------------------------------------*/
-#define VERSION	"0.10"
-
-#define UNUSED(x)	(void)(x)
+#define VERSION	"0.20"
+#define STGUIDEHELPFILE "thingfnd.hyp"
 
 void sigTerm(long sig) {
 	UNUSED(sig);
@@ -87,60 +86,29 @@ void sigTerm(long sig) {
 }
 
 /**
- full2comp()
- comp2full()
- 
- Erzeugt aus einen vollen Dateienamen Pfad und Datei und umgekehrt
- -------------------------------------------------------------------------*/
-void full2comp(char *full, char *path, char *file) {
-	char *p;
-
-	strcpy(path, full);
-	if (!path[0]) {
-		path[0] = (char) Dgetdrv() + 'A';
-		path[1] = ':';
-		Dgetpath(&path[2], 0);
-		strcat(path, "\\");
-	}
-	p = strrchr(path, '\\');
-	if (p) {
-		strcpy(file, &p[1]);
-		p[1] = 0;
-	} else
-		strcpy(file, "");
-}
-
-void comp2full(char *full, char *path, char *file) {
-	strcpy(full, path);
-	if (strrchr(full, 0)[-1] != '\\')
-		strcat(full, "\\");
-	strcat(full, file);
-}
-
-/**
  * full_fselect
  *
- * Ruft fselect() auf und kÅmmert sich dabei um Sachen wie Zerlegung
+ * Ruft fselect() auf und kuemmert sich dabei um Sachen wie Zerlegung
  * und Zusammensetzung des Pfades, Ermittlung des Defaultpfades,
  * Neuzeichnen des Dialogs, etc.
  *
  * Eingabe:
  * full: Zeiger auf vorzuselektierende Datei inklusive Pfad. Nach dem
- *       Aufruf steht hier die tatsÑchlich ausgewÑhlte Datei.
+ *       Aufruf steht hier die tatsaechlich ausgewaehlte Datei.
  * deflt: Zeiger auf vorzusektierende Datei, wenn full leer ist.
  *          Wenn NULL, wird das aktuelle Verzeichnis benutzt.
  * ext: Zeiger auf Filterextension
- * dironly: Es soll ein Verzeichnis ausgewÑhlt werden; ein eventuell
- *          auswgewÑhlter Dateiname wird also ignoriert
- * title: Zeiger auf Titel fÅr die Auswahlbox
+ * dironly: Es soll ein Verzeichnis ausgewaehlt werden; ein eventuell
+ *          auswgewaehlter Dateiname wird also ignoriert
+ * title: Zeiger auf Titel fuer die Auswahlbox
  * freedret: Freedom non-modal aufrufen? (0/1)
- * freedid: ID fÅr Freedom, wenn freedret = 1
+ * freedid: ID fuer Freedom, wenn freedret = 1
  * form: Zeiger auf aufrufendes Formular, ggf. NULL
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Dateiauswahl mit 'Abbruch' verlassen oder Aufruf fehlgeschlagen
- * 1: Dateiauswahl erfolgreich, ausgewÑhlte Datei steht in full
- * 2: Dateiauswahl erfolgreich, ausgewÑhlter Ordner steht in full
+ * 1: Dateiauswahl erfolgreich, ausgewaehlte Datei steht in full
+ * 2: Dateiauswahl erfolgreich, ausgewaehlter Ordner steht in full
  */
 int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title,
 		int freedret, int freedid, FORMINFO *fi) {
@@ -179,136 +147,18 @@ int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title,
 	return (0);
 }
 
-/*-------------------------------------------------------------------------
- str230()
- str236()
- 
- Begrenzt eine Pfadangabe etc. auf 20/36 Zeichen - z.B. fÅr Dialoge
- -------------------------------------------------------------------------*/
-void str230(char *dest, char *src) {
-	int l;
-
-	l = (int) strlen(src);
-	if (l > 30) {
-		strncpy(dest, src, 10);
-		strcpy(&dest[10], "...");
-		strcat(dest, &src[l - 17]);
-	} else
-		strcpy(dest, src);
-}
-
-void str236(char *dest, char *src) {
-	int l;
-
-	l = (int) strlen(src);
-	if (l > 36) {
-		strncpy(dest, src, 10);
-		strcpy(&dest[10], "...");
-		strcat(dest, &src[l - 23]);
-	} else
-		strcpy(dest, src);
-}
-
 /**
- * app_send
  *
- * Verschickt eine AES-Nachricht an eine Applikation.
  *
- * Eingabe:
- * id: AES-ID der EmpfÑngerapplikation
- * message: Die zu verschickende Nachricht
- * pointers: Bitvektor, der angibt, welche Parameter Pointer sind.
- *        - PT34: par1 ist Pointer, par2 wird nicht beachtet
- *        - PT45: par2  "     "   , par3   "    "       "
- *        - PT56: par3  "     "   , par4   "    "       "
- *        - PT67: par4  "     "   , par5   "    "       "
- *        NatÅrlich sind Kombinationen wie BV34|BV45 sinnlos!
- * par1 - par5: Die Parameter fÅr die Nachricht, die fÅr msg[3] bis
- *              msg[7] eingesetzt werden. Siehe auch pointers.
+ * @param *objectTree
  */
-void app_send(int id, int message, int pointers, long par1, long par2,
-		long par3, long par4, long par5) {
-	aesmsg[0] = message;
-	aesmsg[1] = tb.app_id;
-	aesmsg[2] = 0;
-	aesmsg[3] = (int) par1;
-	aesmsg[4] = (int) par2;
-	aesmsg[5] = (int) par3;
-	aesmsg[6] = (int) par4;
-	aesmsg[7] = (int) par5;
-	if (pointers & PT34)
-		long2int(par1, &aesmsg[3], &aesmsg[4]);
-	if (pointers & PT45)
-		long2int(par2, &aesmsg[4], &aesmsg[5]);
-	if (pointers & PT56)
-		long2int(par3, &aesmsg[5], &aesmsg[6]);
-	if (pointers & PT67)
-		long2int(par4, &aesmsg[6], &aesmsg[7]);
-	appl_write(id, 16, aesmsg);
-}
-
-/**
- * long2int
- *
- * Wandelt einen long in zwei ints
- *
- * Eingabe:
- * lword: Zu wandelnder 32-Bit-Wert
- * hi: Zeiger auf die Adresse fÅr die oberen 16 Bit
- * lo: Zeiger auf die Adresse fÅr die unteren 16 Bit
- */
-void long2int(long lword, int *hi, int *lo) {
-	*hi = (int) (lword >> 16L);
-	*lo = (int) (lword & 0xffffL);
-}
-
-/**
- * int2long
- *
- * Wandelt zwei unsigned ints in ein unsigned long.
- *
- * Eingabe:
- * hi: Obere 16 Bit fÅr den unsigned long.
- * lo: Untere 16 Bit fÅr den unsigned long.
- *
- * RÅckgabe:
- * lo + hi * 65536UL
- */
-unsigned long int2long(unsigned int hi, unsigned int lo) {
-	return ((unsigned long) lo + ((unsigned long) hi << 16UL));
-}
-
-/**
- show_help()
- 
- Anzeige eines Hilfetextes mit ST-Guide
- -------------------------------------------------------------------------*/
-void show_help(char *helpfile, char *ref) {
-	int ap_id;
-
-	/* ST-Guide vorhanden ? */
-	ap_id = appl_find("ST-GUIDE");
-	if (ap_id < 0) {
-		frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
-		return;
-	}
-
-	strcpy(aesbuf, "*:\\");
-	strcat(aesbuf, helpfile);
-	if (ref) {
-		strcat(aesbuf, " ");
-		strcat(aesbuf, ref);
-	}
-	app_send(ap_id, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
-}
-
-static void mn_redraw(OBJECT *tree) {
+static void mn_redraw(OBJECT *objectTree) {
 	int top;
 
 	wind_update(BEG_MCTRL);
 	if (!(tb.sys & SY_MULTI) || (tb.app_id == menu_bar(0L, -1))) {
 		wind_get(0, WF_TOP, &top);
-		menu_bar(tree, 1);
+		menu_bar(objectTree, 1);
 		if (top > 0)
 			wind_set(top, WF_TOP);
 	}
@@ -318,18 +168,18 @@ static void mn_redraw(OBJECT *tree) {
 /**
  * mn_all_ienable
  *
- * Setzt alle EintrÑge eines MenÅs via menu_ienable() auf ENABLED
- * oder DISABLED. Davon ausgenommen sind EintrÑge, die mit einem
+ * Setzt alle Eintraege eines Menues via menu_ienable() auf ENABLED
+ * oder DISABLED. Davon ausgenommen sind Eintraege, die mit einem
  * Minuszeichen beginnen, keine G_STRINGs sind oder zu den ACC-
  * Slots gehîren.
  *
  * Eingabe:
- * tree: Zeiger auf zu bearbeitendes MenÅ (wenn tree auf einen Baum
- *       zeigt, der nicht die Struktur eines AES-MenÅs hat, ist das
+ * objectTree: Zeiger auf zu bearbeitendes Menue (wenn objectTree auf einen Baum
+ *       zeigt, der nicht die Struktur eines AES-Menues hat, ist das
  *       Verhalten der Funktion undefiniert)
- * enable: Alle EintrÑge aktivieren (1) oder deaktivieren (0)
+ * enable: Alle Eintraege aktivieren (1) oder deaktivieren (0)
  */
-static void mn_all_ienable(OBJECT *tree, int enable) {
+static void mn_all_ienable(OBJECT *objectTree, int enable) {
 	int i, j, k, in_acc = 2;
 	static int state = 1;
 
@@ -338,12 +188,11 @@ static void mn_all_ienable(OBJECT *tree, int enable) {
 		return;
 	state = enable;
 	wind_update(BEG_UPDATE);
-	for (i = tree->ob_head; tree[i].ob_next != 0; i = tree[i].ob_next)
+	for (i = objectTree->ob_head; objectTree[i].ob_next != 0; i = objectTree[i].ob_next)
 		;
-	for (j = tree[i].ob_head; j != i; j = tree[j].ob_next) {
-		for (k = tree[j].ob_head; k != j; k = tree[k].ob_next) {
-			if (((tree[k].ob_type & 0xff) == G_STRING)
-					&& (*tree[k].ob_spec.free_string != '-') && (in_acc != 1)) {
+	for (j = objectTree[i].ob_head; j != i; j = objectTree[j].ob_next) {
+		for (k = objectTree[j].ob_head; k != j; k = objectTree[k].ob_next) {
+			if (((objectTree[k].ob_type & 0xff) == G_STRING) && (*objectTree[k].ob_spec.free_string != '-') && (in_acc != 1)) {
 				mn_istate(k, enable);
 			}
 			if (in_acc == 2)
@@ -355,78 +204,47 @@ static void mn_all_ienable(OBJECT *tree, int enable) {
 }
 
 /**
- mn_disable()
- 
- Deaktivieren der MenÅeintrÑge bei Fensterdialogen
- -------------------------------------------------------------------------*/
+ * Deaktivieren der Menueeintraege bei Fensterdialogen
+ */
 void mn_disable(void) {
-	OBJECT *baum;
-
-	baum = rinfo.rs_trindex[MAINMENU];
-
-	mn_all_ienable(baum, 0);
-	mn_redraw(baum);
+	mn_all_ienable(rinfo.rs_trindex[MAINMENU], 0);
+	mn_redraw(rinfo.rs_trindex[MAINMENU]);
 }
 
 /**
- mn_istate()
- 
- Disablen eines MenÅeintrags
- -------------------------------------------------------------------------*/
+ * Disablen eines Menueeintrags
+ *
+ * @param item
+ * @param enable
+ */
 void mn_istate(int item, int enable) {
 	if (enable)
-		rinfo.rs_trindex[MAINMENU][item].ob_state &= ~DISABLED;
+		unsetObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 	else
-		rinfo.rs_trindex[MAINMENU][item].ob_state |= DISABLED;
+		setObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 }
 
 /**
- mn_update()
- 
- MenÅeintrage je nach Situation DISABLEn
- -------------------------------------------------------------------------*/
+ * Menueeintrage je nach Situation DISABLEn
+ */
 void mn_update(void) {
-	OBJECT *tree;
+	OBJECT *objectTree;
 
-	tree = rinfo.rs_trindex[MAINMENU];
+	objectTree = rinfo.rs_trindex[MAINMENU];
 
 	wind_update(BEG_UPDATE);
-	if (tree[MFILE].ob_state & DISABLED)
-		mn_all_ienable(tree, 1);
+	if (isObjectDisabled(objectTree, MFILE))
+		mn_all_ienable(objectTree, 1);
 	mn_istate(MABOUT, 1);
 	mn_istate(MNEXTWIN, 1);
 	mn_istate(MQUIT, 1);
-	mn_redraw(tree);
+	mn_redraw(objectTree);
 	wind_update(END_UPDATE);
 }
 
-/*-------------------------------------------------------------------------
- av_...()
- 
- AV-Protokoll
- -------------------------------------------------------------------------*/
-
-void av_wopen(int handle) {
-	if (glob.avid < 0)
-		return;
-
-	app_send(glob.avid, AV_ACCWINDOPEN, 0, handle, 0, 0, 0, 0);
-}
-
-void av_wclose(int handle) {
-	if (glob.avid < 0)
-		return;
-
-	app_send(glob.avid, AV_ACCWINDCLOSED, 0, handle, 0, 0, 0, 0);
-}
-
-/*-------------------------------------------------------------------------
- dl_about()
- 
- öber ThingFnd
- -------------------------------------------------------------------------*/
-
-/* Initialisiert und oeffnet den Dialog 'Ueber ThingFnd' */
+/*
+ * Initialisiert und oeffnet den Dialog 'Ueber ThingFnd'.
+ */
 void di_about(void) {
 	if (fi_about.open) {
 		frm_restore(&fi_about);
@@ -435,33 +253,34 @@ void di_about(void) {
 	frm_start(&fi_about, 1, 1, 0);
 
 	if (fi_about.state == FST_WIN)
-		av_wopen(fi_about.win.handle);
+		avcWindowOpen(glob.avid, fi_about.win.handle);
 }
 
+/**
+ *
+ */
 void de_about(int mode, int ret) {
 	UNUSED(ret);
+
 	if (!mode) {
 		switch (fi_about.exit_obj) {
 		case ABOK:
 			if (fi_about.state == FST_WIN)
-				av_wclose(fi_about.win.handle);
+				avcWindowClose(glob.avid, fi_about.win.handle);
 
 			frm_end(&fi_about);
 			break;
 		}
 	} else {
 		if (fi_about.state == FST_WIN)
-			av_wclose(fi_about.win.handle);
+			avcWindowClose(glob.avid, fi_about.win.handle);
 		frm_end(&fi_about);
 	}
 }
 
-/*-------------------------------------------------------------------------
- dl_nextwin()
- 
- Fenster wechseln
- -------------------------------------------------------------------------*/
-
+/**
+ * Fenster wechseln
+ */
 void dl_nextwin(void) {
 	WININFO *win;
 
@@ -478,107 +297,68 @@ void dl_nextwin(void) {
 		magx_switch(tb.app_id, 0);
 	} else {
 		if (glob.avid >= 0 && (glob.avflags & 0x0001))
-			app_send(glob.avid, AV_SENDKEY, 0, K_CTRL, 0x1107, 0, 0, 0);
+			appl_send(glob.avid, AV_SENDKEY, 0, K_CTRL, 0x1107, 0, 0, 0);
 	}
 }
 
-/*-------------------------------------------------------------------------
- dl_quit()
- 
- Ende
- -------------------------------------------------------------------------*/
-
+/**
+ * Ende
+ */
 void dl_quit(void) {
 	glob.done = 1;
 }
 
-/*
- * insert_date
- *
+/**
  * Schreibt ein GEMDOS-Datum in einen String.
  *
  * Eingabe:
  * str: Zeiger auf Zielpuffer
- * date: EinzufÅgendes GEMDOS-Datum, 0xffff = kein Datum (leer)
+ * date: Einzufuegendes GEMDOS-Datum, 0xffff = kein Datum (leer)
  */
 static void insert_date(char *str, unsigned int date) {
 	if (date == 0xffffU)
 		strcpy(str, "");
-	else {
+	else
 		sprintf(str, "%02d%02d%04d", date & 0x20, (date >> 5) & 0x10, (date >> 9) + 1980);
-	}
 }
 
-/*
- * find_setpage
- *
+/**
  * Schaltet auf eine bestimmte Karteikarte im Suchen-Dialog um.
  *
- * Eingabe:
- * tree: Zeiger auf Dialogbaum
- * page: Anzuzeigende Seite
+ * @param page Anzuzeigende Karteikarte
  */
-static void find_setpage(OBJECT *tree, int page) {
-	int child;
-
-	/*
-	 * Alle Editfelder abschalten, da in nicht sichtbaren Seiten
-	 * keine Eingaben mîglich sein dÅrfen
-	 */
-	tree[FDRIVES].ob_flags &= ~EDITABLE;
-	tree[FFMASK].ob_flags &= ~EDITABLE;
-	tree[FFROMDATE].ob_flags &= ~EDITABLE;
-	tree[FTODATE].ob_flags &= ~EDITABLE;
-	tree[FFROMSIZE].ob_flags &= ~EDITABLE;
-	tree[FTOSIZE].ob_flags &= ~EDITABLE;
-	tree[FCMASK].ob_flags &= ~EDITABLE;
-
-	dial_setopt(tree, FGENERAL, SELECTED, 0);
-	dial_setopt(tree, FATTR, SELECTED, 0);
-
+static void find_setpage(int page) {
 	switch (page) {
 	case 0:
-		dial_setopt(tree, FGENERAL, SELECTED, 1);
-		tree[FDRIVES].ob_flags |= EDITABLE;
-		tree[FFMASK].ob_flags |= EDITABLE;
-		child = FSGENERAL;
+		setActiveCard(mainCard, FGENERAL, FALSE);
 		fi_find.edit_obj = FDRIVES;
 		break;
 	case 1:
-		dial_setopt(tree, FATTR, SELECTED, 1);
-		tree[FFROMDATE].ob_flags |= EDITABLE;
-		tree[FTODATE].ob_flags |= EDITABLE;
-		tree[FFROMSIZE].ob_flags |= EDITABLE;
-		tree[FTOSIZE].ob_flags |= EDITABLE;
-		tree[FCMASK].ob_flags |= EDITABLE;
+		setActiveCard(mainCard, FATTR, FALSE);
 		fi_find.edit_obj = FFROMDATE;
-		child = FSATTR;
 		break;
 	}
-	tree[FSUB].ob_head = tree[FSUB].ob_tail = child;
-	tree[child].ob_next = FSUB;
 }
 
-/*
- * di_find
- *
- * ôffnet den Suchen-Dialog.
+/**
+ * Oeffnet den Suchen-Dialog.
  */
 void di_find(void) {
 	int i, last;
 	char *p, *max, *start;
-	OBJECT *tree;
+	OBJECT *objectTree;
 
-	tree = fi_find.tree;
+	objectTree = fi_find.tree;
 	if (fi_find.open) {
 		frm_restore(&fi_find);
 		return;
 	}
 
-	dial_setopt(tree, FON, SELECTED, !*find.searchpath);
-	dial_setopt(tree, FIN, SELECTED, *find.searchpath);
-	str236(tree[FPATH].ob_spec.tedinfo->te_ptext, find.searchpath);
-	p = start = tree[FDRIVES].ob_spec.tedinfo->te_ptext;
+	setObjectState(objectTree, FON, SELECTED, !*find.searchpath);
+	setObjectState(objectTree, FIN, SELECTED, *find.searchpath);
+	strShortener(objectTree[FPATH].ob_spec.tedinfo->te_ptext, find.searchpath, 36);
+	p = start = getObjectText(objectTree, FDRIVES);
+
 	max = p + 31;
 	last = -1;
 	for (i = 0; i < 32; i++) {
@@ -604,67 +384,69 @@ void di_find(void) {
 		*p++ = 'A' + i - 1;
 	}
 	*p = 0;
-	dial_setopt(tree, FGO, DISABLED, (find.drvbits == 0L) && !*find.searchpath);
-	if (dial_getopt(tree, FGO, DISABLED))
-		tree[FGO].ob_flags &= ~DEFAULT;
 
-	dial_setopt(tree, FFOLLOW, SELECTED, find.follow);
-	dial_setopt(tree, FVERBOSE, SELECTED, find.verbose);
-	strcpy(tree[FFMASK].ob_spec.tedinfo->te_ptext, find.filemask);
-	dial_setopt(tree, FFCASE, SELECTED, find.fm_case);
-	dial_setopt(tree, FDIRS, SELECTED, find.fm_dirs);
+	setObjectState(objectTree, FGO, DISABLED, (find.drvbits == 0L) && !*find.searchpath);
+	if (isObjectDisabled(objectTree, FGO))
+		setObjectFlags(objectTree, FGO, DEFAULT, FALSE);
 
-	dial_setopt(tree, FTIME, SELECTED, find.datecheck);
-	insert_date(tree[FFROMDATE].ob_spec.tedinfo->te_ptext, find.mindate);
-	insert_date(tree[FTODATE].ob_spec.tedinfo->te_ptext, find.maxdate);
+	setObjectState(objectTree, FFOLLOW, SELECTED, find.follow);
+	setObjectState(objectTree, FVERBOSE, SELECTED, find.verbose);
+	setObjectText(objectTree, FFMASK, find.filemask);
+	setObjectState(objectTree, FFCASE, SELECTED, find.fm_case);
+	setObjectState(objectTree, FDIRS, SELECTED, find.fm_dirs);
 
-	dial_setopt(tree, FSIZE, SELECTED, find.sizecheck);
+	setObjectState(objectTree, FTIME, SELECTED, find.datecheck);
+	insert_date(objectTree[FFROMDATE].ob_spec.tedinfo->te_ptext, find.mindate);
+	insert_date(objectTree[FTODATE].ob_spec.tedinfo->te_ptext, find.maxdate);
+
+	setObjectState(objectTree, FSIZE, SELECTED, find.sizecheck);
 	if (find.minsize != -1L) {
-		sprintf(tree[FFROMSIZE].ob_spec.tedinfo->te_ptext, "%ld", find.minsize);
+		sprintf(objectTree[FFROMSIZE].ob_spec.tedinfo->te_ptext, "%ld", find.minsize);
 	} else
-		strcpy(tree[FFROMSIZE].ob_spec.tedinfo->te_ptext, "");
+		strcpy(objectTree[FFROMSIZE].ob_spec.tedinfo->te_ptext, "");
 	if (find.maxsize != -1L) {
-		sprintf(tree[FTOSIZE].ob_spec.tedinfo->te_ptext, "%ld", find.maxsize);
+		sprintf(objectTree[FTOSIZE].ob_spec.tedinfo->te_ptext, "%ld", find.maxsize);
 	} else
-		strcpy(tree[FTOSIZE].ob_spec.tedinfo->te_ptext, "");
+		strcpy(objectTree[FTOSIZE].ob_spec.tedinfo->te_ptext, "");
 
-	dial_setopt(tree, FCONTENTS, SELECTED, find.grep);
-	strcpy(tree[FCMASK].ob_spec.tedinfo->te_ptext, find.contentmask);
-	dial_setopt(tree, FCCASE, SELECTED, find.cm_case);
-	dial_setopt(tree, FCBINARY, SELECTED, find.cm_binary);
+	setObjectState(objectTree, FCONTENTS, SELECTED, find.grep);
+	strcpy(objectTree[FCMASK].ob_spec.tedinfo->te_ptext, find.contentmask);
+	setObjectState(objectTree, FCCASE, SELECTED, find.cm_case);
+	setObjectState(objectTree, FCBINARY, SELECTED, find.cm_binary);
 
-	find_setpage(tree, find.page);
+	find.page = 0;
+	find_setpage(find.page);
 
 	frm_start(&fi_find, 1, 1, 0);
 
 	if (fi_find.state == FST_WIN)
-		av_wopen(fi_find.win.handle);
+		avcWindowOpen(glob.avid, fi_find.win.handle);
 }
 
-/*
+/**
  * search_update
  *
- * Update-Prozedur fÅr die Suche, wird als Callback fÅr search_main()
+ * Update-Prozedur fuer die Suche, wird als Callback fuer search_main()
  * verwendet.
  *
- * Eingabe/RÅckgabe:
+ * Eingabe/Rueckgabe:
  * Siehe Parameter "update" bei search_main()
  */
 int search_update(char *current, long hits) {
 	int ret, wait;
 	static int count = 0;
-	OBJECT *tree;
+	OBJECT *objectTree;
 	EVENT event;
 
-	tree = fi_status.tree;
+	objectTree = fi_status.tree;
 	if (win_update(BEG_UPDATE)) {
 		if (find.verbose && (current != NULL)) {
-			str230(tree[SCURRENT].ob_spec.tedinfo->te_ptext, current);
+			strShortener(objectTree[SCURRENT].ob_spec.tedinfo->te_ptext, current, 30);
 			frm_redraw(&fi_status, SCURRENT);
 		}
 		if ((hits >= 0L) && (hits != lasthits)) {
 			lasthits = hits;
-			sprintf(tree[SHITS].ob_spec.tedinfo->te_ptext, "%ld", hits);
+			sprintf(objectTree[SHITS].ob_spec.tedinfo->te_ptext, "%ld", hits);
 			frm_redraw(&fi_status, SHITS);
 		}
 		wind_update(END_UPDATE);
@@ -687,7 +469,8 @@ int search_update(char *current, long hits) {
 			switch (fi_status.exit_obj) {
 			case SHELP:
 				frm_norm(&fi_status);
-				show_help("thingfnd.hyp", fi_status.userinfo);
+				if (!showSTGuideHelp(STGUIDEHELPFILE, fi_status.userinfo))
+					frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 				break;
 			case SCANCEL:
 				frm_norm(&fi_status);
@@ -701,17 +484,17 @@ int search_update(char *current, long hits) {
 	return (ret);
 }
 
-/*
+/**
  * de_find_go
  *
  * Reagiert auf das Anklicken von "Go" im Suchen-Dialog. Die Eingaben
- * werden geprÅft und ggf. bemÑngelt. Im Erfolgsfall wird die Suche
+ * werden geprueft und ggf. bemaengelt. Im Erfolgsfall wird die Suche
  * gestartet.
  *
  * Eingabe:
- * tree: Zeiger auf Suchen-Dialog
+ * objectTree: Zeiger auf Suchen-Dialog
  */
-static void de_find_go(OBJECT *tree) {
+static void de_find_go(OBJECT *objectTree) {
 	long err;
 	int start, end, i;
 	long ok;
@@ -721,16 +504,16 @@ static void de_find_go(OBJECT *tree) {
 	OBJECT *s_tree;
 
 	temp = find;
-
 	temp.drvbits = 0L;
-	if (dial_getopt(tree, FON, SELECTED)) {
-		p = tree[FDRIVES].ob_spec.tedinfo->te_ptext;
+	if (isObjectSelected(objectTree, FON)) {
+		fprintf(stderr, "1.1 ");
+		p = getObjectText(objectTree, FDRIVES);
 		start = -1;
 		while (*p) {
 			if (isalpha(*p)) {
 				if (start != -1) {
-					dfg_parseerr: frm_alert(1, rinfo.rs_frstr[ALDRVFORMAT],
-							altitle, 1, 0L);
+dfg_parseerr:
+					frm_alert(1, rinfo.rs_frstr[ALDRVFORMAT], altitle, 1, 0L);
 					return;
 				}
 				start = (*p & ~32) - 'A';
@@ -751,18 +534,22 @@ static void de_find_go(OBJECT *tree) {
 			p++;
 		}
 	}
-	temp.follow = dial_getopt(tree, FFOLLOW, SELECTED);
-	temp.fm_case = dial_getopt(tree, FFCASE, SELECTED);
-	temp.fm_dirs = dial_getopt(tree, FDIRS, SELECTED);
+	temp.follow = isObjectSelected(objectTree, FFOLLOW);
+	temp.fm_case = isObjectSelected(objectTree, FFCASE);
+	temp.fm_dirs = isObjectSelected(objectTree, FDIRS);
+
+	/* check filemask */
 	temp.filemask = fmask;
-	p = tree[FFMASK].ob_spec.tedinfo->te_ptext;
+	p = getObjectText(objectTree, FFMASK);
 	if (!*p)
 		strcpy(fmask, "*");
 	else
 		strcpy(fmask, p);
-	temp.datecheck = dial_getopt(tree, FTIME, SELECTED);
+
+	/* check date */
+	temp.datecheck = isObjectSelected(objectTree, FTIME);
 	if (temp.datecheck) {
-		p = tree[FFROMDATE].ob_spec.tedinfo->te_ptext;
+		p = getObjectText(objectTree, FFROMDATE);
 		if (!*p)
 			temp.mindate = 0;
 		else {
@@ -772,7 +559,7 @@ static void de_find_go(OBJECT *tree) {
 				return;
 			}
 		}
-		p = tree[FTODATE].ob_spec.tedinfo->te_ptext;
+		p = getObjectText(objectTree, FTODATE);
 		if (!*p)
 			temp.maxdate = 0xffffU;
 		else {
@@ -790,9 +577,11 @@ static void de_find_go(OBJECT *tree) {
 		temp.mindate = 0;
 		temp.maxdate = 0xffffU;
 	}
-	temp.sizecheck = dial_getopt(tree, FSIZE, SELECTED);
+
+	/* check size */
+	temp.sizecheck = isObjectSelected(objectTree, FSIZE);
 	if (temp.sizecheck) {
-		p = tree[FFROMSIZE].ob_spec.tedinfo->te_ptext;
+		p = getObjectText(objectTree, FFROMSIZE);
 		if (!*p)
 			temp.minsize = 0L;
 		else {
@@ -803,7 +592,7 @@ static void de_find_go(OBJECT *tree) {
 			}
 			temp.minsize = size;
 		}
-		p = tree[FTOSIZE].ob_spec.tedinfo->te_ptext;
+		p = getObjectText(objectTree, FTOSIZE);
 		if (!*p)
 			temp.maxsize = 0x7fffffffL;
 		else {
@@ -822,11 +611,12 @@ static void de_find_go(OBJECT *tree) {
 		temp.minsize = 0L;
 		temp.maxsize = 0x7fffffffL;
 	}
-	temp.grep = dial_getopt(tree, FCONTENTS, SELECTED);
-	temp.cm_case = dial_getopt(tree, FCCASE, SELECTED);
-	temp.cm_binary = dial_getopt(tree, FCBINARY, SELECTED);
+	fprintf(stderr, "5 ");
+	temp.grep = isObjectSelected(objectTree, FCONTENTS);
+	temp.cm_case = isObjectSelected(objectTree, FCCASE);
+	temp.cm_binary = isObjectSelected(objectTree, FCBINARY);
 	if (temp.grep) {
-		p = tree[FCMASK].ob_spec.tedinfo->te_ptext;
+		p = getObjectText(objectTree, FCMASK);
 		if (!*p) {
 			frm_alert(1, rinfo.rs_frstr[ALEMPTYCMASK], altitle, 1, 0L);
 			return;
@@ -855,7 +645,8 @@ static void de_find_go(OBJECT *tree) {
 		temp.contentmask = cmask;
 	} else
 		temp.contentmask = NULL;
-	temp.verbose = dial_getopt(tree, FVERBOSE, SELECTED);
+
+	temp.verbose = isObjectSelected(objectTree, FVERBOSE);
 	if ((err = Fopen(glob.tname, 0)) < 0L) {
 		sprintf(almsg, rinfo.rs_frstr[ALNOTEMPLATE], FNAME_TPL);
 		frm_alert(1, almsg, altitle, 1, 0L);
@@ -864,12 +655,14 @@ static void de_find_go(OBJECT *tree) {
 	Fclose((int) err);
 	find = temp;
 	s_tree = fi_status.tree;
-	s_tree[SCURRENT].ob_spec.tedinfo->te_ptext[0] = 0;
-	strcpy(s_tree[SHITS].ob_spec.tedinfo->te_ptext, "0");
+
+	setObjectText(s_tree, SCURRENT, 0);
+	setObjectText(s_tree, SHITS, "0");
+
 	if (find.verbose)
-		s_tree[SCBOX].ob_flags &= ~HIDETREE;
+		setObjectFlags(s_tree, SCBOX, HIDETREE, FALSE);
 	else
-		s_tree[SCBOX].ob_flags |= HIDETREE;
+		setObjectFlags(s_tree, SCBOX, HIDETREE, TRUE);
 	frm_start(&fi_status, 1, 1, 1);
 	if (fi_status.state == FST_WIN)
 		frm_redraw(&fi_status, ROOT);
@@ -886,39 +679,38 @@ static void de_find_go(OBJECT *tree) {
 		frm_alert(1, rinfo.rs_frstr[ALFAILURE], altitle, 1, 0L);
 	} else {
 		if (glob.tid >= 0) {
-			strcpy(aesbuf, glob.rname);
-			app_send(glob.tid, AV_STARTPROG, PT34, (long) aesbuf, 0L, 0L, 0L,
-					0L);
+			strcpy(aesBuffer, glob.rname);
+			appl_send(glob.tid, AV_STARTPROG, PT34, (long) aesBuffer, 0L, 0L, 0L, 0L);
 		} else
 			frm_alert(1, rinfo.rs_frstr[ALNOTHING], altitle, 1, 0L);
 	}
 }
 
-/*
+/**
  * de_find
  *
  * Callback-Funktion zur Reaktion auf Ereignisse im Suchen-Dialog.
  *
  * Eingabe:
  * mode: Dialog wird geschlossen (1) oder anderes Dialogereignis (0)
- * ret: RÅckgabewert von frm_do(), zu bearbeitendes Objekt (wie bei
+ * ret: Rueckgabewert von frm_do(), zu bearbeitendes Objekt (wie bei
  *      form_do())
  */
 void de_find(int mode, int ret) {
-	OBJECT *tree;
-	int done, exob, edob, oldpage, go_disabled;
+	OBJECT *objectTree;
+	int done, exitObject, edob, oldpage, go_disabled;
 	char searchpath[MAX_PLEN];
 
 	UNUSED(ret);
 
-	tree = fi_find.tree;
+	objectTree = fi_find.tree;
 	done = 0;
 	oldpage = find.page;
 
 	if (!mode) {
-		exob = fi_find.exit_obj;
-		go_disabled = dial_getopt(tree, FGO, DISABLED);
-		switch (exob) {
+		exitObject = fi_find.exit_obj;
+		go_disabled = isObjectDisabled(objectTree, FGO);
+		switch (exitObject) {
 		case FGENERAL:
 			find.page = 0;
 			break;
@@ -926,65 +718,58 @@ void de_find(int mode, int ret) {
 			find.page = 1;
 			break;
 		case FON:
-			dial_setopt(tree, FGO, DISABLED,
-					!tree[FDRIVES].ob_spec.tedinfo->te_ptext[0]);
+			setObjectState(objectTree, FGO, DISABLED, !objectTree[FDRIVES].ob_spec.tedinfo->te_ptext[0]);
 			frm_gotoedit(&fi_find, FDRIVES);
 			break;
 		case FDRIVES:
-			if (dial_getopt(tree, FON, SELECTED)) {
-				dial_setopt(tree, FGO, DISABLED,
-						!tree[exob].ob_spec.tedinfo->te_ptext[0]);
-			}
+			if (isObjectSelected(objectTree, FON))
+				setObjectState(objectTree, FGO, DISABLED, !objectTree[exitObject].ob_spec.tedinfo->te_ptext[0]);
 			break;
 		case FIN:
-			dial_setopt(tree, FGO, DISABLED, !*find.searchpath);
+			setObjectState(objectTree, FGO, DISABLED, !*find.searchpath);
 			break;
 		case FPATHS:
 			strcpy(searchpath, find.searchpath);
-			if (full_fselect(searchpath, NULL, "*.*", 1,
-					rinfo.rs_frstr[TXCHOOSEPATH], 0, 0, &fi_find)) {
+			if (full_fselect(searchpath, NULL, "*.*", 1, rinfo.rs_frstr[TXCHOOSEPATH], 0, 0, &fi_find)) {
 				strcpy(find.searchpath, searchpath);
-				str236(tree[FPATH].ob_spec.tedinfo->te_ptext, find.searchpath);
+				strShortener(objectTree[FPATH].ob_spec.tedinfo->te_ptext, find.searchpath, 36);
 				frm_redraw(&fi_find, FPATH);
-				if (!dial_getopt(tree, FIN, SELECTED)) {
-					dial_setopt(tree, FON, SELECTED, 0);
-					dial_setopt(tree, FIN, SELECTED, 1);
+				if (!isObjectSelected(objectTree, FIN)) {
+					unsetObjectSelected(objectTree, FON);
+					setObjectSelected(objectTree, FIN);
 					frm_redraw(&fi_find, FON);
 					frm_redraw(&fi_find, FIN);
 				}
-				dial_setopt(tree, FGO, DISABLED, !*find.searchpath);
+				setObjectState(objectTree, FGO, DISABLED, !*find.searchpath);
 			}
 			frm_norm(&fi_find);
 			break;
 		case FTIME:
-			if (dial_getopt(tree, FTIME, SELECTED)) {
+			if (isObjectSelected(objectTree, FTIME)) {
 				if (fi_find.edit_obj != FTODATE)
 					frm_gotoedit(&fi_find, FFROMDATE);
 			}
 			break;
 		case FSIZE:
-			if (dial_getopt(tree, FSIZE, SELECTED)) {
+			if (getObjectState(objectTree, FSIZE, SELECTED)) {
 				if (fi_find.edit_obj != FTOSIZE)
 					frm_gotoedit(&fi_find, FFROMSIZE);
 			}
 			break;
 		case FCONTENTS:
-			if (dial_getopt(tree, FCONTENTS, SELECTED))
+			if (getObjectState(objectTree, FCONTENTS, SELECTED))
 				frm_gotoedit(&fi_find, FCMASK);
 			break;
 		case FGO:
-			de_find_go(tree);
+			de_find_go(objectTree);
 			frm_norm(&fi_find);
 			break;
 		case FCANCEL:
 			done = FCANCEL;
 			break;
 		}
-		if (go_disabled != dial_getopt(tree, FGO, DISABLED)) {
-			if (go_disabled)
-				tree[FGO].ob_flags |= DEFAULT;
-			else
-				tree[FGO].ob_flags &= ~DEFAULT;
+		if (go_disabled != isObjectDisabled(objectTree, FGO)) {
+			setObjectFlags(objectTree, FGO, DEFAULT, go_disabled);
 			frm_redraw(&fi_find, FGOBOX);
 		}
 	} else
@@ -993,28 +778,28 @@ void de_find(int mode, int ret) {
 	/* Bei Bedarf Seite umschalten */
 	if (find.page != oldpage) {
 		frm_gotoedit(&fi_find, 0);
-		find_setpage(tree, find.page);
+		find_setpage(find.page);
 		edob = fi_find.edit_obj;
 		fi_find.edit_obj = 0;
 		frm_gotoedit(&fi_find, edob);
-		frm_redraw(&fi_find, FSUB);
+		frm_redraw(&fi_find, getActiveCardBodyIdx(mainCard));
 		mevent.ev_mwich = MU_M1;
 		frm_do(&fi_find, &mevent);
 	}
 
-	/* Ggf. Dialog schlieûen */
+	/* Ggf. Dialog schliessen */
 	if (done) {
 		if (done == FCANCEL)
 			glob.done = 1;
 		if (done != -1)
 			frm_norm(&fi_find);
 		if (fi_find.state == FST_WIN)
-			av_wclose(fi_find.win.handle);
+			avcWindowClose(glob.avid, fi_find.win.handle);
 		frm_end(&fi_find);
 	}
 }
 
-/*
+/**
  * drag_on_window
  *
  * Behandelt Drag&Drop auf ein Fenster von ThingFnd.
@@ -1033,91 +818,73 @@ void drag_on_window(int handle, int mx, int my, char *buf) {
 	UNUSED(buf);
 }
 
-/*-------------------------------------------------------------------------
- ddnak()
- 
- Drag&Drop-Protokoll abweisen
- -------------------------------------------------------------------------*/
-
-void ddnak(EVENT * mevent) {
-	char *pipename = "U:\\PIPE\\DRAGDROP.AA";
-	long fd;
-	char c;
-
-	pipename[18] = mevent->ev_mmgpbuf[7] & 0x00ff;
-	pipename[17] = (mevent->ev_mmgpbuf[7] & 0xff00) >> 8;
-	fd = Fopen(pipename, FO_RW);
-	if (fd >= 0L) {
-		c = 1; /* DD_NAK */
-		Fwrite((int) fd, 1, &c);
-		Fclose((int) fd);
-	}
-}
-
-/*-------------------------------------------------------------------------
- handle_menu()
-
- Verarbeiten einer MenÅauswahl
- Wird auch von handle_key() bei Shortcuts aufgerufen
- -------------------------------------------------------------------------*/
-
+/**
+ * Verarbeiten einer Menueauswahl
+ * Wird auch von handle_key() bei Shortcuts aufgerufen
+ *
+ * @param title
+ * @param item
+ * @param ks
+ */
 void handle_menu(int title, int item, int ks) {
-	WININFO *win;
-	OBJECT *tree;
+	BOOLEAN stguide;
+	OBJECT *objectTree;
 
-	tree = rinfo.rs_trindex[MAINMENU];
-	if ((tree[item].ob_state & DISABLED) || (tree[title].ob_state & DISABLED)) {
+	objectTree = rinfo.rs_trindex[MAINMENU];
+	if (isObjectDisabled(objectTree, item) || isObjectDisabled(objectTree, title)) {
 		return;
 	}
 
-	mn_tnormal(tree, title, 0);
+	mn_tnormal(objectTree, title, 0);
 	mn_disable();
-	mn_tnormal(tree, title, 1);
+	mn_tnormal(objectTree, title, 1);
 
-	/* Hilfetext anzeigen, falls [Control] gedrÅckt */
+	/* Hilfetext anzeigen, falls [Control] gedrueckt */
 	if (ks & K_CTRL) {
 		switch (item) {
 		case MABOUT:
-			show_help("thingfnd.hyp", "%I");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%I");
 			break;
-
 		case MNEXTWIN:
-			show_help("thingfnd.hyp", "%mnwin");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mnwin");
 			break;
-
 		case MQUIT:
-			show_help("thingfnd.hyp", "%mquit");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mquit");
 			break;
-
 		default:
-			show_help("thingfnd.hyp", "%I");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%I");
 			break;
 		}
+		if (!stguide)
+			frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 	} else {
 		switch (item) {
 		case MABOUT:
 			fi_about.init();
 			break;
-
 		case MNEXTWIN:
 			dl_nextwin();
 			break;
-
 		case MQUIT:
 			dl_quit();
 			break;
 		}
 	}
-	mn_tnormal(tree, title, 1);
+	mn_tnormal(objectTree, title, 1);
 	mn_update();
 }
 
-/*-------------------------------------------------------------------------
- handle_win()
-
- Verarbeiten von Fensterereignissen
- -------------------------------------------------------------------------*/
-
+/**
+ * Verarbeiten von Fensterereignissen
+ *
+ * @param handle
+ * @param msg
+ * @param f1
+ * @param f2
+ * @param f3
+ * @param f4
+ * @param ks
+ */
 void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	WININFO *win;
 	FORMINFO *fi;
@@ -1161,7 +928,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			win_newtop(tb.topwin);
 			mn_update();
 
-			/* Workaround fÅr MagiC */
+			/* Workaround fuer MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
 				if (wind_get(top, WF_OWNER, &owner))
 					magx_switch(owner, 0);
@@ -1181,7 +948,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	case WM_REDRAW:
 		win_redraw(win, f1, f2, f3, f4);
 		/*
-		 * Workaround fÅr Einblenden bei N.AES, das in diesem
+		 * Workaround fuer Einblenden bei N.AES, das in diesem
 		 * Fall kein WM_ONTOP verschickt ...
 		 */
 		get_twin(&top);
@@ -1209,8 +976,8 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		break;
 
 	case WM_CLOSED:
-		if (tb.sm_alert) /* Alert offen? - dann geht kein Close! */
-		{
+		if (tb.sm_alert) {
+			/* Alert offen? - dann geht kein Close! */
 			mybeep();
 			if (tb.alwin)
 				win_top(tb.alwin);
@@ -1286,12 +1053,15 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	}
 }
 
-/*-------------------------------------------------------------------------
- handle_button()
-
- Verarbeiten von Mausklicks
- -------------------------------------------------------------------------*/
-
+/**
+ * Verarbeiten von Mausklicks
+ *
+ * @param mx
+ * @param my
+ * @param but
+ * @param ks
+ * @param br
+ */
 void handle_button(int mx, int my, int but, int ks, int br) {
 	UNUSED(mx);
 	UNUSED(my);
@@ -1300,51 +1070,51 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 	UNUSED(br);
 }
 
-/*-------------------------------------------------------------------------
- handle_key()
-
- Verarbeiten von Tastatureingaben
- -------------------------------------------------------------------------*/
-
+/**
+ * Verarbeiten von Tastatureingaben
+ *
+ * @param ks
+ * @param kr
+ */
 void handle_key(int ks, int kr) {
 	unsigned int key;
 	int title, item, skey;
 
 	key = normkey(ks, kr);
-	key &= ~(NKF_CAPS | NKF_RESVD); /* Nicht benîtigte Flags *
-	 * ausmaskieren */
+	key &= ~(NKF_CAPS | NKF_RESVD); /* Nicht benoetigte Flags ausmaskieren */
 	if (key & NKF_LSH || key & NKF_RSH)
 		key |= NKF_SHIFT; /* Shift-Status */
 
-	/* PrÅfen, ob MenÅ-Shortcut vorliegt */
+	/* Pruefen, ob Menue-Shortcut vorliegt */
 	if (menu_key(rinfo.rs_trindex[MAINMENU], key, &title, &item)) {
-		/* Shortcut vorhanden, MenÅhandling ausfÅhren */
+		/* Shortcut vorhanden, Menuehandling ausfuehren */
 		handle_menu(title, item, 0);
-	} else
-	/* Kein Shortcut, normale Verarbeitung */
-	{
-		skey = 0; /* Flag fÅr AV_SENDKEY */
+	} else {
+		/* Kein Shortcut, normale Verarbeitung */
+		skey = 0; /* Flag fuer AV_SENDKEY */
 		if (key == (NKF_FUNC | NK_HELP)) {
-			if (!tb.topfi)
-				show_help("thingfnd.hyp", "%I");
+			if (!tb.topfi) {
+				if (!showSTGuideHelp(STGUIDEHELPFILE, "%I"))
+					frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
+			}
 		} else
 			skey = 1;
-		if (skey) /* Ggf. AV_SENDKEY */
-		{
+		if (skey) {
+			/* Ggf. AV_SENDKEY */
 			if (glob.avid >= 0 && (glob.avflags & 0x0001))
-				app_send(glob.avid, AV_SENDKEY, 0, ks, kr, 0, 0, 0);
+				appl_send(glob.avid, AV_SENDKEY, 0, ks, kr, 0, 0, 0);
 		}
 	}
 }
 
-/*-------------------------------------------------------------------------
- handle_fmsg()
-
- Wird von der GEM-Toolbox fÅr die Bearbeitung einer unbekannten
- AES-Message wÑhrend eines modalen Fensterdialogs aufgerufen
- -------------------------------------------------------------------------*/
-
-void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
+/**
+ * Wird von der GEM-Toolbox fuer die Bearbeitung einer unbekannten
+ * AES-Message waehrend eines modalen Fensterdialogs aufgerufen.
+ *
+ * @param *mevent
+ * @param *fi
+ */
+void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
 	aesmsg[1] = tb.app_id;
 	aesmsg[2] = 0;
 	aesmsg[3] = 0;
@@ -1384,14 +1154,13 @@ void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
 				aesmsg[7] = 0;
 				shel_write(SHW_AESSEND, 0, 0, (char *) aesmsg, 0L);
 				frm_alert(1, rinfo.rs_frstr[ALNOSHUT], altitle, 1, 0L);
-			} else /* Nein - alles klar */
-			{
+			} else {
+				/* Nein - alles klar */
 				glob.done = 1;
 			}
 
 		case MN_SELECTED:
-			mn_tnormal(rinfo.rs_trindex[MAINMENU], mevent->ev_mmgpbuf[3],
-					mevent->ev_mmgpbuf[4]);
+			mn_tnormal(rinfo.rs_trindex[MAINMENU], mevent->ev_mmgpbuf[3], mevent->ev_mmgpbuf[4]);
 			frm_alert(1, rinfo.rs_frstr[ALWDIAL], altitle, 1, 0L);
 			break;
 
@@ -1408,39 +1177,40 @@ void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
 
 	if (mevent->ev_mwich & MU_KEYBD && fi) {
 		if (fi->normkey == (NKF_FUNC | NK_HELP) && fi->userinfo) {
-			if (fi->state == FST_WIN)
-				show_help("thingnd.hyp", fi->userinfo);
-			else
+			if (fi->state == FST_WIN) {
+				if (!showSTGuideHelp(STGUIDEHELPFILE, fi->userinfo))
+					frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
+			} else
 				frm_alert(1, rinfo.rs_frstr[ALNOWDIAL], altitle, 1, 0L);
 		}
 	}
 }
 
-/*
+/**
  * get_buf_entry
  *
- * Ermittelt den nÑchsten Filenamen aus einem Puffer, dessen EintrÑge
+ * Ermittelt den naechsten Filenamen aus einem Puffer, dessen Eintraege
  * durch Leerzeichen getrennt und ggf. von Quotes (') umschlossen
- * sind. Der ermittelte Filename enthÑlt keine Quotes mehr.
+ * sind. Der ermittelte Filename enthaelt keine Quotes mehr.
  *
  * Eingabe:
  * buf: Zeiger auf den Puffer, muû bzw. darf nur beim ersten Aufruf
- *      fÅr buf angegeben werden, danach muû fÅr buf ein Nullzeiger
- *      Åbergeben werden, damit get_buf_entry den nÑchsten Eintrag
+ *      fuer buf angegeben werden, danach muû fuer buf ein Nullzeiger
+ *      uebergeben werden, damit get_buf_entry den naechsten Eintrag
  *      ermitteln kann
- * name: Hierhin wird der nÑchste Filename kopiert. Da dieser mit
+ * name: Hierhin wird der naechste Filename kopiert. Da dieser mit
  *       komplettem Pfad versehen sein kann, sollte name ausreichend
  *       Platz bieten.
- * newpos: Wenn ungleich NULL, wird hier der Zeiger auf die nÑchste
- *         Leseposition abgelegt, so daû man get_buf_entry auch
+ * newpos: Wenn ungleich NULL, wird hier der Zeiger auf die naechste
+ *         Leseposition abgelegt, so dass man get_buf_entry auch
  *         wechselseitig mit zwei oder mehr Puffern verwenden kann.
  *         Der Wert wird nur gesetzt, wenn ein Eintrag gelesen werden
  *         konnte, der Returncode also 1 ist.
  *
- * RÅckgabe:
- * 0: Kein weiterer (gÅltiger) Filename mehr in buf (ein Filename ist
- *    z.B. ungÅltig, wenn er falsch gequotet wurde)
- * 1: name enthÑlt den nÑchsten Filenamen
+ * Rueckgabe:
+ * 0: Kein weiterer (gueltiger) Filename mehr in buf (ein Filename ist
+ *    z.B. ungueltig, wenn er falsch gequotet wurde)
+ * 1: name enthaelt den naechsten Filenamen
  */
 int get_buf_entry(char *buf, char *name, char **newpos) {
 	static char *bufpos;
@@ -1452,20 +1222,20 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 	else
 		pos = bufpos;
 
-	/* Eventuell war der letzte Filename ungÅltig, dann abbrechen */
+	/* Eventuell war der letzte Filename ungueltig, dann abbrechen */
 	if (pos == 0L)
 		return (0);
 
-	/* Erstmal fÅhrende Leerzeichen Åberlesen */
+	/* Erstmal fuehrende Leerzeichen ueberlesen */
 	for (; *pos == ' '; pos++)
 		;
-	/* Gibt es Åberhaupt noch einen Filenamen? */
+	/* Gibt es ueberhaupt noch einen Filenamen? */
 	if (!*pos)
 		return (0);
 
 	if (*pos != '\'') {
 		/*
-		 * Wenn der Filename nicht mit einem Quote beginnt, bis zum nÑchsten
+		 * Wenn der Filename nicht mit einem Quote beginnt, bis zum naechsten
 		 * Leerzeichen kopieren
 		 */
 		for (; *pos && (*pos != ' '); *name++ = *pos++)
@@ -1474,12 +1244,12 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 		/* Sonst den Filenamen "entquoten" */
 		closed = 0;
 		for (pos++;;) {
-			/* Bei einem Nullbyte abbrechen (gibt ungÅltigen Filenamen) */
+			/* Bei einem Nullbyte abbrechen (gibt ungueltigen Filenamen) */
 			if (!*pos)
 				break;
 			if (*pos == '\'') {
 				/*
-				 * Ist das aktuelle Zeichen ein Quote, gibt es folgende FÑlle zu
+				 * Ist das aktuelle Zeichen ein Quote, gibt es folgende Faelle zu
 				 * unterscheiden:
 				 * 1. Danach folgt ein Leerzeichen oder das Bufferende, dann ist der
 				 *    Filename an dieser Stelle korrekt beendet
@@ -1507,7 +1277,7 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 	}
 	/*
 	 * Den Filenamen mit einem Nullbyte abschliessen und die Position im
-	 * Puffer fÅr den nÑchsten Aufruf merken
+	 * Puffer fuer den naechsten Aufruf merken
 	 */
 	*name = 0;
 	bufpos = pos;
@@ -1516,16 +1286,15 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 	return 1;
 }
 
-/*-------------------------------------------------------------------------
- main_init()
- 
- Programminitialisierung
- -------------------------------------------------------------------------*/
-
-int main_init(void) {
+/**
+ * Programminitialisierung
+ *
+ * @return
+ */
+BOOLEAN main_init(void) {
 	int i, l, x, y, w, h;
-	char *p, aname[9];
-	OBJECT *tree;
+	char *p, aname[9], rsrcName[13];
+	OBJECT *objectTree;
 
 	/* MiNT-Domain aktivieren */
 	Pdomain(1);
@@ -1538,7 +1307,7 @@ int main_init(void) {
 	Psignal(SIGQUIT, (void *) 1L);
 	Psignal(SIGHUP, (void *) 1L);
 
-	aesbuf = 0L;
+	aesBuffer = 0L;
 	aesapname = 0L;
 	glob.menu = 0;
 	glob.avid = -1;
@@ -1551,31 +1320,23 @@ int main_init(void) {
 	pminit();
 #endif
 	if (!init_cicon())
-		return (0);
+		return (FALSE);
 
 	if (!tool_init("thingfnd.app"))
-		return (0);
+		return (FALSE);
 
-#if 0
-	if ((p = getenv("THINGDIR")) == 0L)
-	{
-		glob.tname[0] = (char) Dgetdrv() + 'A';
-		glob.tname[1] = ':';
-		Dgetpath(&glob.tname[2], 0);
-	}
-	else
-	strcpy(glob.tname, p);
-#else
+	/* Startverzeichnis mit abschliessendem '\' versehen */
+	l = (int) strlen(tb.homepath) - 1;
+	if ((l > 0) && (tb.homepath[l] != '\\'))
+		strcat(tb.homepath, "\\");
+
 	strcpy(glob.tname, tb.homepath);
-#endif
-	l = (int) strlen(glob.tname);
-	if (glob.tname[l - 1] != '\\')
-		strcat(glob.tname, "\\");
 	strcpy(glob.rname, glob.tname);
 	strcat(glob.tname, FNAME_TPL);
 	strcat(glob.rname, FNAME_RES);
 
-	if (tb.sys & SY_MTOS) /* Eintrag im Desk-MenÅ */
+	/* Eintrag im Desk-Menue */
+	if (tb.sys & SY_MTOS)
 		menu_register(tb.app_id, "  Thing Find ");
 
 	if (glob.use3d == 0)
@@ -1589,10 +1350,13 @@ int main_init(void) {
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	if (!rsc_load("thingfnd.rsc", &rinfo)) {
-		frm_alert(1, "[3][THINGFND.RSC nicht gefunden!|"
-				"THINGFND.RSC not found!][ OK ]", altitle, 1, 0L);
-		return (0);
+	sprintf(rsrcName, "%s%s\\thgfnd%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	if (!rsc_load(rsrcName, &rinfo)) {
+		sprintf(rsrcName, "%s%s\\thgfnden.rsc", tb.homepath, PNAME_RSC);
+		if (!rsc_load(rsrcName, &rinfo)) {
+			frm_alert(1, "[3][THINGFND.RSC nicht gefunden!|THINGFND.RSC not found!][ OK ]", altitle, 1, 0L);
+			return (FALSE);
+		}
 	}
 	for (i = 0; i < NUM_TREE; i++) {
 		if (i == MAINMENU)
@@ -1613,9 +1377,9 @@ int main_init(void) {
 	/* Bei Fehler raus */
 	if (!aesapname) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
-		return (0);
+		return (FALSE);
 	}
-	aesbuf = &aesapname[9];
+	aesBuffer = &aesapname[9];
 	/* Sonst initialisieren */
 	strcpy(aesapname, "THINGFND");
 
@@ -1623,17 +1387,17 @@ int main_init(void) {
 	tb.backwin = glob.backwin; /* MagiC-Fensterworkround */
 
 	/* ThingFnd-Logo anpassen */
-	tree = rinfo.rs_trindex[ABOUT];
-	tree[ABLOGOHI].ob_x = (tree->ob_width - tree[ABLOGOHI].ob_spec.bitblk->bi_wb * 8) / 2;
-	tree[ABLOGOLO].ob_x = (tree->ob_width - tree[ABLOGOLO].ob_spec.bitblk->bi_wb * 8) / 2;
+	objectTree = rinfo.rs_trindex[ABOUT];
+	objectTree[ABLOGOHI].ob_x = (objectTree->ob_width - objectTree[ABLOGOHI].ob_spec.bitblk->bi_wb * 8) / 2;
+	objectTree[ABLOGOLO].ob_x = (objectTree->ob_width - objectTree[ABLOGOLO].ob_spec.bitblk->bi_wb * 8) / 2;
 	if (tb.ch_h < 12) {
-		tree[ABLOGOHI].ob_flags |= HIDETREE;
-		tree[ABLOGOLO].ob_flags &= ~HIDETREE;
+		setObjectFlags(objectTree, ABLOGOHI, HIDETREE, TRUE);
+		setObjectFlags(objectTree, ABLOGOLO, HIDETREE, FALSE);
 	} else {
-		l = tree[ABLOGOHI].ob_spec.bitblk->bi_hl - tree[ABLOGOHI].ob_height + 4;
-		tree->ob_height += l;
-		for (i = 4; !(tree[i].ob_flags & LASTOB); i++)
-			tree[i].ob_y += l;
+		l = objectTree[ABLOGOHI].ob_spec.bitblk->bi_hl - objectTree[ABLOGOHI].ob_height + 4;
+		objectTree->ob_height += l;
+		for (i = 4; !(objectTree[i].ob_flags & LASTOB); i++)
+			objectTree[i].ob_y += l;
 	}
 
 	/* Icons fuer ikon. Fenster anpassen */
@@ -1646,15 +1410,13 @@ int main_init(void) {
 
 	/* Userdefs erzeugen */
 	setUserdefs(rinfo.rs_trindex[0], TRUE);
-
-	for (i = 1; i < NUM_TREE; i++)
+	for (i = 1; i < NUM_TREE; i++) {
 		setUserdefs(rinfo.rs_trindex[i], FALSE);
-	setBackgroundBorder(FALSE);
 
-	/* Dialogboxen zentrieren */
-	for (i = 0; i < NUM_TREE; i++)
-		if (i != 0)
-			form_center(rinfo.rs_trindex[i], &x, &y, &w, &h);
+		/* Dialogboxen zentrieren */
+		form_center(rinfo.rs_trindex[i], &x, &y, &w, &h);
+	}
+	setBackgroundBorder(FALSE);
 
 	/* Dialoge initialisieren */
 	fi_about.tree = rinfo.rs_trindex[ABOUT];
@@ -1665,7 +1427,11 @@ int main_init(void) {
 	fi_find.exit = de_find;
 	fi_status.tree = rinfo.rs_trindex[STATUS];
 
-	/* Handler fÅr modale Dialoge */
+	/* Die einzelnen Karteikarten des Suchdialogs zusammenhaengen. */
+	cardAdd(&mainCard, rinfo.rs_trindex[FIND], FGENERAL, FSGENERAL);
+	cardAdd(&mainCard, rinfo.rs_trindex[FIND], FATTR, FSATTR);
+
+	/* Handler fuer modale Dialoge */
 	tb.modal_on = mn_disable;
 	tb.modal_off = mn_update;
 
@@ -1685,7 +1451,7 @@ int main_init(void) {
 			}
 			glob.avid = appl_find(aname);
 			if (glob.avid >= 0) {
-				app_send(glob.avid, AV_PROTOKOLL, PT67, 18, 0, 0, (long) aesapname, 0);
+				appl_send(glob.avid, AV_PROTOKOLL, PT67, 18, 0, 0, (long) aesapname, 0);
 			}
 		}
 		glob.tid = appl_find("THING   ");
@@ -1700,15 +1466,12 @@ int main_init(void) {
 	wind_update(END_UPDATE);
 	fi_find.init();
 
-	return (1);
+	return (TRUE);
 }
 
-/*-------------------------------------------------------------------------
- main_loop()
- 
- Hauptschleife des Programms
- -------------------------------------------------------------------------*/
-
+/**
+ * Hauptschleife des Programms
+ */
 void main_loop(void) {
 	int top, *msg, evdone, ret;
 
@@ -1731,35 +1494,32 @@ void main_loop(void) {
 		mevent.ev_mm1y = mevent.ev_mmoy;
 
 		/*
-		 * Bei Bedarf vor der Message-Auswertung énderung des aktiven
-		 * Fenster berÅcksichtigen
+		 * Bei Bedarf vor der Message-Auswertung Aenderung des aktiven
+		 * Fenster beruecksichtigen
 		 */
 		if (!(tb.sys & SY_MULTI || tb.sys & SY_WINX)) {
 			get_twin(&top);
 
-			/*
-			 * Falls aktives Fenster sich geÑndert hat, dann MenÅs
-			 * updaten
-			 */
-			if (tb.topwin) /* Bisher aktives Fenster vorhanden */
-			{
-				if (!top) /* Kein Fenster mehr aktiv */
-				{
+			/* Falls aktives Fenster sich geaendert hat, dann Menues updaten */
+			if (tb.topwin) {
+				/* Bisher aktives Fenster vorhanden */
+				if (!top) {
+					/* Kein Fenster mehr aktiv */
 					tb.topwin = 0L;
 					tb.topfi = 0L;
 					mn_update();
-				} else
-				/* Fenster aktiv */if (top != tb.topwin->handle)
-				/* Anderes  * als  * bisher  */
-				{
-					tb.topwin = win_getwinfo(top);
-					mn_update();
+				} else {
+					/* Fenster aktiv */
+					if (top != tb.topwin->handle) {
+						/* Anderes als bisher */
+						tb.topwin = win_getwinfo(top);
+						mn_update();
+					}
 				}
-			} else
-			/* Bisher kein Fenster aktiv */
-			{
-				if (top) /* Aber jetzt ist eins aktiv */
-				{
+			} else {
+				/* Bisher kein Fenster aktiv */
+				if (top) {
+					/* Aber jetzt ist eins aktiv */
 					tb.topwin = win_getwinfo(top);
 					mn_update();
 				}
@@ -1779,13 +1539,13 @@ void main_loop(void) {
 				ddnak(&mevent);
 				break;
 			case VA_DRAGACCWIND:
-				drag_on_window(msg[3], msg[4], msg[5], (char *) int2long(msg[6], msg[7]));
+				drag_on_window(msg[3], msg[4], msg[5], (char *) int2long(&msg[6], &msg[7]));
 				break;
 			case VA_START:
 				mybeep();
 				magx_switch(tb.app_id, 0);
 				break;
-				/* MenÅauswahl */
+				/* Menueauswahl */
 			case MN_SELECTED:
 				handle_menu(msg[3], msg[4], mevent.ev_mmokstate);
 				break;
@@ -1823,7 +1583,8 @@ void main_loop(void) {
 			if (!tb.topfi->cont) {
 				/* HELP-Button? */
 				if ((tb.topfi->help_obj != -1) && (tb.topfi->exit_obj == tb.topfi->help_obj)) {
-					show_help("thingfnd.hyp", tb.topfi->userinfo);
+					if (!showSTGuideHelp(STGUIDEHELPFILE, tb.topfi->userinfo))
+						frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 					frm_norm(tb.topfi);
 					evdone = 1;
 				} else {
@@ -1836,7 +1597,7 @@ void main_loop(void) {
 		} else
 			evdone = 0;
 
-		/* Jetzt die vom Handler Åbriggelassenen Events bearbeiten */
+		/* Jetzt die vom Handler uebriggelassenen Events bearbeiten */
 		if (!evdone && !tb.sm_nowdial) {
 			/* Tastatur */
 			if (mevent.ev_mwich & MU_KEYBD)
@@ -1845,18 +1606,15 @@ void main_loop(void) {
 			/* Maustaste */
 			if (mevent.ev_mwich & MU_BUTTON)
 				handle_button(mevent.ev_mmox, mevent.ev_mmoy, mevent.ev_mmobutton, mevent.ev_mmokstate, mevent.ev_mbreturn);
-
 		}
 	}
 }
 
-/*-------------------------------------------------------------------------
- main_exit()
- 
- Programmdeinitialisierung
- -------------------------------------------------------------------------*/
-
+/**
+ * Programmdeinitialisierung
+ */
 void main_exit(void) {
+	int i;
 	FORMINFO *fi, *fi1;
 
 	/* Offene Dialoge schliessen */
@@ -1869,17 +1627,26 @@ void main_exit(void) {
 
 	/* Beim AV-Server abmelden */
 	if (glob.avid != -1)
-		app_send(glob.avid, AV_EXIT, 0, tb.app_id, 0, 0, 0, 0);
+		appl_send(glob.avid, AV_EXIT, 0, tb.app_id, 0, 0, 0, 0);
 
-	/* Sonstige AufrÑumarbeiten */
+	/* Sonstige Aufraeumarbeiten */
 	if (glob.menu)
 		menu_bar(rinfo.rs_trindex[MAINMENU], 0);
+
+	/* Karteikarten freigeben. */
+	cardRemoveAll(mainCard);
+
+	/* Userdefs entfernen */
+	unsetUserdefs(rinfo.rs_trindex[0]);
+	for (i = 1; i < NUM_TREE; i++)
+		unsetUserdefs(rinfo.rs_trindex[i]);
 
 	if (aesapname)
 		Mfree(aesapname);
 
 	rsc_free(&rinfo);
 
+	/* cleanup of Thing Toolbox stuff */
 	tool_exit();
 	exit_cicon();
 }
@@ -1926,6 +1693,7 @@ main(int argc, char *argv[]) {
 			}
 		}
 	}
+
 	if (main_init())
 		main_loop();
 

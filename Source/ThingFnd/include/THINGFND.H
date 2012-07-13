@@ -29,17 +29,15 @@
 #define FNAME_TPL "template.grp"	/* Vorlage fÅr Ergebnisgruppe */
 #define FNAME_RES "result.grp"      /* Name der Ergebnisgruppe */
 #define FNAME_LOG "thingfnd.log" 	/* Logbuch */
+#define PNAME_RSC "rsrc"			/* Resourcen */
+#define PNAME_CON "config"			/* Konfiguration */
+#define PNAME_DOC "doc"				/* Hypertexte */
 #define MAX_PLEN 256
 #define MAX_FLEN 64
 #define MAX_AVLEN 16384
 
 #define THING_MSG 0x46ff /* Thing-Protokoll */
 #define AT_ILOAD 0x0001 /* Thing-Protokoll, Icons neuladen */
-
-#define PT34 1 /* Konstanten fÅr app_send */
-#define PT45 2
-#define PT56 4
-#define PT67 8
 
 typedef struct {
 	int page; /* Aktuelle Karteikarte */
@@ -73,16 +71,9 @@ typedef struct {
 	int avflags;
 } GLOB;
 
-void app_send(int id, int message, int pointers, long par1, long par2,
-		long par3, long par4, long par5);
-void long2int(long lword, int *hi, int *lo);
-unsigned long int2long(unsigned int, unsigned int);
-void show_help(char *helpfile, char *ref);
 void mn_istate(int item, int enable);
 void mn_disable(void);
 void mn_update(void);
-void av_wopen(int handle);
-void av_wclose(int handle);
 void di_about(void);
 void de_about(int mode, int ret);
 void dl_nextwin(void);

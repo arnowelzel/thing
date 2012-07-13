@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 typedef void *FORMINFO;
-#include "..\include\proto.h"
+#include "..\include\thingfnd.h"
 
 #define MAX_NAMELEN		MAX_FLEN
 #define MAX_TITLELEN	32
@@ -155,14 +155,17 @@ long search_main(long drvbits, char *searchpath, int follow, char *filemask,
 	/* Gibt es berhaupt etwas zu durchsuchen? */
 	if ((drvbits == 0L) && (searchpath == NULL))
 		return (0L);
+
 	/* Vorlage ”ffnen */
 	if ((template = fopen(resulttemplate, "r")) == NULL)
 		return (-1L);
+
 	/* Ausgabedatei anlegen und initialisieren */
 	if ((result = fopen(resultfile, "w")) == NULL) {
 		fclose(template);
 		return (-1L);
 	}
+
 	while (fgets(linebuf, 1024, template)) {
 		if ((*linebuf == '#') || !strncmp(linebuf, "INFO ", 5)
 				|| !strncmp(linebuf, "IGTA ", 5)
@@ -177,6 +180,7 @@ long search_main(long drvbits, char *searchpath, int follow, char *filemask,
 	}
 	fclose(template);
 	fprintf(result, "\n");
+
 	/* Je nach Suchmodus die eigentliche Suchfunktion aufrufen */
 	if (searchpath) {
 		hits = 0;
@@ -258,11 +262,11 @@ static long do_search(char *searchpath, long *hits, int depth, int follow,
 		strupr(filemask);
 	if (!(update)(searchpath, *hits))
 		return (0x80000000L);
+
 	match = 0;
-	for (ok = get_next_file(searchpath, &handle, follow, namebuf,
-			(int) sizeof(namebuf), &xattr); ok;
-			ok = get_next_file(NULL, &handle, follow, namebuf,
-					(int) sizeof(namebuf), &xattr)) {
+	for (ok = get_next_file(searchpath, &handle, follow, namebuf, (int) sizeof(namebuf), &xattr);
+			ok;
+			ok = get_next_file(NULL, &handle, follow, namebuf, (int) sizeof(namebuf), &xattr)) {
 		if ((strlen(searchpath) + strlen(namebuf) + 2) > sizeof(path)) {
 			get_next_file(NULL, &handle, follow, NULL, 0, NULL);
 			return (-69);
@@ -357,6 +361,7 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 		handle->full = malloc(strlen(dirpath) + (size_t) namelen + 2);
 		if (handle->full == NULL)
 			return (0);
+
 		if (Fxattr(0, ".", xattr) == -32L)
 			handle->fsfirst = 1;
 		else {
@@ -372,6 +377,7 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 				return (get_next_file(NULL, handle, follow, name, namelen, xattr));
 			}
 		}
+
 		handle->old = Fgetdta();
 		Fsetdta(&handle->dta);
 		strcpy(handle->full, dirpath);
@@ -384,12 +390,15 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 			handle->magic = 0L;
 			return (0);
 		}
+
 		strcpy(name, handle->dta.dta_name);
 		fill_xattr(handle->path, xattr, &handle->dta);
 		return (1);
 	}
+
 	if (handle->magic != 0xbeebbeebL)
 		return (0);
+
 	if (name == NULL) {
 		free(handle->full);
 		if (handle->fsfirst)
@@ -401,6 +410,7 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 		handle->magic = 0L;
 		return (0);
 	}
+
 	if (handle->fsfirst) {
 		if (Fsnext()) {
 			free(handle->full);
@@ -413,11 +423,13 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 		return (1);
 	} else {
 		if (handle->dxreaddir) {
+/*fprintf(stderr, "\n7.1 (namelen %d; dir: %ld, name: %s)", namelen, handle->dir, name);*/
 			err = Dxreaddir(namelen, handle->dir, name, xattr, &xerr);
 			if (err == -32L)
 				handle->dxreaddir = 0;
 			else if (err || xerr) {
-				gnf_derror: free(handle->full);
+gnf_derror:
+				free(handle->full);
 				Dclosedir(handle->dir);
 				handle->magic = 0L;
 				return (0);
@@ -433,7 +445,9 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 		err = Dreaddir(namelen, handle->dir, name);
 		if (err)
 			goto gnf_derror;
-		gnf_fxattr: strcpy(handle->full, handle->path);
+
+gnf_fxattr:
+		strcpy(handle->full, handle->path);
 		if (strrchr(handle->full, 0)[-1] != '\\')
 			strcat(handle->full, "\\");
 		strcat(handle->full, name + 4);
@@ -506,27 +520,27 @@ int wild_match(char *string, char *pattern) {
 		case '\\':
 			/* Literal match with following character */
 			if (!*++pattern)
-				return 0;
+				return (0);
 			/* else FALL THROUGH */
 		default:
 			if (*string != *pattern)
-				return 0;
+				return (0);
 			continue;
 		case '?':
 			/* Match anything.  */
 			if (*string == '\0')
-				return 0;
+				return (0);
 			continue;
 		case '*':
 			/* Trailing star matches everything.  */
 			while (*(++pattern) == '*')
 				;
 			if (!*pattern)
-				return 1;
+				return (1);
 			while (*string)
 				if (wild_match(string++, pattern))
-					return 1;
-			return 0;
+					return (1);
+			return (0);
 		case '[':
 			esc = 0;
 			/* Check for inverse character class.  */
@@ -540,22 +554,21 @@ int wild_match(char *string, char *pattern) {
 					continue;
 				if (!esc && *pattern == '-') {
 					if (!*++pattern)
-						return 0;
+						return (0);
 					if (*pattern == '\\')
 						if (!*++pattern)
-							return 0;
-					matched = matched
-							|| (*string <= *pattern && *string >= prev);
+							return (0);
+					matched = matched || (*string <= *pattern && *string >= prev);
 				} else
 					matched = matched || *string == *pattern;
 				esc = 0;
 			}
 			if (prev == 256 || esc || *pattern != ']' || matched == reverse)
-				return 0;
+				return (0);
 			continue;
 		}
 	}
-	return *string == '\0';
+	return (*string == '\0');
 }
 
 /**

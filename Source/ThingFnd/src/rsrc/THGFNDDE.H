@@ -1,4 +1,4 @@
-/* Resource Datei Indizes fÅr THINGFND */
+/* Resource Datei Indizes fÅr THGFNDDE */
 
 #define MAINMENU         0   /* Menuebaum */
 #define MACC             3   /* TITLE in Baum MAINMENU */
@@ -10,9 +10,9 @@
 #define ABOUT            1   /* Formular/Dialog */
 #define ABLOGOHI         2   /* IMAGE in Baum ABOUT */
 #define ABLOGOLO         3   /* IMAGE in Baum ABOUT */
-#define ABVER            6   /* TEXT in Baum ABOUT */
-#define ABHELP           8   /* BUTTON in Baum ABOUT */
-#define ABOK             9   /* BUTTON in Baum ABOUT */
+#define ABVER            4   /* TEXT in Baum ABOUT */
+#define ABHELP           5   /* BUTTON in Baum ABOUT */
+#define ABOK             6   /* BUTTON in Baum ABOUT */
 
 #define FIND             2   /* Formular/Dialog */
 #define FGENERAL         2   /* BUTTON in Baum FIND */
