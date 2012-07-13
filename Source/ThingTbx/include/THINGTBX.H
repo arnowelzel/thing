@@ -21,20 +21,33 @@
  * @license    LGPL
  */
 
-/*=========================================================================
- TOOLBOX.H
-
- Headerfile zur ToolBox
- =========================================================================*/
 #ifndef __TOOLBOX__
 #define __TOOLBOX__
 
+#include <aes.h>
+#include <tos.h>
+#include <portab.h>
 #include <magx.h>
 #include <fdmproto.h>
 
-/*-------------------------------------------------------------------------
- Minimum/Maximum-Funktionen
- -------------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
+/*  global functions                                                */
+/*------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
+/*  global definitions                                              */
+/*------------------------------------------------------------------*/
+#define UNUSED(x)	(void)(x)
+
+#ifndef BOOLEAN
+#define BOOLEAN		WORD
+#endif
+#ifndef TRUE
+#define TRUE		(BOOLEAN)1
+#endif
+#ifndef FALSE
+#define FALSE		(BOOLEAN)0
+#endif
+
 #define max(a,b)    (((a) > (b)) ? (a) : (b)) /* Maximum-Funktion */
 #define min(a,b)    (((a) < (b)) ? (a) : (b)) /* Minimum Funktion */
 
@@ -42,7 +55,7 @@
  WINX/MTOS-Anpassung
  -------------------------------------------------------------------------*/
 #define WM_BOTTOMED 33 /* AES-Message unter WINX/MultiTOS:
-                          Fenster mit wind_set(handle,WF_BOTTOM,0,0,0,0)
+                          Fenster mit wind_set(handle, WF_BOTTOM, 0, 0, 0, 0)
                           nach hinten stellen */
 
 /*-------------------------------------------------------------------------
@@ -174,7 +187,7 @@ typedef struct sub {
 typedef struct forminfo {
 	OBJECT *tree; /* Zeiger auf Objektbaum */
 	int bub_id; /* BubbleGEM-ID des Dialogs, oder -1 */
-	int open; /* 1=Dialog ge”ffnet */
+	int open; /* 1 = Dialog ge”ffnet */
 	int start_obj; /* Nummer des ersten Editfeldes oder ROOT */
 	int edit_obj; /* Nummer des aktuellen Eingabefeldes nach xform_do() */
 	int edit_idx; /* Cursorposition des aktuellen Eingabefeldes */
@@ -184,8 +197,7 @@ typedef struct forminfo {
 	 allen Popup-Mens oder 0L, falls keine Popups
 	 enthalten sind */
 	POPLIST **poplist; /* Wie popup, jedoch fr Popup-Listen */
-	int keyflag; /* Falls 1 werden NKCC-Tastaturcodes bestimmter Tasten
-	 in normkey mit exit_obj=0x8000 zurckgeliefert */
+	int keyflag; /* Falls 1 werden NKCC-Tastaturcodes bestimmter Tasten in normkey mit exit_obj=0x8000 zurckgeliefert */
 	void *userinfo; /* Zeiger auf beliebige Benutzerdaten fr ein Hilfesystem */
 	int undo_obj; /* UNDO-Button oder -1, falls keiner vorhanden ist */
 	int help_obj; /* HELP-Button oder -1, falls keiner vorhanden ist */
@@ -195,7 +207,7 @@ typedef struct forminfo {
 	char *title; /* Fenstertitel, falls Dialogbox keinen Titel enth„lt */
 	int ty, wy; /* Y-Koordinaten fr Sicherung bei Fensterdialog */
 	int cx, cy, cw, ch; /* Aussenrechteck */
-	int cont; /* 1=Keine Verarbeitung, 0=Exit-Objekt */
+	int cont; /* 1 = Keine Verarbeitung, 0 = Exit-Objekt */
 	void (*init)(void); /* Zeiger auf Init-Funktion */
 	void (*exit)(int mode, int ret); /* Zeiger auf Exit-Funktion */
 	struct forminfo *oldtop; /* Bisheriger Dialog, falls ohne Fenster */
@@ -261,6 +273,8 @@ typedef struct {
 	long colors; /* Anzahl der Farben */
 	MAGX_COOKIE *magx; /* MagiC-Cookie oder 0L */
 	long sys; /* Verschiedene Systemeigenschaften */
+	int sysLanguageId; /* System-Sprache */
+	char sysLanguageCode[3]; /* System-Sprache ('de', 'en', ...) */
 	char apname[13]; /* Dateiname der Applikation */
 	char homepath[256]; /* Startverzeichnis der Applikation */
 	int mform, mbusy; /* Aktuelle Mausform, Busy-Flag */
@@ -296,20 +310,99 @@ typedef struct {
 #define SY_POPUP   0x00010000L /* MultiTOS-Popup- und -Submens vorhanden */
 #define SY_WUPDATE 0x00020000L /* wind_update() "check and set" vorhanden */
 
-#define PT34 1 /* Konstanten fr appl_send() */
+/* Konstanten fuer app_send */
+#define PT34 1
 #define PT45 2
 #define PT56 4
 #define PT67 8
 
+#ifdef TOOLBOX_LIB
+TOOLINFO tb;
+#else
+extern TOOLINFO tb;
+#endif
+
+#if 0
 #if !defined( _TOOLBOX_ )
 extern TOOLINFO tb;
+#endif
 #endif
 
 /*-------------------------------------------------------------------------
  Funktionsprototypen
  -------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------
+ * 'debug.c'
+ *-------------------------------------------------------------------------*/
+#ifdef DEBUG
+void debugLog(int init, char *logFile, const char *format, ...);
+#define DEBUGLOG(x) debugLog x
+#else
+#define DEBUGLOG(x)
+#endif
+
+/*-------------------------------------------------------------------------
+ * 'avclient.c'
+ *-------------------------------------------------------------------------*/
+void avcWindowOpen(int avId, int handle);
+void avcWindowClose(int avId, int handle);
+
+/*-------------------------------------------------------------------------
+ * 'convert.c'
+ *-------------------------------------------------------------------------*/
+#if 0
+void long2int(long lword, int *hi, int *lo);
+unsigned long int2long(unsigned int hi, unsigned int lo);
+#endif
+int abs2rel(int rel, int abs, int value);
+
+/*-------------------------------------------------------------------------
+ * 'converta.s'
+ *-------------------------------------------------------------------------*/
+extern void long2int(long lword, int *iword1, int *iword2);
+extern long int2long(int *iword1, int *iword2);
+
+/*-------------------------------------------------------------------------
+ * 'dragdrop.c'
+ *-------------------------------------------------------------------------*/
+void ddnak(EVENT *mevent);
+
+/*-------------------------------------------------------------------------
+ * 'gemdos.c'
+ *-------------------------------------------------------------------------*/
+void full2comp(char *full, char *path, char *file);
+void comp2full(char *full, char *path, char *file);
+int isValidPath(char *path);
+int isValidFileMask(char *mask, int wild);
+/*int isValidFileExtension(char *ext);*/
+int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title, int freedret, int freedid, FORMINFO *fi);
+
+/*-------------------------------------------------------------------------
+ * 'help.c'
+ *-------------------------------------------------------------------------*/
+WORD showSTGuideHelp(BYTE *helpfile, BYTE *reference);
+void read_hlp(char *ext);
+void free_hlp(BHELP *root);
+
+/*-------------------------------------------------------------------------
+ * 'string.c'
+ *-------------------------------------------------------------------------*/
+void strShortener(char *dest, char *src, int limit);
+int isWildcard(char c);
+int hasWildcards(char *str);
+int patternMatching(register char *pattern, register char *str);
+char *get_text(char *str, char *buf, int maxlen);
+
+/*-------------------------------------------------------------------------
+ * 'system.c'
+ *-------------------------------------------------------------------------*/
+WORD getSystemLanguage(BYTE *sysLanguageCode);
+
+/*-------------------------------------------------------------------------
+ * 'toolbox.c'
+ *-------------------------------------------------------------------------*/
 void mybeep(void);
-int getcookie(long cookie, long *p_value);
+int getCookie(long cookie, long *p_value);
 unsigned int normkey(int ks, int kr);
 int rel2abs(char *path, char **dest);
 int menu_key(OBJECT *tree, int key, int *title, int *item);
@@ -380,20 +473,16 @@ void tree_win(OBJECT *tree, int mode);
 void scrap_clear(void);
 void mn_tnormal(OBJECT *tree, int title, int normal);
 
-int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
-		int fret, int fid);
+int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel, int fret, int fid);
 void magx_switch(int id, int top);
 int Screen2Buffer(int x, int y, int w, int h, int flag);
 void grf_ghostbox(int *pxy, int n);
-int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
-		int *dx, int *dy);
-void dial_setopt(OBJECT *tree, int obj, int state, int opt);
-int dial_getopt(OBJECT *tree, int obj, int state);
+int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy, int *dx, int *dy);
+
 void _v_opnvwk(int *work_in, int *handle, int *work_out);
 int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2, int *ap_gout3, int *ap_gout4);
 char *appl_name(int id, char *deflt);
-void appl_send(int id, int message, int pointers, long par1, long par2,
-		long par3, long par4, long par5);
+void appl_send(int id, int message, int pointers, long par1, long par2, long par3, long par4, long par5);
 int calc_small_text_width(char *text);
 int win_update(int mode);
 
@@ -402,5 +491,12 @@ int win_update(int mode);
  -------------------------------------------------------------------------*/
 extern SYSHDR *get_oshdr(void);
 extern void get_twin(int *handle);
+
+/*-------------------------------------------------------------------------
+ * 'tosext.s'
+ *-------------------------------------------------------------------------*/
+long Dxreaddir(int ln,long dirh,char *buf,XATTR *xattr,long *xr);
+#define Dreadlabel(path, label, len)	gemdos(338, (char *)(path), (char *)(label), (int)(len))
+#define Dwritelabel(path, label)		gemdos(339, (char *)(path), (char *)(label))
 
 #endif

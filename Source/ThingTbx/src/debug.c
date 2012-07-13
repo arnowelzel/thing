@@ -21,12 +21,28 @@
  * @license    LGPL
  */
 
-/**
- * TOSEXT.H - Ergaenzungen zur PCTOSLIB.LIB
- */
+#ifdef DEBUG
+#include "..\include\thingtbx.h"
+#include <stdarg.h>
 
-long Dxreaddir(int ln,long dirh,char *buf,XATTR *xattr,long *xr);
-#define Dreadlabel(path, label, len)	gemdos(338, (char *)(path),\
-	(char *)(label), (int)(len))
-#define Dwritelabel(path, label)		gemdos(339, (char *)(path),\
-	(char *)(label))
+/**
+ *
+ *
+ * @param
+ * @param
+ */
+void debugLog(int init, char *logFile, const char *format, ...) {
+	FILE *fh;
+	va_list va;
+	char logfileName[256];
+
+	sprintf(logfileName, "%s%s", tb.homepath, logFile);
+	if ((fh = fopen(logfileName, init ? "w" : "a")) == NULL)
+		return;
+
+	va_start(va, format);
+	vfprintf(fh, format, va);
+	va_end(va);
+	fclose(fh);
+}
+#endif

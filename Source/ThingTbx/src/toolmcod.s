@@ -6,7 +6,6 @@
 
 	globl	get_oshdr
 	globl	get_twin
-	globl long_2_int
 
 	text
 	
@@ -59,26 +58,6 @@ topok:
 	movem.l	(sp)+,a0-a6/d0-d7	;Ergebnis holen
 	move.w	intout+2,(a0)
 	rts
-
-/*
- * long_2_int
- *
- * Wandelt in Langwort in zwei Wîrter.
- *
- * Pure-C-équivalent:
- * void long_2_int(long lw, int *hi, int *lo)
- *
- * Eingabe:
- * lw (d0): Zu wandelndes Langwort
- * hi (a0): Zeiger auf Wort fÅr den High-Anteil
- * lo (a1): Zeiger auf Wort fÅr den Low-Anteil
- */
-module long_2_int
-	move.w	d0,(a1)
-	swap	d0
-	move.w	d0,(a0)
-	rts
-endmod
 
 ;--------------------------------------------------------------------------
 ;Daten

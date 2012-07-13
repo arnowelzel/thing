@@ -23,13 +23,13 @@
 
 #include <aes.h>
 #include <vdi.h>
-#include <tos.h>
 #include <nkcc.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <slectric.h>
 #include <portab.h>
+#define TOOLBOX_LIB
 #define _TOOLBOX_
 #include "..\include\thingtbx.h"
 #include <dudolib.h>
@@ -37,6 +37,15 @@
 #include <memdebug.h>
 #endif
 #define NOVA_PATCH
+
+
+/*------------------------------------------------------------------*/
+/*  global functions                                                */
+/*------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
+/*  global variables                                                */
+/*------------------------------------------------------------------*/
+BYTE *aesBuffer;
 
 /*-------------------------------------------------------------------------
  Resource fuer Popup-Listen und Bitmaps fuer Userdefs
@@ -56,7 +65,6 @@ static void lst_arrow(LISTINFO *li, int object, int dir);
 TOOLINFO tb;
 
 static int is_disabled(char *p);
-extern void long_2_int(long lw, int *hi, int *lo);
 
 /* Lokale Variablen */
 static int work_in[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
@@ -69,8 +77,7 @@ static int unum, uused;
 static int v_handle;
 static FORMINFO t_fi;
 static int pop_offx, pop_offy;
-static OBJECT sepline = { -1, -1, -1, (SEPARATOR << 8) | G_STRING, LASTOB,
-		DRAW3D | NORMAL, 0, 0, 1, 1 };
+static OBJECT sepline = { -1, -1, -1, (SEPARATOR << 8) | G_STRING, LASTOB, DRAW3D | NORMAL, 0, 0, 1, 1 };
 
 /**
  * appl_control
@@ -83,7 +90,7 @@ static OBJECT sepline = { -1, -1, -1, (SEPARATOR << 8) | G_STRING, LASTOB,
  * what: Steuerungsopcode (z.B. APC_TOP)
  * retcode: Zeiger auf Returnwert der Steuerungsfunktion
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 1: Alles OK
  * 0: Fehler
  */
@@ -116,11 +123,11 @@ int appl_control(int ap_id, int what, void *retcode) {
  * richtig unterstuetzt.
  *
  * Eingabe:
- * win: Handle des Fenster, Åber das man Informationen haben will
+ * win: Handle des Fenster, ueber das man Informationen haben will
  * cmd: Opcode fuer wind_get, also z.B. WF_OWNER
  * out1 bis out4: Zeiger auf int-Ausgabeparameter 1 bis 4
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 1: Alles OK
  * 0: Fehler
  */
@@ -195,35 +202,37 @@ unsigned int normkey(int ks, int kr) {
 	return (nkc_ret);
 }
 
-/**-------------------------------------------------------------------------
- getcookie()
-
- Cookie abfragen
- -------------------------------------------------------------------------*/
-static long getjar(void) {
+/**
+ * Cookie abfragen
+ *
+ * @param cookie
+ * @param *p_value
+ * @return
+ */
+static long getCookiePointer(void) {
 	return (*(long *) 0x5a0L);
 }
 
-int getcookie(long cookie, long *p_value) {
+int getCookie(long cookie, long *p_value) {
 	long *cookiejar;
 
-	cookiejar = (long *) Supexec(getjar);
+	cookiejar = (long *) Supexec(getCookiePointer);
 
 	if (cookiejar == 0L)
-		return (0);
+		return (FALSE);
 
 	do {
 		if (cookiejar[0] == cookie) {
 			if (p_value)
 				*p_value = cookiejar[1];
 
-			return (1);
+			return (TRUE);
 		} else {
 			cookiejar = &(cookiejar[2]);
 		}
 	} while (cookiejar[-2]);
 
-	return (0);
+	return (FALSE);
 }
 
 /**
@@ -232,7 +241,7 @@ int getcookie(long cookie, long *p_value) {
  * Erzeugt aus einem eventuell relativen Pfad
  * einen absoluten der Form X:\...\, wobei nicht
  * darauf geachtet wird, ob der Pfad existiert
- * oder Åberhaupt ein Verzeichnis bezeichnet. FÅr
+ * oder ueberhaupt ein Verzeichnis bezeichnet. Fuer
  * den absoulten Pfad wird selbsttÑtig Speicher
  * angefordert, der dann vom Aufruf mittels free
  * wieder freigegeben werden muû. rel2abs versucht
@@ -245,7 +254,7 @@ int getcookie(long cookie, long *p_value) {
  * path: Zeiger auf umzuwandelnden Pfad, der
  *       absolut oder relativ sein darf, auch mit
  *       '.'- und '..'-Komponenten
- * destpath: Zeiger auf Zeiger fÅr den Zielpfad,
+ * destpath: Zeiger auf Zeiger fuer den Zielpfad,
  *           hier wird der angeforderte Speicher
  *           eingetragen, so daû er auch vom
  *           Aufrufer noch erreichbar ist.
@@ -253,7 +262,7 @@ int getcookie(long cookie, long *p_value) {
  *           wÑhrend der Abarbeitung von rel2abs
  *           ein Fehler aufgetreten ist.
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Alles OK, in destpath findet sich Zeiger auf
  *    erzeugten absoluten Pfad
  * sonst: GEMDOS-Fehlermeldung, destpath ist NULL
@@ -279,7 +288,7 @@ WORD rel2abs(char *path, char **destpath) {
 	}
 
 	/*
-	 * Versuchen, maximale PfadlÑnge fÅr das
+	 * Versuchen, maximale PfadlÑnge fuer das
 	 * Wurzelverzeichnis des betroffenen Laufwerks
 	 * zu ermitteln. Das muû nicht unbedingt die
 	 * korrekte LÑnge ergeben, ist aber verlÑûlicher,
@@ -294,13 +303,13 @@ WORD rel2abs(char *path, char **destpath) {
 		maxplen = 256;
 
 	/*
-	 * Plus zwei Bytes: FÅr den abschlieûenden Back-
-	 * slash und die Null fÅr das Stringende.
+	 * Plus zwei Bytes: Fuer den abschlieûenden Back-
+	 * slash und die Null fuer das Stringende.
 	 */
 	maxplen += 2;
 
 	/*
-	 * Speicher fÅr zwei Pfadpuffer anfordern, dies
+	 * Speicher fuer zwei Pfadpuffer anfordern, dies
 	 * ist gleichzeitig die Adresse, die in destpath
 	 * abgelegt wird
 	 */
@@ -331,7 +340,7 @@ WORD rel2abs(char *path, char **destpath) {
 	 * eventuellen Laufwerksangabe kein Backslash),
 	 * wird der aktuelle Pfad angehÑngt. Ansonsten
 	 * werden eventuelle unnîtige Backslashes
-	 * Åberlesen.
+	 * ueberlesen.
 	 */
 	sprintf(temp, "%c:", drive + 65);
 	if (*pos != '\\')
@@ -345,12 +354,12 @@ WORD rel2abs(char *path, char **destpath) {
 	 * komponentenweise betrachtet (immer von der
 	 * momentanten Position bis zum nÑchsten
 	 * Backslash). Ist die Komponente '.', wird sie
-	 * ignoriert, weil sie fÅr das gerade aktuelle
+	 * ignoriert, weil sie fuer das gerade aktuelle
 	 * Verzeichnis steht. Bei '..' wird vom absoluten
 	 * Pfad die letzte Komponente entfernt, wenn man
 	 * noch nicht im Wurzelverzeichnis angekommen ist.
 	 * Bei der Zerlegung in Komponenten werden wieder
-	 * mehrfache Backslashes Åbergangen.
+	 * mehrfache Backslashes uebergangen.
 	 */
 	next = pos;
 	while ((next != NULL) && *pos) {
@@ -372,7 +381,7 @@ WORD rel2abs(char *path, char **destpath) {
 	}
 
 	/*
-	 * Nach erfolgreicher Umwandlung noch per Fsfirst() prÅfen, ob es
+	 * Nach erfolgreicher Umwandlung noch per Fsfirst() pruefen, ob es
 	 * sich um ein Verzeichnis handelt. Falls ja, wird ein Backslash
 	 * angehÑngt.
 	 */
@@ -392,12 +401,12 @@ WORD rel2abs(char *path, char **destpath) {
  * Wie Dgetcwd, nur daû Dgetpath benutzt wird,
  * wenn Dgetcwd nicht vorhanden ist (dann wird
  * len ignoriert und man muû hoffen, daû buf
- * genÅgend Platz bietet). Dgetpath wird auch dann
+ * genuegend Platz bietet). Dgetpath wird auch dann
  * benutzt, wenn Dgetcwd vorhanden ist, aber
  * EDRIVE geliefert hat, weil MetaDOS kein Dgetcwd
- * bereitstellt und daher fÅr die entsprechenden
+ * bereitstellt und daher fuer die entsprechenden
  * Laufwerke das des Betriebssystems benutzt wird,
- * das von diesen Laufwerken natÅrlich nichts
+ * das von diesen Laufwerken natuerlich nichts
  * weiû.
  *
  * Eingabe:
@@ -406,9 +415,9 @@ WORD rel2abs(char *path, char **destpath) {
  * drive: Laufwerk, von dem der aktuelle Pfad
  *        ermittelt werden soll (0 = aktuelles,
  *        1 = A, 2 = B, etc.)
- * len: Anzahl der Zeichen, fÅr die buf Platz hat
+ * len: Anzahl der Zeichen, fuer die buf Platz hat
  *
- * RÅckgabe:
+ * Rueckgabe:
  * Returnwert von Dgetcwd bzw. Dgetpath
  */
 static WORD d_getcwd(char *buf, WORD drive, WORD len) {
@@ -425,8 +434,8 @@ static WORD d_getcwd(char *buf, WORD drive, WORD len) {
 /**-------------------------------------------------------------------------
  menu_key()
 
- Ermittelt anhand des NKCC-Tastaturcodes den zugehîrigen MenÅeintrag
- Åber den Shortcut, der als Text am rechten MenÅrand steht.
+ Ermittelt anhand des NKCC-Tastaturcodes den zugehîrigen Menueeintrag
+ ueber den Shortcut, der als Text am rechten Menuerand steht.
  -------------------------------------------------------------------------*/
 int menu_key(OBJECT *tree, int key, int *title, int *item) {
 	char match[5], text[5], *mp;
@@ -452,27 +461,26 @@ int menu_key(OBJECT *tree, int key, int *title, int *item) {
 	p++;
 	match[p] = 0;
 
-	/* Ersten MenÅtitel holen */
+	/* Ersten Menuetitel holen */
 	mtitle = tree[0].ob_head;
 	mtitle = tree[mtitle].ob_head;
 	mtitle = tree[mtitle].ob_head;
 
-	/* Erstes MenÅ holen */
+	/* Erstes Menue holen */
 	menu = tree[0].ob_tail;
 	menu = tree[menu].ob_head;
 
 	for (;;) {
-		/* Ersten und letzen MenÅeintrag holen */
+		/* Ersten und letzen Menueeintrag holen */
 		first = tree[menu].ob_head;
 		last = tree[menu].ob_tail;
 
-		/* Alle EintrÑge prÅfen */
+		/* Alle EintrÑge pruefen */
 		for (index = first; index <= last; index++) {
-			/* Nur prÅfen, falls wirklich Eintrag (und keine Niceline)
+			/* Nur pruefen, falls wirklich Eintrag (und keine Niceline)
 			 und anwÑhlbar */
-			if (tree[index].ob_type == G_STRING && !(tree[index].ob_state
-					& DISABLED)) {
-				/* Shortcut-Text im MenÅ isolieren */
+			if (tree[index].ob_type == G_STRING && !isObjectDisabled(tree, index)) {
+				/* Shortcut-Text im Menue isolieren */
 				mp = tree[index].ob_spec.free_string;
 				i = 0;
 				while (mp[i])
@@ -495,7 +503,7 @@ int menu_key(OBJECT *tree, int key, int *title, int *item) {
 				if (!strcmp(match, text)) {
 					*title = mtitle;
 					*item = index;
-					return 1;
+					return (1);
 				}
 			}
 		}
@@ -505,7 +513,7 @@ int menu_key(OBJECT *tree, int key, int *title, int *item) {
 			break;
 	}
 
-	return 0;
+	return (0);
 }
 
 /**-------------------------------------------------------------------------
@@ -519,13 +527,11 @@ static int shortcut_walk(OBJECT *tree, int start, unsigned char k) {
 	unsigned char s;
 	OBJECT *obj;
 
-	for (i = tree[start].ob_head; (i != start) && (i != -1); i
-			= tree[i].ob_next) {
+	for (i = tree[start].ob_head; (i != start) && (i != -1); i = tree[i].ob_next) {
 		obj = &tree[i];
 		if ((obj->ob_flags & HIDETREE) == 0) {
 			/* Umgewandelter Button? */
-			if (((obj->ob_type & 0xff) == G_USERDEF) && (obj->ob_flags
-					& SELECTABLE)) {
+			if (((obj->ob_type & 0xff) == G_USERDEF) && (obj->ob_flags & SELECTABLE)) {
 				scut = (obj->ob_state & 0x7f00) >> 8;
 				/* Shortcut vorhanden? */
 				if (scut <= 0x7e) {
@@ -569,117 +575,19 @@ int shortcut(OBJECT *tree, int ks, int kr, int undo_obj, int help_obj) {
 
 	/* Shift etc. nicht verwenden */
 	if ((key & NKF_LSH) || (key & NKF_RSH) || (key & NKF_CTRL))
-		return -1;
+		return (-1);
 
 	/* [Undo]?, [Help]? */
 	if (key == (NKF_FUNC | NK_UNDO))
-		return undo_obj;
+		return (undo_obj);
 	if (key == (NKF_FUNC | NK_HELP))
-		return help_obj;
+		return (help_obj);
 
 	/* Nur [Alt]-Kombinationen verwenden */
 	if (!(key & NKF_ALT))
-		return -1;
+		return (-1);
 
 	return (shortcut_walk(tree, 0, nkc_toupper(key & 0xff)));
-}
-
-/**
- * read_hlp
- *
- * Liest die BubbleGEM-Hilfedatei der Applikation ein und baut die
- * dazugehîrige verkettete Liste auf.
- *
- * Eingabe:
- * ext: Endung der gesuchten Hilfedatei (inklusive Punkt), wird
- *      benutzt, um residentes oder "on demand"-Laden der Hilfedatei
- *      zu ermîglichen
- */
-static void read_hlp(char *ext) {
-	char fname[256], line[257], *p;
-	int state, rebalance;
-	long id_and_obj;
-	FILE *handle;
-	BHELP *new,
-	*father,
-	*last,
-	*one,
-	*two,
-	*current;
-
-	tb.hlp = NULL;
-	strcpy(fname, tb.homepath);
-	if ((p = strrchr(tb.apname, '.')) != NULL)
-		*p = 0;
-	strcat(fname, tb.apname);
-	strcat(fname, ext);
-	if (p)
-		*p = '.';
-	if ((handle = fopen(fname, "r")) == NULL)
-		return;
-
-	state = 0;
-	while (fgets(line, 256, handle)) {
-		if ((p = strrchr(line, '\r')) != NULL)
-			*p = 0;
-		if ((p = strrchr(line, '\n')) != NULL)
-			*p = 0;
-		if ((!*line) || (*line == '#'))
-			continue;
-		if (state == 0) {
-			sscanf(line, "%lx", &id_and_obj);
-			if (id_and_obj == 0L)
-				break;
-		} else {
-			if ((new = malloc(sizeof(BHELP) + strlen(line))) == NULL)
-				break;
-			new->lt = new->ge = NULL;
-			new->bal = 0;
-			new->id_and_obj = id_and_obj;
-			strcpy(new->txt, line);
-			if (tb.hlp == NULL) {
-				tb.hlp = new;
-			} else {
-				father = last = NULL;
-				rebalance = 0;
-				for (current = tb.hlp;;) {
-					current->bal++;
-					if (current->bal == 2) {
-						rebalance = 1;
-						father = last;
-					}
-					last = current;
-					if (current->ge == NULL) {
-						current->ge = new;
-						break;
-					}
-					else
-					current = current->ge;
-				}
-				if (rebalance) {
-					if (father)
-						one = father->ge;
-					else
-						one = tb.hlp;
-					two = one->ge;
-					one->ge = two->lt;
-					two->lt = one;
-					one->bal = two->bal = 0;
-					if (father) {
-						father->ge = two;
-						for (current = tb.hlp; current != two; current = current->ge) {
-							current->bal--;
-						}
-					}
-					else
-					tb.hlp = two;
-				}
-			}
-		}
-		state = 1 - state;
-	}
-	fclose(handle);
-	return;
 }
 
 /**-------------------------------------------------------------------------
@@ -711,7 +619,6 @@ int tool_init(char *apname) {
 	tb.ictree = 0L;
 	tb.ictreed = 0L;
 
-
 	v_handle = 0;
 	nk_ok = 0;
 	unum = 0;
@@ -728,7 +635,7 @@ int tool_init(char *apname) {
 	/* Dirchs Userdef-Library initialisieren */
 	if (initDudolib() != USR_NOERROR) {
 		form_alert(1, "[3][Failed to initialize|userdefined objects!][ OK ]");
-		return(0);
+		return (0);
 	}
 
 	tb.scr_id = appl_find("SCRENMGR");
@@ -757,8 +664,7 @@ int tool_init(char *apname) {
 	tb.colors = 1L << min(24L, (long) tb.planes);
 
 	/*
-	 * Ermitteln, ob "True Color" vorliegt, also bei Weiû alle Pixel
-	 * gesetzt sind
+	 * Ermitteln, ob "True Color" vorliegt, also bei Weiss alle Pixel gesetzt sind
 	 */
 	{
 		MFDB src, dst;
@@ -804,12 +710,16 @@ int tool_init(char *apname) {
 	rs_fix(&sepline, 8, 16);
 
 	/* Images im Alert plazieren */
-	rs_trindex[2][2].ob_y = rs_trindex[2][3].ob_y = rs_trindex[2][1].ob_y;
+	rs_trindex[2][2].ob_y =
+	rs_trindex[2][3].ob_y =
+	rs_trindex[2][1].ob_y;
 
-	rs_trindex[2][1].ob_width = rs_trindex[2][2].ob_width
-			= rs_trindex[2][3].ob_width = rs_trindex[2][1].ob_height
-					= rs_trindex[2][2].ob_height = rs_trindex[2][3].ob_height
-							= 32;
+	rs_trindex[2][1].ob_width =
+	rs_trindex[2][2].ob_width =
+	rs_trindex[2][3].ob_width =
+	rs_trindex[2][1].ob_height =
+	rs_trindex[2][2].ob_height =
+	rs_trindex[2][3].ob_height = 32;
 
 	/* MFDBs initialisieren */
 	scr_mfdb.fd_addr = 0L; /* Bildschirm */
@@ -837,29 +747,21 @@ int tool_init(char *apname) {
 	pop_offx = rs_trindex[0]->ob_width - pop_offx;
 	pop_offy = rs_trindex[0]->ob_height - pop_offy;
 
-
 	/* Aktuelle Systemkonfiguration */
-#ifndef _NAES
-	if (getcookie('MagX', (long *) &tb.magx))
+	if (getCookie('MagX', (long *) &tb.magx))
 		tb.sys |= SY_MAGX;
 	else
-#endif /* _NAES */
 		tb.magx = 0L;
-#ifndef _NAES
-	if (getcookie('nAES', 0L))
-#endif
+	if (getCookie('nAES', 0L))
 		tb.sys |= SY_NAES;
-#ifndef _NAES
-	if (getcookie('Gnva', 0L))
+	if (getCookie('Gnva', 0L))
 		tb.sys |= SY_GNVA;
-#endif
-
 	if (_GemParBlk.global[1] != 1) {
 		tb.sys |= SY_MULTI; /* Multitasking */
 		if (_GemParBlk.global[0] >= 0x400)
 			tb.sys |= SY_MTOS; /* Und MultiTOS */
 	}
-	if (getcookie('MiNT', &ldummy))
+	if (getCookie('MiNT', &ldummy))
 		tb.sys |= SY_MINT; /* MiNT */
 
 	if (Sysconf(-1) != -32L)
@@ -867,26 +769,20 @@ int tool_init(char *apname) {
 
 	/* Startverzeichnis ermitteln */
 	sret = shel_read(tb.homepath, cmd);
-#ifndef _NAES
 	if (tb.sys & SY_MAGX)
 		tail = (SHELTAIL *) cmd;
 	else
 		tail = 0L;
-#else
-	tail = 0L;
-#endif
 
 	if (sret) {
-#ifndef _NAES
-		if (tail) /* MagiC-Shell ? */
-		{
-			if (tail->magic == 'SHEL' && tb.magx->aesvars->magic
-					== 0x87654321L && tb.magx->aesvars->magic2 == 'MAGX') {
+		if (tail) {
+			/* MagiC-Shell ? */
+			if (tail->magic == 'SHEL' && tb.magx->aesvars->magic == 0x87654321L && tb.magx->aesvars->magic2 == 'MAGX') {
 				tb.sys |= SY_MSHELL;
-			} else
+			} else {
 				tail = 0L;
+			}
 		}
-#endif
 
 		p = strrchr(tb.homepath, '\\');
 		if (p)
@@ -901,9 +797,7 @@ int tool_init(char *apname) {
 		if (!shel_find(tb.homepath) || rel2abs(tb.homepath, &hp)) {
 			/* Hat auch nicht geklappt :( */
 			tb.homepath[0] = 0;
-			form_alert(1,
-					"[1][Startverzeichnis der Applikation|nicht gefunden!|"
-						"Can't find application's|home directory!][Abbruch]");
+			form_alert(1, "[1][Startverzeichnis der Applikation|nicht gefunden!|Can't find application's|home directory!][Abbruch]");
 			return (0);
 		} else {
 			if (hp) {
@@ -917,6 +811,9 @@ int tool_init(char *apname) {
 		}
 	}
 
+	/* Systemsprache ermitteln */
+	tb.sysLanguageId = getSystemLanguage(tb.sysLanguageCode);
+
 	/* AES-Fonts ermitteln */
 	tb.fn_id = tb.fs_id = 1;
 	if (tb.ch_h == 8)
@@ -925,10 +822,7 @@ int tool_init(char *apname) {
 		tb.fn_size = 13;
 	tb.fs_size = 5;
 
-#ifndef _NAES
-	if ((tb.sys & SY_MTOS) || (tb.sys & SY_MAGX) || (appl_find("?AGI\0\0\0\0") >= 0))
-#endif
-	{
+	if ((tb.sys & SY_MTOS) || (tb.sys & SY_MAGX) || (appl_find("?AGI\0\0\0\0") >= 0)) {
 		tb.sys |= SY_AGI;
 		if (appl_getinfo(0, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			tb.fn_size = out[0];
@@ -940,11 +834,11 @@ int tool_init(char *apname) {
 		}
 	}
 
-	/* Auf WINX prÅfen */
+	/* Auf WINX pruefen */
 	if (new_wind_get(0, 'WX', &out[0], &out[1], &out[2], &out[3]) == 'WX')
 		tb.sys |= SY_WINX;
 
-	/* Auf Farbicons prÅfen */
+	/* Auf Farbicons pruefen */
 	if (tb.sys & SY_AGI) {
 		if (appl_getinfo(2, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[2] == 1)
@@ -963,7 +857,8 @@ int tool_init(char *apname) {
 		tb.numfonts += vst_load_fonts(tb.vdi_handle, 0);
 		vst_load_fonts(v_handle, 0);
 	}
-	/* Ausmaûe des kleinen Systemfonts ermitteln */
+
+	/* Ausmasse des kleinen Systemfonts ermitteln */
 	vst_font(tb.vdi_handle, tb.fs_id);
 	vst_height(tb.vdi_handle, tb.fs_size, &d, &d, &tb.fs_cw, &tb.fs_ch);
 
@@ -982,9 +877,6 @@ int tool_init(char *apname) {
 		if (appl_getinfo(11, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			/* WF_ICONIFY vorhanden und Iconifier? */
 			if ((out[0] & 0x0080) && (out[3] & 0x0001))
-#if 0
-				&& (tb.sys&SY_MAGX || _GemParBlk.global[0]>=0x410))
-#endif
 				tb.sys |= SY_ICONIFY;
 
 			/* WF_OWNER vorhanden? */
@@ -1002,7 +894,7 @@ int tool_init(char *apname) {
 				tb.sys |= SY_ASEARCH;
 		}
 
-		/* MultiTOS-Popup- bzw. SubmenÅs vorhanden? */
+		/* MultiTOS-Popup- bzw. Submenues vorhanden? */
 		if (appl_getinfo(9, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[0] && out[1])
 				tb.sys |= SY_POPUP;
@@ -1011,26 +903,6 @@ int tool_init(char *apname) {
 
 	read_hlp(".hlr");
 	return (1);
-}
-
-/**
- * free_hlp()
- *
- * Gibt die Liste mit dem BubbleGEM-Hilfebaum wieder frei.
- *
- * Eingabe:
- * root: Zeiger auf die Wurzel des Hilfebaums.
- */
-void free_hlp(BHELP *root) {
-	BHELP *lt, *ge;
-
-	if (root != NULL) {
-		lt = root->lt;
-		ge = root->ge;
-		free(root);
-		free_hlp(lt);
-		free_hlp(ge);
-	}
 }
 
 /**-------------------------------------------------------------------------
@@ -1187,8 +1059,8 @@ void obj_cdraw(int *pxy, int whandle) {
  obj_idxabs()
 
  Berechnet aus dem Index eines Editfeldes die absolute Pixelposition unter
- BerÅcksichtigung der Eingabemaske - wird von obj_edit() verwendet um
- die Position fÅr den Cursor zu berechnen
+ Beruecksichtigung der Eingabemaske - wird von obj_edit() verwendet um
+ die Position fuer den Cursor zu berechnen
  -------------------------------------------------------------------------*/
 int obj_idxabs(char *tmp, char *txt, int idx) {
 	int tmp_idx, txt_idx, hlp_idx, extent[8], d;
@@ -1221,7 +1093,7 @@ int obj_idxabs(char *tmp, char *txt, int idx) {
  obj_idxrel()
 
  Berechnet aus der absoluten Pixelposition den Index eines Editfeldes unter
- BerÅcksichtigung der Eingabemaske - wird von frm_do() fÅr die direkte
+ Beruecksichtigung der Eingabemaske - wird von frm_do() fuer die direkte
  Positionierung des Cursors verwendet.
  -------------------------------------------------------------------------*/
 int obj_idxrel(OBJECT *tree, int obj, int pxl_idx) {
@@ -1245,14 +1117,14 @@ int obj_idxrel(OBJECT *tree, int obj, int pxl_idx) {
  * obj_xleft
  *
  * Ermittelt die linke x-Koordinate des Inhalts eines Editfeldes
- * unter BerÅcksichtigung von Ausrichtung und aktuellem Inhalt
+ * unter Beruecksichtigung von Ausrichtung und aktuellem Inhalt
  * (Stichwort: proportionale Systemfonts).
  *
  * Eingabe:
  * tree: Zeiger auf Objektbaum
  * obj: Nummer des Objektes in tree
  *
- * RÅckgabe:
+ * Rueckgabe:
  * Absolute x-Bildschirmkoordinate des ersten Zeichens im Editfeld
  */
 int obj_xleft(OBJECT *tree, int obj) {
@@ -1287,7 +1159,7 @@ int obj_xleft(OBJECT *tree, int obj) {
 /**-------------------------------------------------------------------------
  obj_edit()
 
- Erweiterte Version der AES-Funktion objc_edit() mit BerÅcksichtigung
+ Erweiterte Version der AES-Funktion objc_edit() mit Beruecksichtigung
  des sichtbaren Fensterausschnitts etc.
  -------------------------------------------------------------------------*/
 int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
@@ -1317,7 +1189,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 	tmplen = ob_edtree[ob_edobject].ob_spec.tedinfo->te_tmplen - 1;
 #endif
 
-	/* Obergrenze fÅr Index berechnen */
+	/* Obergrenze fuer Index berechnen */
 	maxidx = 0;
 	i = 0;
 	while (tmp[i]) {
@@ -1328,7 +1200,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 	if (txtlen > maxidx)
 		txtlen = maxidx;
 
-	/* Pixel-Koordinaten fÅr Cursor berechnen */
+	/* Pixel-Koordinaten fuer Cursor berechnen */
 	objc_offset(ob_edtree, ob_edobject, &x, &y);
 	x = obj_xleft(ob_edtree, ob_edobject);
 
@@ -1346,7 +1218,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 		obj_cdraw(pxy, whandle);
 		break;
 
-	case ED_CHAR: /* Zeichen einfÅgen */
+	case ED_CHAR: /* Zeichen einfuegen */
 		idx = *ob_edidx;
 		if (ob_edstate != 0x7fff) {
 			key = normkey(ob_edstate, ob_edchar);
@@ -1445,7 +1317,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 				if (vidx >= maxidx)
 					vidx--;
 
-				/* Auf GÅltigkeit prÅfen bzw. Umwandeln */
+				/* Auf Gueltigkeit pruefen bzw. Umwandeln */
 				switch (valid[vidx]) {
 				case 'x':
 					key = nkc_toupper(key);
@@ -1457,7 +1329,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 					break;
 				} /* switch */
 
-				/* Wenn Eingabe gÅltig, dann an Cursorposition einfÅgen */
+				/* Wenn Eingabe gueltig, dann an Cursorposition einfuegen */
 				if (key) {
 					i = txtlen + 1;
 					while (i > idx) {
@@ -1484,7 +1356,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 				}
 			}
 			break;
-		}/* switch */
+		} /* switch */
 
 		if (idx != *ob_edidx) {
 			pxy[0] = x + obj_idxabs(tmp, txt, *ob_edidx);
@@ -1535,7 +1407,7 @@ void tree_win(OBJECT *tree, int mode) {
 /**-------------------------------------------------------------------------
  popup_menu()
 
- DurchfÅhrung eines Popup-MenÅs
+ Durchfuehrung eines Popup-Menues
  -------------------------------------------------------------------------*/
 int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 		OBJECT *father) {
@@ -1557,7 +1429,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 	int mouse;
 	MN_SET mn_set;
 
-	/* Aktuelle Einstellungen fÅr Popup-MenÅs auslesen */
+	/* Aktuelle Einstellungen fuer Popup-Menues auslesen */
 	if (tb.sys & SY_POPUP)
 		menu_settings(0, &mn_set);
 	else
@@ -1583,7 +1455,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 		i++;
 	}
 
-	/* MenÅ positionieren */
+	/* Menue positionieren */
 	if (center_obj < 1)
 		center_obj = 1;
 	if (father != NULL)
@@ -1616,12 +1488,12 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 	} else
 		*ok = 1;
 
-	/* MenÅ ausgeben und los ...*/
+	/* Menue ausgeben und los ...*/
 	objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 
 	/*
-	 * PrÅfen, ob Maustaste noch gedrÅckt ist und ggf. Flag fÅr
-	 * die Auswahl mit gedrÅckter Maustaste setzen.
+	 * Pruefen, ob Maustaste noch gedrueckt ist und ggf. Flag fuer
+	 * die Auswahl mit gedrueckter Maustaste setzen.
 	 */
 	evnt_timer(100, 0);
 	graf_mkstate(&mx, &my, &mevent.ev_mbreturn, &d);
@@ -1726,7 +1598,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 			ob = objc_find(tree, ROOT, MAX_DEPTH, mx, my);
 			/* Und bearbeiten ... */
 			if (ob == -1) {
-				/* Ausserhalb des MenÅs */
+				/* Ausserhalb des Menues */
 				sel = -1;
 #if 0
 				if (mevent.ev_mwich & MU_BUTTON && !rt)
@@ -1897,7 +1769,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 /**-------------------------------------------------------------------------
  pop_set()
 
- öbernimmt eine MenÅauswahl eines Popup-MenÅs in den Dialog.
+ öbernimmt eine Menueauswahl eines Popup-Menues in den Dialog.
  -------------------------------------------------------------------------*/
 void pop_set(FORMINFO *fi, POPMENU *pop) {
 	int newtype, oldtype;
@@ -1962,12 +1834,12 @@ void poplist_get(FORMINFO *fi, POPLIST *pop) {
  pop_do()
 
  Wird von frm_do() bei Tastatur- und Maus-Events aufgerufen um
- auf Popup-MenÅs zu prÅfen. Falls ein Popup-MenÅ gewÑhlt wurde, wird
- die Auswahl automatisch in den Dialog Åbernommen.
+ auf Popup-Menues zu pruefen. Falls ein Popup-Menue gewÑhlt wurde, wird
+ die Auswahl automatisch in den Dialog uebernommen.
 
- Funktionsergebnis: 0=Kein Popup-MenÅ ausgewÑhlt
- 1=Popup-MenÅ oder Shortcut eines Popup-MenÅs gewÑhlt
- 2=Auswahl durchgefÅhrt und Popup-Objekt enthÑlt
+ Funktionsergebnis: 0=Kein Popup-Menue ausgewÑhlt
+ 1=Popup-Menue oder Shortcut eines Popup-Menues gewÑhlt
+ 2=Auswahl durchgefuehrt und Popup-Objekt enthÑlt
  "TOUCHEXIT"-Flag
  -------------------------------------------------------------------------*/
 int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
@@ -1999,7 +1871,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 				pdo = 1;
 
 			/*
-			 * Popup ausfÅhren, falls via Mausklick oder Shortcut gewÑhlt.
+			 * Popup ausfuehren, falls via Mausklick oder Shortcut gewÑhlt.
 			 */
 			if ((mode && pop->formobj == pobj) || (!mode && pop->formshort == pobj)) {
 				/* Abbrechen, falls Popup DISABLED ist */
@@ -2016,7 +1888,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 
 				pdo = 1;
 
-				/* Position fÅr das MenÅ berechnen */
+				/* Position fuer das Menue berechnen */
 				objc_offset(fi->tree, pop->formobj, &px, &py);
 				px += (fi->tree[pop->formobj].ob_width / 2) + pop->offx;
 				py += (fi->tree[pop->formobj].ob_height / 2) + pop->offy;
@@ -2029,7 +1901,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 							1);
 				}
 
-				/* MenÅauswahl durchfÅhren */
+				/* Menueauswahl durchfuehren */
 				pret = popup_menu(pop, px, py, pop->sel, &pok, NULL);
 
 				/* Shortcut wieder deselektieren */
@@ -2039,13 +1911,13 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 				}
 
 				/*
-				 * Weitere Verarbeitung nur wenn ein MenÅeintrag ausgewÑhlt
+				 * Weitere Verarbeitung nur wenn ein Menueeintrag ausgewÑhlt
 				 * wurde.
 				 */
 				if (pret != -1) {
 					/*
-					 * Falls die entsprechende Option im MenÅ gesetzt ist, dann
-					 * MenÅeintrag in den Dialog Åbernehmen.
+					 * Falls die entsprechende Option im Menue gesetzt ist, dann
+					 * Menueeintrag in den Dialog uebernehmen.
 					 */
 					if (pop->take == 1) {
 						pop->sel = pret;
@@ -2088,8 +1960,8 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
  poplist_do()
 
  Wird von frm_do() bei Tastatur- und Maus-Events aufgerufen um
- auf Popup-Listen zu prÅfen. Falls ein Listeneintrag gewÑhlt wurde, wird
- die Auswahl automatisch in den Dialog Åbernommen.
+ auf Popup-Listen zu pruefen. Falls ein Listeneintrag gewÑhlt wurde, wird
+ die Auswahl automatisch in den Dialog uebernommen.
 
  Funktionsergebnis: 0=Kein Listeneintrag ausgewÑhlt
  1=Listeneintrag gewÑhlt
@@ -2100,14 +1972,14 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 /*
  * is_disabled
  *
- * Unterfunktion fÅr poplist_handle: Testet, ob eine Zeichenkette nur
- * aus Minuszeichen besteht. Leere Zeichenketten erfÅllen die
+ * Unterfunktion fuer poplist_handle: Testet, ob eine Zeichenkette nur
+ * aus Minuszeichen besteht. Leere Zeichenketten erfuellen die
  * Bedingung nicht.
  *
  * Eingabe:
  * p: Zeiger auf zu testende Zeichenkette
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Zeichenkette enthÑlt nicht nur Minuszeichen oder ist leer
  * sonst: Zeichenkette besteht durchgehen aus Minuszeichen
  */
@@ -2121,9 +1993,7 @@ static int is_disabled(char *p) {
 
 /* Unterfunktion: Aktualisieren der Liste - wurde ausgelagert um das
  "Realtime"-Scrolling mit dem Slider zu ermîglichen */
-
-void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum,
-		int sel) {
+void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) {
 	long spos; /* Sliderposition */
 	int i, j, l, delta;
 	int pxy[8];
@@ -2166,11 +2036,11 @@ void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum,
 
 	/* ... optimiertes Redraw mîglich ? */
 	delta = *offset - *offset1;
-	if (abs(delta) >= vnum) /* Nein - komplett neuzeichnen */
-	{
+	if (abs(delta) >= vnum) {
+		/* Nein - komplett neuzeichnen */
 		objc_draw(tree, 1, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
-	} else /* Ja - nur scrollen und Teile neuzeichnen */
-	{
+	} else {
+		/* Ja - nur scrollen und Teile neuzeichnen */
 		pxy[0] = pxy[4] = tree->ob_x + tree[1].ob_x;
 		pxy[1] = pxy[5] = tree->ob_y + tree[1].ob_y;
 		pxy[2] = pxy[6] = pxy[0] + tree[1].ob_width - 1;
@@ -2229,7 +2099,7 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 				pdo = 1;
 
 			/*
-			 * Popup-Liste ausfÅhren, falls via Mausklick oder Shortcut
+			 * Popup-Liste ausfuehren, falls via Mausklick oder Shortcut
 			 * gewÑhlt, oder das angeklickte Textfeld nicht editierbar ist.
 			 */
 			if ((mode && pop->formobj == pobj) || (!mode && pop->formshort == pobj) || (mode && pop->formset == pobj && !(fi->tree[pop->formset].ob_flags & EDITABLE))) {
@@ -2238,7 +2108,7 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 					return (pdo);
 
 				pdo = 1;
-				/* Position fÅr die Liste berechnen */
+				/* Position fuer die Liste berechnen */
 				objc_offset(fi->tree, pop->formset, &px, &py);
 				px--; /* Wegen Rahmen */
 
@@ -2269,14 +2139,14 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 					}
 				}
 
-				/* Weitere Verarbeitung nur wenn MenÅeintrag ausgewÑhlt wurde */
+				/* Weitere Verarbeitung nur wenn Menueeintrag ausgewÑhlt wurde */
 				if (pret != -1) {
 					if (fi->tree[pop->formobj].ob_flags & TOUCHEXIT) {
 						*exit_obj = pop->formobj;
 						pdo = 2;
 					}
 
-					/* Listeneintrag in den Dialog Åbernehmen */
+					/* Listeneintrag in den Dialog uebernehmen */
 					if (fi->open) {
 						poplist_set(fi, pop);
 						objc_draw(fi->tree, pop->formset, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
@@ -2317,9 +2187,9 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
  * pok: Zeiger auf int; hier steht nach Aufruf eine 1, wenn der
  *      Bildschirmhintergrund nicht aktualisiert werden muû, sonst 0
  * father: Ggf. Zeiger auf "Vaterdialog" bei Listboxen, die als
- *         UntermenÅ eines Popups fungieren, sonst NULL
+ *         Untermenue eines Popups fungieren, sonst NULL
  *
- * RÅckgabe:
+ * Rueckgabe:
  * GewÑhlter Eintrag (ggf. -1), der auch in *pop gesetzt wird
  */
 int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
@@ -2427,7 +2297,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	tree[POPLISTLINE].ob_height = tree[1].ob_height;
 	tree[POPLISTLINE].ob_width = 1;
 
-	/* ... das MenÅ selber */
+	/* ... das Menue selber */
 	tree->ob_x = px;
 	tree->ob_y = py + oh - 1;
 	if (father)
@@ -2462,7 +2332,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		}
 	}
 
-	/* Listenauswahl durchfÅhren ... */
+	/* Listenauswahl durchfuehren ... */
 	pret = -1;
 
 	wind_update( BEG_MCTRL);
@@ -2485,8 +2355,8 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	sel1 = sel;
 
 	/*
-	 * PrÅfen, ob Maustaste noch gedrÅckt ist und ggf. Flag fÅr
-	 * die Auswahl mit gedrÅckter Maustaste setzen.
+	 * Pruefen, ob Maustaste noch gedrueckt ist und ggf. Flag fuer
+	 * die Auswahl mit gedrueckter Maustaste setzen.
 	 */
 	evnt_timer(100, 0);
 	graf_mkstate(&mevent.ev_mmox, &mevent.ev_mmoy, &mevent.ev_mbreturn, &mevent.ev_mmokstate);
@@ -2501,9 +2371,9 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	keyflag = 0;
 
 	/*
-	 * Flag fÅr Scrollen bei Auswahl mit gedrÅckter Maustaste
+	 * Flag fuer Scrollen bei Auswahl mit gedrueckter Maustaste
 	 * lîschen - Scrollen beim Verlassen der Liste wird erst
-	 * durchgefÅhrt, wenn man mit der Maus einen Eintrag in der
+	 * durchgefuehrt, wenn man mit der Maus einen Eintrag in der
 	 * Liste selektiert hat.
 	 */
 	rs = 0;
@@ -2562,7 +2432,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		/* Mausklick auswerten */
 		if ((mevent.ev_mwich & MU_BUTTON) || (mevent.ev_mwich & MU_M1) || (mevent.ev_mwich & MU_TIMER)) {
 			/*
-			 * Falls Maus bewegt wurde, dann Sperre fÅr Echtzeit-
+			 * Falls Maus bewegt wurde, dann Sperre fuer Echtzeit-
 			 * Auswahl aufheben.
 			 */
 			if (mx != mevent.ev_mmox || my != mevent.ev_mmoy) {
@@ -2605,7 +2475,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 					else
 					{
 						/*
-						 * Hier optional: Wenn nicht mit gedrÅckter Maustaste,
+						 * Hier optional: Wenn nicht mit gedrueckter Maustaste,
 						 * dann Realtime-Scroll abschalten, wenn Maus nicht
 						 * horizontal im Bereich der Liste lag.
 						 */
@@ -2746,7 +2616,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 				if (ob >= 2 && ob <= (LISTSIZE + 1) && !keyflag) {
 					sel = offset + ob - 2; /* Nummer des Eintrags */
 					/*
-					 * Scrollen bei Auswahl mit gedrÅckter Maustaste
+					 * Scrollen bei Auswahl mit gedrueckter Maustaste
 					 * zulassen
 					 */
 					rs = 1;
@@ -2855,7 +2725,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		}
 
 		/*
-		 * Ist der Mauszeiger auûerhalb des Popups, mÅssen auch
+		 * Ist der Mauszeiger auûerhalb des Popups, muessen auch
 		 * Timer-Events ausgelîst werden, damit die Liste von
 		 * selbst scrollt
 		 */
@@ -2896,7 +2766,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	if (!rt)
 		evnt_button(1, 3, 0, &d, &d, &d, &d);
 
-	/* Weitere Verarbeitung nur wenn MenÅeintrag ausgewÑhlt wurde */
+	/* Weitere Verarbeitung nur wenn Menueeintrag ausgewÑhlt wurde */
 	if (pret >= 0) {
 		if (is_disabled(pop->list[pret]))
 			pret = -1;
@@ -2936,7 +2806,7 @@ void fw_update(struct wininfo *win) {
 		tree->ob_y = win->work.y;
 }
 
-/* #pragma-Direktive um Warnung "... never used ..." zu unterdrÅcken */
+/* #pragma-Direktive um Warnung "... never used ..." zu unterdruecken */
 #pragma warn -par
 void fw_prepare(struct wininfo *win) {
 }
@@ -2966,14 +2836,14 @@ void frm_restore(FORMINFO *fi) {
 /**-------------------------------------------------------------------------
  frm_keybd()
 
- Erweiterte Version von form_keybd() mit BerÅcksichtigung von
+ Erweiterte Version von form_keybd() mit Beruecksichtigung von
  Tastaturshortcuts, [Insert] und [Ctrl]-C/X/V
  -------------------------------------------------------------------------*/
 int frm_keybd(FORMINFO *fi, int nobj, int *nextobj, int *nextchar, int kr,
 		int ks) {
 	int sobj;
 
-	/* Erstmal auf Shortcut prÅfen */
+	/* Erstmal auf Shortcut pruefen */
 	sobj = shortcut(fi->tree, ks, kr, fi->undo_obj, fi->help_obj);
 	if (sobj != -1) {
 		/*
@@ -2985,8 +2855,8 @@ int frm_keybd(FORMINFO *fi, int nobj, int *nextobj, int *nextchar, int kr,
 		/* Objekt bearbeiten */
 		*nextobj = sobj;
 		return (form_button(fi->tree, sobj, 1, nextobj));
-	} else /* Kein Shortcut - dann normal weiter */
-	{
+	} else {
+		/* Kein Shortcut - dann normal weiter */
 		if ((ks & 3) && ((kr & 0xff) == 0x9)) {
 			ks = 0;
 			kr = 72 << 8;
@@ -2998,7 +2868,7 @@ int frm_keybd(FORMINFO *fi, int nobj, int *nextobj, int *nextchar, int kr,
 /**-------------------------------------------------------------------------
  frm_edstring()
 
- Text in ein Editfeld Åbertragen, unter BerÅcksichtigung des
+ Text in ein Editfeld uebertragen, unter Beruecksichtigung des
  Cursors.
  -------------------------------------------------------------------------*/
 void frm_edstring(FORMINFO *fi, int obj, char *str) {
@@ -3017,7 +2887,7 @@ void frm_edstring(FORMINFO *fi, int obj, char *str) {
  * frm_gotoedit
  *
  * Setzt den Cursor in ein bestimmtes Editfeld bzw. lîscht ihn. Dabei
- * darf der gewÅnschte Zustand auch schon aktiv sein, d.h. man kann
+ * darf der gewuenschte Zustand auch schon aktiv sein, d.h. man kann
  * gefahrlos den Cursor auf Objekt x setzen, wenn er dort schon ist,
  * ohne daû es Zeichenprobleme gibt.
  *
@@ -3047,7 +2917,7 @@ void frm_gotoedit(FORMINFO *fi, int obj) {
  frm_norm()
 
  Stellt das Exit-Objekt eines Dialoges wieder normal dar.
- Sehr nÅtzlich, wenn z.B. ein EXIT-Button selektiert wurde, aber der
+ Sehr nuetzlich, wenn z.B. ein EXIT-Button selektiert wurde, aber der
  Dialog deshalb noch nicht beendet ist.
  -------------------------------------------------------------------------*/
 void frm_norm(FORMINFO *fi) {
@@ -3065,7 +2935,7 @@ void frm_norm(FORMINFO *fi) {
  frm_start()
 
  Vorbereitung eines Dialogs. Hat die Variable 'wd' den Wert 1, wird der
- Dialog als modaler Fensterdialog ausgefÅhrt, sonst analog zu den
+ Dialog als modaler Fensterdialog ausgefuehrt, sonst analog zu den
  MyDial-Dialogen. Wird 'cd' auf 1 gesetzt, wird der Dialog zentriert,
  sonst nicht.
 
@@ -3080,7 +2950,7 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 	FORMINFO *list;
 	EVENT event;
 
-	/* Popup-MenÅeintrÑge in den Dialog Åbernehmen */
+	/* Popup-MenueeintrÑge in den Dialog uebernehmen */
 	if (fi->popup) {
 		pn = 0;
 		while (fi->popup[pn]) {
@@ -3090,7 +2960,7 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 		}
 	}
 
-	/* Poplist-EintrÑge in den Dialog Åbernehmen */
+	/* Poplist-EintrÑge in den Dialog uebernehmen */
 	if (fi->poplist) {
 		pn = 0;
 		while (fi->poplist[pn]) {
@@ -3133,18 +3003,18 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 	if (wd == 1) {
 		ok = 1;
 		fi->drobj = ROOT; /* Bei Redraw gesamten Objektbaum zeichnen */
-		/* Dialog im Fenster ausfÅhren */
+		/* Dialog im Fenster ausfuehren */
 		fi->win.flags = NAME | MOVER;
-		if (!mode && !tb.sm_modal) /* Non-modal? */
-		{
+		if (!mode && !tb.sm_modal) {
+			/* Non-modal? */
 			fi->win.flags |= CLOSER;
 			if (tb.sys & SY_ICONIFY)
 				fi->win.flags |= SMALLER;
 		}
-#ifndef _NAES
+
 		if (tb.sys & SY_MAGX)
 			fi->win.flags |= BACKDROP;
-#endif
+
 		strcpy(fi->win.name, " ");
 		if (fi->tree[1].ob_state & WHITEBAK)
 			strcat(fi->win.name, getObjectText(fi->tree, 1));
@@ -3159,10 +3029,10 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 		fi->win.redraw = fw_redraw;
 		fi->win.slide = 0L;
 		fi->win.ictree = tb.ictreed;
-		/* Objektbaum fÅr's Fenster umbauen und als Fenstergrîûe Åbernehmen */
+		/* Objektbaum fuer's Fenster umbauen und als Fenstergrîûe uebernehmen */
 		tree_win(fi->tree, 1);
 		if (cd) {
-			/* Zentrieren, falls gewÅnscht */
+			/* Zentrieren, falls gewuenscht */
 			form_center(fi->tree, &fi->win.work.x, &fi->win.work.y, &fi->win.work.w, &fi->win.work.h);
 		} else {
 			/* sonst aktuelle Werte beibehalten */
@@ -3189,12 +3059,12 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 	}
 
 	/* Jetzt erst 'Modal' aufrufen, weil erst hier sichergestellt ist,
-	 dass die MenÅzeile auch sichtbar ist */
+	 dass die Menuezeile auch sichtbar ist */
 	if (domode)
 		tb.modal_on();
 
-	/* Dialog normal ausfÅhren - entweder weil kein Fenster mehr frei war,
-	 oder weil dies so gewÅnscht wurde oder weil bereits ein non-modaler
+	/* Dialog normal ausfuehren - entweder weil kein Fenster mehr frei war,
+	 oder weil dies so gewuenscht wurde oder weil bereits ein non-modaler
 	 Dialog auf ist */
 	setBackgroundBorderLine(fi->tree, 0, 0);
 	if (!wd || !ok || tb.sm_nowdial) {
@@ -3202,18 +3072,18 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 		fi->win.handle = -1;
 		fi->state = FST_NORM;
 
-		/* Semaphore fÅr Alertboxen erhîhen */
+		/* Semaphore fuer Alertboxen erhîhen */
 		tb.sm_nowdial++;
 
 		wind_update( BEG_UPDATE);
 		wind_update( BEG_MCTRL);
 		form_center(fi->tree, &x, &y, &w, &h);
-		if (cd) /* Zentrieren, wenn gewÅnscht */
-		{
+		if (cd) {
+			/* Zentrieren, wenn gewuenscht */
 			fi->tree->ob_x = x + (w - fi->tree->ob_width) / 2;
 			fi->tree->ob_y = y + (h - fi->tree->ob_height) / 2;
-		} else /* Sonst aktuelle Werte fÅr finish ermitteln */
-		{
+		} else {
+			/* Sonst aktuelle Werte fuer finish ermitteln */
 			x = fi->tree->ob_x - (w - fi->tree->ob_width) / 2;
 			y = fi->tree->ob_y - (h - fi->tree->ob_height) / 2;
 		}
@@ -3239,7 +3109,7 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 			graf_mouse(tb.mform, 0L);
 	}
 
-	/* Semaphore fÅr Dialog allgemein erhîhen */
+	/* Semaphore fuer Dialog allgemein erhîhen */
 	tb.sm_dial++;
 
 	/* Aktualisierung des Mauszeigers */
@@ -3281,7 +3151,7 @@ void frm_end(FORMINFO *fi) {
 	fi->open = 0;
 	if (fi->state != FST_WIN) /* Normal */
 	{
-		/* Semaphore fÅr Alertboxen heruntersetzen */
+		/* Semaphore fuer Alertboxen heruntersetzen */
 		if (tb.sm_nowdial > 0)
 			tb.sm_nowdial--;
 
@@ -3303,7 +3173,7 @@ void frm_end(FORMINFO *fi) {
 		fi->tree->ob_y = fi->ty + fi->win.work.y - fi->wy;
 	}
 
-	/* Semaphore fÅr Dialoge allgemein heruntersetzen */
+	/* Semaphore fuer Dialoge allgemein heruntersetzen */
 	if (tb.sm_dial > 0)
 		tb.sm_dial--;
 	if (tb.sm_modal > 0) {
@@ -3327,7 +3197,7 @@ void frm_end(FORMINFO *fi) {
 			next->prev = prev;
 	}
 
-	/* BerÅcksichtigen, dass evtl. kein Dialog mehr auf ist */
+	/* Beruecksichtigen, dass evtl. kein Dialog mehr auf ist */
 	if (!tb.fi)
 		tb.topfi = 0L;
 
@@ -3340,7 +3210,7 @@ void frm_end(FORMINFO *fi) {
 /*-------------------------------------------------------------------------
  frm_redraw()
 
- Zeichnet den Dialog komplett oder teilweise neu unter BerÅcksichtigung
+ Zeichnet den Dialog komplett oder teilweise neu unter Beruecksichtigung
  eines eventuell aktiven Eingabefeldes
  -------------------------------------------------------------------------*/
 void frm_redraw(FORMINFO *fi, int obj) {
@@ -3355,15 +3225,12 @@ void frm_redraw(FORMINFO *fi, int obj) {
 		fi->drobj = ROOT;
 	} else {
 		if (fi->edit_obj && fi->edit_idx != -1)
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-					fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 
-		objc_draw(fi->tree, obj, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w,
-				tb.desk.h);
+		objc_draw(fi->tree, obj, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 
 		if (fi->edit_obj && fi->edit_idx != -1)
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-					fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 	}
 }
 
@@ -3401,20 +3268,16 @@ void frm_event(FORMINFO *fi, EVENT *mevent) {
 	case WM_MOVED:
 		/* Fenster ermitteln, das betroffen ist */
 		win = win_getwinfo(mevent->ev_mmgpbuf[3]);
-		/* Nur fÅr Dialogfenster selber bearbeiten,
+		/* Nur fuer Dialogfenster selber bearbeiten,
 		 alle anderen werden an den Handler der Appl. weitergereicht */
 		if (win) {
-			if (win->class==WCDIAL ||
-       msg==WM_TOPPED || msg==WM_NEWTOP || msg==WM_ONTOP ||
-       msg==WM_UNTOPPED || msg==WM_M_BDROPPED ||
-       msg==WM_BOTTOMED) {
+			if (win->class == WCDIAL || msg == WM_TOPPED || msg == WM_NEWTOP || msg == WM_ONTOP ||
+					msg == WM_UNTOPPED || msg == WM_M_BDROPPED || msg == WM_BOTTOMED) {
 				switch (msg) {
 				case WM_REDRAW:
 					if (tb.sm_nowdial)
 						break;
-					win_redraw(win, mevent->ev_mmgpbuf[4],
-							mevent->ev_mmgpbuf[5], mevent->ev_mmgpbuf[6],
-							mevent->ev_mmgpbuf[7]);
+					win_redraw(win, mevent->ev_mmgpbuf[4], mevent->ev_mmgpbuf[5], mevent->ev_mmgpbuf[6], mevent->ev_mmgpbuf[7]);
 					break;
 				case WM_TOPPED:
 					win_top(&fi->win);
@@ -3437,8 +3300,7 @@ void frm_event(FORMINFO *fi, EVENT *mevent) {
 					break;
 				case WM_SIZED:
 				case WM_MOVED:
-					win_size(win, mevent->ev_mmgpbuf[4], mevent->ev_mmgpbuf[5],
-							mevent->ev_mmgpbuf[6], mevent->ev_mmgpbuf[7]);
+					win_size(win, mevent->ev_mmgpbuf[4], mevent->ev_mmgpbuf[5], mevent->ev_mmgpbuf[6], mevent->ev_mmgpbuf[7]);
 					break;
 				}
 			} else {
@@ -3458,7 +3320,7 @@ void frm_event(FORMINFO *fi, EVENT *mevent) {
 /*-------------------------------------------------------------------------
  frm_insert()
 
- EinfÅgen eines Sonderzeichens aus einem Popup-MenÅ an die
+ Einfuegen eines Sonderzeichens aus einem Popup-Menue an die
  aktuelle Cursorposition im Editfeld
  -------------------------------------------------------------------------*/
 void frm_insert(FORMINFO *fi) {
@@ -3493,8 +3355,7 @@ void frm_insert(FORMINFO *fi) {
 		tree->ob_y = tb.desk.y + 1;
 
 	/* Bildschirmhintergrund sichern */
-	if (!Screen2Buffer(tree->ob_x - 1, tree->ob_y - 1, tree->ob_width + 4,
-			tree->ob_height + 4, TRUE)) {
+	if (!Screen2Buffer(tree->ob_x - 1, tree->ob_y - 1, tree->ob_width + 4, tree->ob_height + 4, TRUE)) {
 		mybeep();
 	}
 #if 0
@@ -3530,8 +3391,7 @@ void frm_insert(FORMINFO *fi) {
 		graf_mouse(M_ON,0L);
 #endif
 
-		objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w,
-				tb.desk.h);
+		objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 
 		/* Auswahl des Sonderzeichens */
 		vsf_perimeter(v_handle, 0);
@@ -3556,8 +3416,7 @@ void frm_insert(FORMINFO *fi) {
 			sy1 = sy;
 			if (mevent.ev_mwich & MU_KEYBD) {
 				skey = normkey(mevent.ev_mmokstate, mevent.ev_mkreturn)
-						& ~(NKF_RESVD | NKF_NUM | NKF_CAPS | NKF_ALT | NKF_CTRL
-								| NKF_SHIFT);
+						& ~(NKF_RESVD | NKF_NUM | NKF_CAPS | NKF_ALT | NKF_CTRL | NKF_SHIFT);
 
 				switch (skey) {
 				case NKF_FUNC | NK_UP:
@@ -3626,8 +3485,7 @@ void frm_insert(FORMINFO *fi) {
 				if (mx != mevent.ev_mmox || my != mevent.ev_mmoy) {
 					mx = mevent.ev_mmox;
 					my = mevent.ev_mmoy;
-					if (objc_find(tree, ROOT, MAX_DEPTH, mevent.ev_mmox,
-							mevent.ev_mmoy) != -1) {
+					if (objc_find(tree, ROOT, MAX_DEPTH, mevent.ev_mmox, mevent.ev_mmoy) != -1) {
 						sx = (mevent.ev_mmox - tree->ob_x) / (tb.ch_w * 2);
 						sy = (mevent.ev_mmoy - tree->ob_y) / tb.ch_h;
 					} else {
@@ -3636,8 +3494,7 @@ void frm_insert(FORMINFO *fi) {
 				}
 			}
 			if (mevent.ev_mwich & MU_BUTTON) {
-				if (objc_find(tree, ROOT, MAX_DEPTH, mevent.ev_mmox,
-						mevent.ev_mmoy) != -1) {
+				if (objc_find(tree, ROOT, MAX_DEPTH, mevent.ev_mmox, mevent.ev_mmoy) != -1) {
 					sx = (mevent.ev_mmox - tree->ob_x) / (tb.ch_w * 2);
 					sy = (mevent.ev_mmoy - tree->ob_y) / tb.ch_h;
 				} else {
@@ -3682,12 +3539,10 @@ void frm_insert(FORMINFO *fi) {
 		/* Auf Loslassen der Maustaste warten */
 		mevent.ev_mbreturn = 1;
 		while (mevent.ev_mbreturn & 1)
-			graf_mkstate(&mevent.ev_mmox, &mevent.ev_mmoy, &mevent.ev_mbreturn,
-					&mevent.ev_mmokstate);
+			graf_mkstate(&mevent.ev_mmox, &mevent.ev_mmoy, &mevent.ev_mbreturn, &mevent.ev_mmokstate);
 
 		/* Bildschirmhintergrund wiederherstellen */
-		Screen2Buffer(tree->ob_x - 1, tree->ob_y - 1, tree->ob_width + 4,
-				tree->ob_height + 4, FALSE);
+		Screen2Buffer(tree->ob_x - 1, tree->ob_y - 1, tree->ob_width + 4, tree->ob_height + 4, FALSE);
 #if 0
 		mxy[0]=0;mxy[1]=0;
 		mxy[2]=fw-1;mxy[3]=fh-1;
@@ -3698,10 +3553,9 @@ void frm_insert(FORMINFO *fi) {
 		graf_mouse(M_ON,0L);
 		Mfree(mfdb.fd_addr);
 #endif
-		/* Zeichen in das Editfeld einfÅgen */
+		/* Zeichen in das Editfeld einfuegen */
 		if (ch)
-			obj_edit(fi->tree, fi->edit_obj, ch, 0x7fff, &fi->edit_idx,
-					ED_CHAR, fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, ch, 0x7fff, &fi->edit_idx, ED_CHAR, fi->win.handle);
 	}
 
 	if (!tb.mbusy)
@@ -3715,7 +3569,7 @@ void frm_insert(FORMINFO *fi) {
  frm_epaste()
  frm_ecut()
 
- Aktuelles Eingabefeld in's GEM-Clipboard Åbertragen bzw. von dort
+ Aktuelles Eingabefeld in's GEM-Clipboard uebertragen bzw. von dort
  einlesen
  -------------------------------------------------------------------------*/
 int frm_ecopy(FORMINFO *fi) {
@@ -3775,7 +3629,7 @@ void frm_epaste(FORMINFO *fi) {
 		l++;
 	}
 
-	/* Text aus dem Clipboard einfÅgen */
+	/* Text aus dem Clipboard einfuegen */
 	buf = fi->tree[fi->edit_obj].ob_spec.tedinfo->te_ptext;
 	strcpy(sname, spath);
 	strcat(sname, "SCRAP.TXT");
@@ -3784,8 +3638,7 @@ void frm_epaste(FORMINFO *fi) {
 		return;
 
 	l = fi->tree[fi->edit_obj].ob_spec.tedinfo->te_txtlen - 1;
-	obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-			fi->win.handle);
+	obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 	ret = Fread((int) fh, (long) l, buf);
 	Fclose((int) fh);
 	if (ret >= 0L)
@@ -3796,19 +3649,16 @@ void frm_epaste(FORMINFO *fi) {
 	}
 	fi->edit_idx = -1;
 	frm_redraw(fi, fi->edit_obj);
-	obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-			fi->win.handle);
+	obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 }
 
 void frm_ecut(FORMINFO *fi) {
 	if (frm_ecopy(fi)) {
-		obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-				fi->win.handle);
+		obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 		fi->tree[fi->edit_obj].ob_spec.tedinfo->te_ptext[0] = 0;
 		fi->edit_idx = -1;
 		frm_redraw(fi, fi->edit_obj);
-		obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-				fi->win.handle);
+		obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 	}
 }
 
@@ -3886,8 +3736,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 		/* Nur initialisieren, wenn der Cursor noch nicht pos. wurde */
 		if (doini) {
 			fi->edit_obj = next_obj;
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-					fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 		} else {
 			doini = 1;
 			fi->edit_obj = edit_obj;
@@ -3896,15 +3745,13 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 		next_obj = 0;
 	}
 
-	/* Mauszeiger Åber Editfeldern als Cursor */
+	/* Mauszeiger ueber Editfeldern als Cursor */
 	if (mevent->ev_mwich & MU_M1) {
 		mform = ARROW;
 
 		/* Nur, wenn Dialog aktiv */
-		if (fi->state != FST_WIN || (fi->state == FST_WIN && tb.topwin
-				== &fi->win && !(fi->win.state & WSICON))) {
-			mobj = objc_find(fi->tree, ROOT, MAX_DEPTH, mevent->ev_mmox,
-					mevent->ev_mmoy);
+		if (fi->state != FST_WIN || (fi->state == FST_WIN && tb.topwin == &fi->win && !(fi->win.state & WSICON))) {
+			mobj = objc_find(fi->tree, ROOT, MAX_DEPTH, mevent->ev_mmox, mevent->ev_mmoy);
 			if (mobj != -1)
 				if (fi->tree[mobj].ob_flags & EDITABLE)
 					mform = TEXT_CRSR;
@@ -3923,8 +3770,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 	 * Alle weiteren Aktionen nur bearbeiten, wenn der Dialog
 	 * entweder kein Fensterdialog ist, oder das Fenster aktiv ist.
 	 */
-	if (fi->state != FST_WIN || (fi->state == FST_WIN && tb.topwin == &fi->win
-			&& !(fi->win.state & WSICON))) {
+	if (fi->state != FST_WIN || (fi->state == FST_WIN && tb.topwin == &fi->win && !(fi->win.state & WSICON))) {
 		/*
 		 * Aktuelles Eingabefeld fixieren, um énderungen feststelllen zu
 		 * kînnen.
@@ -3935,7 +3781,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 		}
 
 		/*
-		 * Taste gedrÅckt -> Aktuelles Eingabefeld bearbeiten oder
+		 * Taste gedrueckt -> Aktuelles Eingabefeld bearbeiten oder
 		 * DEFAULT.
 		 */
 		if (mevent->ev_mwich & MU_KEYBD) {
@@ -3969,7 +3815,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 				break;
 			} /* switch */
 
-			/* Auf Popups prÅfen */
+			/* Auf Popups pruefen */
 			if (fi->popup) {
 				pdo = pop_do(0, fi, -1, mevent->ev_mmokstate,
 						mevent->ev_mkreturn, &fi->edit_obj, &fi->edit_idx,
@@ -4027,8 +3873,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 					break;
 
 				default:
-					fi->cont = frm_keybd(fi, next_obj, &next_obj, &kr,
-							mevent->ev_mkreturn, mevent->ev_mmokstate);
+					fi->cont = frm_keybd(fi, next_obj, &next_obj, &kr, mevent->ev_mkreturn, mevent->ev_mmokstate);
 					if (kr) {
 						obj_edit(fi->tree, fi->edit_obj, kr,
 								mevent->ev_mmokstate, &fi->edit_idx, ED_CHAR,
@@ -4057,8 +3902,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 			}
 
 			/* Angeklicktes Objekt suchen */
-			if ((next_obj = objc_find(fi->tree, ROOT, MAX_DEPTH,
-					mevent->ev_mmox, mevent->ev_mmoy)) == -1) /* NIL */
+			if ((next_obj = objc_find(fi->tree, ROOT, MAX_DEPTH, mevent->ev_mmox, mevent->ev_mmoy)) == -1) /* NIL */
 			{
 				/* Auûerhalb des Dialogs */
 				if (fi->state != FST_WIN)
@@ -4070,14 +3914,12 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 				{
 					if (fi->state != FST_WIN) /* Fensterdialog? */
 						mybeep();
-					else if (next_obj && (fi->tree[next_obj].ob_state
-							& DISABLED) == 0) {
-						bubble_message(fi->bub_id, next_obj, mevent->ev_mmox,
-								mevent->ev_mmoy);
+					else if (next_obj && (fi->tree[next_obj].ob_state & DISABLED) == 0) {
+						bubble_message(fi->bub_id, next_obj, mevent->ev_mmox, mevent->ev_mmoy);
 					}
 					next_obj = 0;
 				} else {
-					/* Auf Popups prÅfen */
+					/* Auf Popups pruefen */
 					if (fi->popup)
 						pdo = pop_do(1, fi, next_obj, mevent->ev_mmokstate,
 								mevent->ev_mkreturn, &fi->edit_obj,
@@ -4104,16 +3946,15 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 
 					case 0:
 						/* Normale Verarbeitung */
-						fi->cont = form_button(fi->tree, next_obj,
-								mevent->ev_mbreturn, &next_obj);
+						fi->cont = form_button(fi->tree, next_obj, mevent->ev_mbreturn, &next_obj);
 						nobj = next_obj & 0x7fff;
 
 						/* Klick in ein Editfeld? */
 						if (fi->cont && fi->tree[nobj].ob_flags & EDITABLE) {
-							/* Falls Doppelklick, dann RÅckgabe mit Objektnummer */
+							/* Falls Doppelklick, dann Rueckgabe mit Objektnummer */
 							if (mevent->ev_mbreturn == 2) {
 								fi->cont = 0;
-								/*								tb.mform=ARROW;
+/*								tb.mform=ARROW;
 								 if(!tb.mbusy) graf_mouse(tb.mform,0L); */
 
 								next_obj |= 0x8000;
@@ -4122,9 +3963,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 								objc_offset(fi->tree, nobj, &x, &y);
 								x = obj_xleft(fi->tree, nobj);
 
-								tlen
-										= (int) strlen(
-												fi->tree[nobj].ob_spec.tedinfo->te_ptext);
+								tlen = (int) strlen(fi->tree[nobj].ob_spec.tedinfo->te_ptext);
 								new_idx = mevent->ev_mmox - x;
 								new_idx = obj_idxrel(fi->tree, nobj, new_idx);
 								if (new_idx > tlen)
@@ -4136,8 +3975,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 						 * Falls Exit-Objekt TOUCHEXIT & EXIT, dann auf
 						 * Loslassen der Maustaste warten.
 						 */
-						if (!fi->cont && (fi->tree[nobj].ob_flags & (TOUCHEXIT
-								| EXIT)) == (TOUCHEXIT | EXIT)) {
+						if (!fi->cont && (fi->tree[nobj].ob_flags & (TOUCHEXIT | EXIT)) == (TOUCHEXIT | EXIT)) {
 							evnt_button(1, 3, 0, &mx, &my, &mb, &ks);
 						}
 						break;
@@ -4152,7 +3990,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 	}
 
 	/*
-	 * PrÅfen, ob der Inhalt des fixierten Eingabefelds verÑndert
+	 * Pruefen, ob der Inhalt des fixierten Eingabefelds verÑndert
 	 * wurde.
 	 */
 	if (eobj) {
@@ -4171,20 +4009,16 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 		 * im neuen Feld setzen.
 		 */
 		if (next_obj != fi->edit_obj) {
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-					fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 			fi->edit_idx = new_idx;
 			fi->edit_obj = next_obj;
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-					fi->win.handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 		} else /* Gleiches Feld, dann Cursor ggf. setzen */
 		{
 			if (new_idx != fi->edit_idx && new_idx != -1) {
-				obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-						fi->win.handle);
+				obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 				fi->edit_idx = new_idx;
-				obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-						fi->win.handle);
+				obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
 			}
 		}
 	}
@@ -4268,7 +4102,7 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
 
 	/* Semaphore gesetzt - d.h. ist ein anderer Alert schon auf? */
 	if (tb.sm_alert) {
-		/* Ja - dann halt in der Åblichen Form :-/ */
+		/* Ja - dann halt in der ueblichen Form :-/ */
 		done = form_alert(defbut, alstr);
 		if (!(t_fi.state & FST_WIN))
 			frm_redraw(&t_fi, ROOT);
@@ -4323,7 +4157,7 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
 		tree[t + 4].ob_spec.free_string[0] = 0;
 	}
 
-	/* Text Åbernehmen */
+	/* Text uebernehmen */
 	t = 0;
 	maxlen = 0;
 	while (alstr[p] && alstr[p] != ']') {
@@ -4359,7 +4193,7 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
 		n = s;
 	tree->ob_height = n;
 
-	/* Button-Texte Åbernehmen */
+	/* Button-Texte uebernehmen */
 	b = 0;
 	butlen = 0;
 	while (alstr[p] && alstr[p] != ']') {
@@ -4440,10 +4274,8 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
 
 	/* Buttons horizontal plazieren */
 	tree[11].ob_x = tree->ob_width - tree[11].ob_width - tb.ch_w * 2;
-	tree[10].ob_x = tree->ob_width - tree[11].ob_width - tree[10].ob_width
-			- tb.ch_w * 4;
-	tree[9].ob_x = tree->ob_width - tree[11].ob_width - tree[9].ob_width
-			- tree[10].ob_width - tb.ch_w * 6;
+	tree[10].ob_x = tree->ob_width - tree[11].ob_width - tree[10].ob_width - tb.ch_w * 4;
+	tree[9].ob_x = tree->ob_width - tree[11].ob_width - tree[9].ob_width - tree[10].ob_width - tb.ch_w * 6;
 
 	/* Und Dialog abwickeln... */
 	setUserdefs(rs_trindex[2], FALSE);
@@ -4513,15 +4345,15 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
 	return (done);
 }
 
-/*
+/**
  * lst_prepare
  *
- * Paût in einem Dialog Position und Grîûe des Sliders und der Pfeile
+ * Passt in einem Dialog Position und Groesse des Sliders und der Pfeile
  * einer Auswahlliste an.
  *
  * Eingabe:
  * li: Zeiger auf betroffene LISTINFO-Struktur
- * tree: Zeiger auf zugehîrigen Objektbaum, da li->fi->tree eventuell
+ * tree: Zeiger auf zugehoerigen Objektbaum, da li->fi->tree eventuell
  *       noch ungesetzt ist
  */
 void lst_prepare(LISTINFO *li, OBJECT *tree) {
@@ -4530,13 +4362,11 @@ void lst_prepare(LISTINFO *li, OBJECT *tree) {
 	x = tree[li->ob_list].ob_x + tree[li->ob_list].ob_width + 1;
 	tree[li->ob_up].ob_x = tree[li->ob_box].ob_x = tree[li->ob_down].ob_x = x;
 
-	tree[li->ob_box].ob_y = tree[li->ob_up].ob_y + tree[li->ob_up].ob_height
-			+ 1;
-	tree[li->ob_box].ob_height = tree[li->ob_list].ob_height
-			- tree[li->ob_up].ob_height - tree[li->ob_down].ob_height - 2;
+	tree[li->ob_box].ob_y = tree[li->ob_up].ob_y + tree[li->ob_up].ob_height + 1;
+	tree[li->ob_box].ob_height = tree[li->ob_list].ob_height - tree[li->ob_up].ob_height - tree[li->ob_down].ob_height - 2;
 }
 
-/*-------------------------------------------------------------------------
+/**
  lst_init()
 
  Initialisiert eine Auswahlliste in einem Dialog
@@ -4549,7 +4379,7 @@ void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
 
 	tree = li->fi->tree;
 
-	/* ListeneintrÑge in den Dialog Åbertragen */
+	/* Listeneintraege in den Dialog uebertragen */
 	if (ilist) {
 		for (i = 0; i < li->view; i++) {
 			p = tree[li->ob_list + i + 1].ob_spec.tedinfo->te_ptext;
@@ -4575,13 +4405,11 @@ void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
 	/* Grîûe und Position des Sliders berechnen */
 	if (islide) {
 		if (li->num > li->view) {
-			ssize = (long) tree[li->ob_box].ob_height * (long) li->view
-					/ (long) li->num;
+			ssize = (long) tree[li->ob_box].ob_height * (long) li->view / (long) li->num;
 			if (ssize < (long) tree[li->ob_slide].ob_width)
 				ssize = (long) tree[li->ob_slide].ob_width;
 
-			spos = (long) li->offset * ((long) tree[li->ob_box].ob_height
-					- ssize) / (long) (li->num - li->view);
+			spos = (long) li->offset * ((long) tree[li->ob_box].ob_height - ssize) / (long) (li->num - li->view);
 		} else {
 			ssize = (long) tree[li->ob_box].ob_height;
 			spos = 0;
@@ -4600,17 +4428,17 @@ void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
 /*
  * lst_handle
  *
- * Listenbehandlung fÅr Dialogauswertung.
+ * Listenbehandlung fuer Dialogauswertung.
  *
  * Eingabe:
  * li: Zeiger auf betroffene Auswahlliste
  * fi: Zeiger auf dazugehîrige FORMINFO-Struktur
- * ret: RÅckgabewert von frm_do()
+ * ret: Rueckgabewert von frm_do()
  * dclick: Zeiger auf Integer, in dem vermerkt wird, ob ein
  *         Listeneintrag zur Bearbeitung ausgewÑhlt wurde (1) oder
  *         nicht (0)
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Die Auswahlliste war vom Dialogereignis nicht betroffen
  * sonst: Auswahlliste behandelt, *dclick entsprechend gesetzt
  */
@@ -4635,6 +4463,7 @@ int lst_handle(LISTINFO *li, int ret, int *dclick) {
 			sd = -li->view;
 		else
 			sd = li->view;
+
 		do {
 			lst_move(li, sd);
 			graf_mkstate(&mx, &mx, &mb, &ks);
@@ -4652,10 +4481,12 @@ int lst_handle(LISTINFO *li, int ret, int *dclick) {
 		}
 	} else
 		retcode = 0;
+
 	if (li->fi->state == FST_WIN) {
 		wind_update( END_MCTRL);
 		wind_update( END_UPDATE);
 	}
+
 	return (retcode);
 }
 
@@ -4710,8 +4541,8 @@ void lst_move(LISTINFO *li, int delta) {
 	last--;
 
 	/* Optimiertes Redraw mîglich? */
-	if (abs(odelta) < vis) /* Ja ... */
-	{
+	if (abs(odelta) < vis) {
+		/* Ja ... */
 		/* Liste aktualisieren, aber ohne die EintrÑge zu zeichnen */
 		lst_init(li, 1, 1, 0, 1);
 
@@ -4745,17 +4576,17 @@ void lst_move(LISTINFO *li, int delta) {
 			for (i = last + !!lfrag; i > (last - odelta); i--)
 				frm_redraw(li->fi, li->ob_list + i + 1);
 		}
-	} else /* Nein ... */
-	{
+	} else {
+		/* Nein ... */
 		/* Liste aktualisieren und komplett zeichnen */
 		lst_init(li, 1, 1, 1, 1);
 	}
 }
 
-/*-------------------------------------------------------------------------
+/**
  lst_slide()
 
- FÅhrt bei gedrÅckter Maustaste ein Realtime-Scrolling einer
+ Fuehrt bei gedrueckter Maustaste ein Realtime-Scrolling einer
  Auswahlliste durch (wird aufgerufen, wenn man mit der Maus auf den
  Slider geklickt hat).
  -------------------------------------------------------------------------*/
@@ -4779,14 +4610,12 @@ void lst_slide(LISTINFO *li) {
 	graf_mouse(FLAT_HAND, 0L);
 	/* Bei 3D-Optik Slider selektieren */
 	if (tb.use3d)
-		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-				tb.desk.h, SELECTED, 1);
+		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
 
 	do {
 		/* Offset berechnen */
 		spos = (long) (li->num - li->view) * (long) (my - oy - i)
-				/ (long) (tree[li->ob_box].ob_height
-						- tree[li->ob_slide].ob_height);
+				/ (long) (tree[li->ob_box].ob_height - tree[li->ob_slide].ob_height);
 		offset = (int) spos;
 		if (offset > omax)
 			offset = omax;
@@ -4802,8 +4631,7 @@ void lst_slide(LISTINFO *li) {
 	/* Bei 3D-Optik Slider deselektieren */
 	while (mb & 1);
 	if (tb.use3d)
-		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-				tb.desk.h, NORMAL, 1);
+		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
 
 	graf_mouse(ARROW, 0L);
 }
@@ -4829,16 +4657,14 @@ static void lst_arrow(LISTINFO *li, int object, int dir) {
 	if (li->num <= li->view)
 		return;
 
-	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-			tb.desk.h, SELECTED, 1);
+	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
 	do {
 		lst_move(li, dir);
 		evnt_timer(70, 0);
 		graf_mkstate(&du, &du, &mb, &du);
 	} while (mb & 1);
 
-	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-			tb.desk.h, NORMAL, 1);
+	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
 }
 
 /*-------------------------------------------------------------------------
@@ -4860,8 +4686,7 @@ void lst_select(LISTINFO *li, int sel) {
 		if (li->sel >= li->offset && li->sel <= li->offset + li->view - 1) {
 			ob = li->ob_list + 1 + li->sel - li->offset;
 			tree[ob].ob_state &= ~SELECTED;
-			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w,
-					tb.desk.h);
+			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 		}
 	}
 
@@ -4871,8 +4696,7 @@ void lst_select(LISTINFO *li, int sel) {
 		if (li->sel >= li->offset && li->sel <= li->offset + li->view - 1) {
 			ob = li->ob_list + 1 + li->sel - li->offset;
 			tree[ob].ob_state |= SELECTED;
-			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w,
-					tb.desk.h);
+			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 		}
 	}
 }
@@ -4939,8 +4763,8 @@ void lst_key(LISTINFO *li, int key) {
 		lst_select(li, -1);
 		lst_select(li, sel);
 	}
-	if (sel != -1) /* Auswahl in sichtbaren Bereich verschieben */
-	{
+	if (sel != -1) {
+		/* Auswahl in sichtbaren Bereich verschieben */
 		if (li->offset > sel)
 			lst_move(li, sel - li->offset);
 
@@ -5010,13 +4834,12 @@ void win_unicon(WININFO *win, int x, int y, int w, int h) {
 
 	wind_set(win->handle, WF_UNICONIFY, x, y, w, h);
 
-	/* UrsprÅngliche Koordinaten eintragen */
+	/* Urspruengliche Koordinaten eintragen */
 	win->curr.x = win->save.x;
 	win->curr.y = win->save.y;
 	win->curr.w = win->save.w;
 	win->curr.h = win->save.h;
-	wind_set(win->handle, WF_CURRXYWH, win->curr.x, win->curr.y, win->curr.w,
-			win->curr.h);
+	wind_set(win->handle, WF_CURRXYWH, win->curr.x, win->curr.y, win->curr.w, win->curr.h);
 	/* WININFO-Struktur aktualisieren */
 	win->state &= ~WSICON;
 	win_pupdate(win);
@@ -5060,8 +4883,7 @@ static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
 		}
 	}
 	for (i = tb.win; i != NULL; i = i->next) {
-		if ((i == win) || (i->state & WSICON)
-				|| ((i->state & WSOPEN) != WSOPEN)) {
+		if ((i == win) || (i->state & WSICON) || ((i->state & WSOPEN) != WSOPEN)) {
 			continue;
 		}
 		tst2 = i->curr;
@@ -5074,19 +4896,19 @@ static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
 	return (1);
 }
 
-/**-------------------------------------------------------------------------
+/**
  win_open()
 
  Initialisiert (mode=0) oder îffnet (mode=1) ein initialisiertes Fenster.
  Als Ergebnis erhÑlt man 1, falls alles ok ist, sonst 0.
- Die Åbergebene WININFO-Struktur wird an die Liste der geîffneten
+ Die uebergebene WININFO-Struktur wird an die Liste der geîffneten
  Fenster angehÑngt.
- Ist das 15. Bit von mode gesetzt, wird zunÑchst geprÅft, ob das
- Fenster an der gewÅnschten Position abgelegt werden kann, ohne dabei
+ Ist das 15. Bit von mode gesetzt, wird zunÑchst geprueft, ob das
+ Fenster an der gewuenschten Position abgelegt werden kann, ohne dabei
  ein bereits offenes Fenster zu verdecken. Klappt das nicht, wird
  eine solche Position gesucht, falls es keine gibt, muû das Fenster
  interaktiv plaziert werden, falls das 14. Bit von mode gesetzt ist.
- Ansonsten wird das Fenster an der ursprÅnglichen Position geîffnet.
+ Ansonsten wird das Fenster an der urspruenglichen Position geîffnet.
  -------------------------------------------------------------------------*/
 int win_open(WININFO *win, int mode) {
 	WININFO *list;
@@ -5119,8 +4941,7 @@ int win_open(WININFO *win, int mode) {
 				&win->work.h);
 
 		/* Fenster erzeugen */
-		win->handle = wind_create(win->flags, win->full.x, win->full.y,
-				win->full.w, win->full.h);
+		win->handle = wind_create(win->flags, win->full.x, win->full.y, win->full.w, win->full.h);
 		if (win->handle <= 0)
 			return (0);
 
@@ -5161,8 +4982,7 @@ int win_open(WININFO *win, int mode) {
 					for (y = tb.desk.y + tb.fupper; (y + tst.h)
 							<= (mx.y + mx.h); y += 8) {
 						tst.y = y;
-						for (x = tb.desk.x + tb.fleft; (x + tst.w) <= (mx.x
-								+ mx.w); x += 8) {
+						for (x = tb.desk.x + tb.fleft; (x + tst.w) <= (mx.x + mx.w); x += 8) {
 							tst.x = x;
 							if (win_pos_ok(win, &tst, &w)) {
 								win->curr.x = x;
@@ -5202,8 +5022,7 @@ int win_open(WININFO *win, int mode) {
 
 		tb.topwin = win;
 		win->state |= WSOPEN;
-		wind_open(win->handle, win->curr.x, win->curr.y, win->curr.w,
-				win->curr.h);
+		wind_open(win->handle, win->curr.x, win->curr.y, win->curr.w, win->curr.h);
 		win_pupdate(win);
 
 		/* Slider setzen */
@@ -5221,15 +5040,14 @@ int win_open(WININFO *win, int mode) {
 void win_close(WININFO *win) {
 	WININFO *prev, *next;
 
-	if (win->state & WSINIT) /* Fenster initialisiert */
-	{
-		if (win->state & WSOPEN) /* Fenster geîffnet */
-		{
+	if (win->state & WSINIT) {
+		/* Fenster initialisiert */
+		if (win->state & WSOPEN) {
+			/* Fenster geîffnet */
 			/* Bei Bedarf Fenster vorher nach hinten stellen */
-#ifndef _NAES
 			if (tb.backwin && tb.sys & SY_MAGX)
 				wind_set(win->handle, WF_BOTTOM, 0, 0, 0, 0);
-#endif
+
 			/* Und schlieûen */
 			wind_close(win->handle);
 			win->state &= ~WSOPEN;
@@ -5237,7 +5055,7 @@ void win_close(WININFO *win) {
 
 		wind_delete(win->handle);
 		win->state &= ~WSINIT;
-		/* Falls ikonifiziert, dann ursprÅngliche Koordinaten eintragen */
+		/* Falls ikonifiziert, dann urspruengliche Koordinaten eintragen */
 		if (win->state & WSICON) {
 			win->curr.x = win->save.x;
 			win->curr.y = win->save.y;
@@ -5283,8 +5101,8 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	area.w = w;
 	area.h = h;
 
-	if (win->state & WSICON) /* Fenster ikonifiziert */
-	{
+	if (win->state & WSICON) {
+		/* Fenster ikonifiziert */
 		if (win->ictree) {
 			win->ictree->ob_x = win->work.x;
 			win->ictree->ob_y = win->work.y;
@@ -5296,8 +5114,8 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 			vsf_interior(tb.vdi_handle, FIS_HOLLOW);
 			vsf_perimeter(tb.vdi_handle, 0);
 		}
-	} else /* Fenster normal */
-	{
+	} else {
+		/* Fenster normal */
 		/* Vorbereitungs-/Update-Prozedur aufrufen, falls vorhanden */
 		if (win->update)
 			win->update(win);
@@ -5306,11 +5124,10 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	}
 
 	/* Falls Dialogbox, dann vor dem Redraw Cursor ausschalten */
-	if (win->class==WCDIAL) {
+	if (win->class == WCDIAL) {
 		fi = (FORMINFO *) win->user;
 		if (fi->edit_obj && fi->edit_idx != -1)
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
-					win->handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, win->handle);
 	}
 
 	/* Grîûe des Arbeitsbereiches */
@@ -5323,7 +5140,7 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	while (box.w && box.h) {
 		if (rc_intersect(&full, &box)) /* sichtbar? */
 		{
-			/* Nur durchfÅhren, wenn freies Rechteck innerhalb des zu
+			/* Nur durchfuehren, wenn freies Rechteck innerhalb des zu
 			 zeichnenden Bereichs liegt */
 			if (rc_intersect(&area, &box)) {
 				/* Clipping ein */
@@ -5337,8 +5154,7 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 				if (win->state & WSICON) /* Fenster ikonifiziert */
 				{
 					if (win->ictree)
-						objc_draw(win->ictree, ROOT, MAX_DEPTH, box.x, box.y,
-								box.w, box.h);
+						objc_draw(win->ictree, ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
 					else
 						v_bar(tb.vdi_handle, pxy);
 				} else {
@@ -5356,10 +5172,9 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	}
 
 	/* Falls Dialog dann ggf. Cursor wieder einschalten */
-	if (win->class==WCDIAL) {
+	if (win->class == WCDIAL) {
 		if (fi->edit_obj && fi->edit_idx != -1)
-			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT,
-					win->handle);
+			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, win->handle);
 	}
 
 	/* Maus einschalten und AES freigeben */
@@ -5393,7 +5208,7 @@ void win_scroll(WININFO *win, int x, int y) {
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
 		/*
-		 * Nur durchfÅhren, wenn Teil-Rechteck ganz oder teilweise
+		 * Nur durchfuehren, wenn Teil-Rechteck ganz oder teilweise
 		 * innerhalb des Desktops liegt.
 		 */
 		if (rc_intersect(&tb.desk, &box)) {
@@ -5412,7 +5227,7 @@ void win_scroll(WININFO *win, int x, int y) {
 				mw = box.w - mx;
 				mh = box.h - my;
 
-				/* Koordinaten fÅr Verschiebung berechnen */
+				/* Koordinaten fuer Verschiebung berechnen */
 				if (x > 0)
 					pxy[0] = box.x;
 				else
@@ -5486,8 +5301,8 @@ void win_scroll(WININFO *win, int x, int y) {
 					/* Clipping aus */
 					vs_clip(tb.vdi_handle, 0, pxy);
 				}
-			} else /* Nicht mîglich, dann komplett neu zeichnen */
-			{
+			} else {
+				/* Nicht mîglich, dann komplett neu zeichnen */
 				/* Clipping ein */
 				pxy[0] = box.x;
 				pxy[1] = box.y;
@@ -5519,8 +5334,7 @@ void win_scroll(WININFO *win, int x, int y) {
  -------------------------------------------------------------------------*/
 void win_pupdate(WININFO *win) {
 	/* Grîsse des Arbeitsbereiches abfragen */
-	wind_get(win->handle, WF_WORKXYWH, &win->work.x, &win->work.y,
-			&win->work.w, &win->work.h);
+	wind_get(win->handle, WF_WORKXYWH, &win->work.x, &win->work.y, &win->work.w, &win->work.h);
 
 	/* Window-Update aufrufen, falls vorhanden */
 	if (win->update)
@@ -5549,7 +5363,7 @@ void win_size(WININFO *win, int x, int y, int w, int h) {
 	/* Grîûe setzen */
 	wind_set(win->handle, WF_CURRXYWH, x, y, w, h);
 
-	/* "Fulled"-Status rÅcksetzen */
+	/* "Fulled"-Status ruecksetzen */
 	win->state &= ~WSFULL;
 
 	/* Parameter aktualisieren */
@@ -5559,7 +5373,7 @@ void win_size(WININFO *win, int x, int y, int w, int h) {
 	if (slide) {
 		win_slide(win, S_INIT, 0, 0);
 		/*
-		 * Falls erwÅnscht, dann Redraw-Message fÅr kompletten Arbeits-
+		 * Falls erwuenscht, dann Redraw-Message fuer kompletten Arbeits-
 		 * bereich verschicken.
 		 */
 		if (win->state & WSFULLREDR) {
@@ -5601,7 +5415,7 @@ void win_full(WININFO *win) {
 	/* Slider aktualisieren, falls nîtig */
 	if (win->curr.w != w || win->curr.h != h) {
 		win_slide(win, S_INIT, 0, 0);
-		/* Falls erwÅnscht, dann Redraw-Message fÅr kompletten Arbeits-
+		/* Falls erwuenscht, dann Redraw-Message fuer kompletten Arbeits-
 		 bereich verschicken */
 		if (win->state & WSFULLREDR) {
 			aesmsg[0] = WM_REDRAW;
@@ -5797,8 +5611,7 @@ void rs_textadjust(OBJECT *tree, int bg) {
 	bg &= 0xf;
 	for (i = 0;; i++) {
 		if ((tree[i].ob_type & 0xff) == G_TEXT) {
-			if (((tree[i].ob_flags & EDITABLE) != EDITABLE)
-					&& (tree[i].ob_spec.tedinfo->te_color & 128)) {
+			if (((tree[i].ob_flags & EDITABLE) != EDITABLE) && (tree[i].ob_spec.tedinfo->te_color & 128)) {
 				tree[i].ob_spec.tedinfo->te_thickness = 0;
 				tree[i].ob_spec.tedinfo->te_color &= ~128;
 				tree[i].ob_type = G_BOXTEXT | (tree[i].ob_type & 0xff00);
@@ -5806,8 +5619,7 @@ void rs_textadjust(OBJECT *tree, int bg) {
 			}
 		}
 		if ((tree[i].ob_type & 0xff) == G_BOXTEXT) {
-			if ((tree[i].ob_spec.tedinfo->te_thickness == 0)
-					&& ((tree[i].ob_spec.tedinfo->te_color & 128) != 128)) {
+			if ((tree[i].ob_spec.tedinfo->te_thickness == 0) && ((tree[i].ob_spec.tedinfo->te_color & 128) != 128)) {
 				tree[i].ob_spec.tedinfo->te_color &= ~15;
 				tree[i].ob_spec.tedinfo->te_color |= bg;
 			}
@@ -5870,9 +5682,9 @@ void mn_tnormal(OBJECT *tree, int title, int normal) {
 	{
 		wind_update(BEG_UPDATE);
 		id=menu_bar(0L,-1);
-		if(id==tb.app_id) /* MenÅleiste gehîrt mir */
+		if(id==tb.app_id) /* Menueleiste gehîrt mir */
 		objc_change(tree,title,0,0,0,tb.resx,tb.resy,state,1);
-		else /* MenÅleiste gehîrt jemand anderem */
+		else /* Menueleiste gehîrt jemand anderem */
 		objc_change(tree,title,0,0,0,tb.resx,tb.resy,state,0);
 		wind_update(END_UPDATE);
 	}
@@ -5895,9 +5707,9 @@ void mn_tnormal(OBJECT *tree, int title, int normal) {
  Freedom-Support
  
  fret - 0=auf Antwort von Freedom warten
- 1=sofort zurÅckkehren mit 'Abbruch', Freedom-Antwort
+ 1=sofort zurueckkehren mit 'Abbruch', Freedom-Antwort
  wird spÑter ausgewertet
- fid  - Beliebige ID fÅr spÑtere Auswertung der Freedom-Antwort
+ fid  - Beliebige ID fuer spÑtere Auswertung der Freedom-Antwort
  -------------------------------------------------------------------------*/
 int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 		int fret, int fid) {
@@ -5914,6 +5726,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 	/* Freedom-Daten initialisieren */
 	if (!fdm)
 		fdm = Mxalloc(sizeof(lpath), (tb.sys & SY_XALLOC) ? 0x23 : 0x3);
+
 	if (fdm) {
 		fdm->magic = '?Fdm';
 		fdm->id = fid;
@@ -5932,7 +5745,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 		strcpy(&fpath[(int) strlen(fpath) + 1], "?Fdm");
 
 	/* FSEL-Cookie ermitteln */
-	if (!getcookie('FSEL', (long *) &selectric))
+	if (!getCookie('FSEL', (long *) &selectric))
 		selectric = NULL;
 
 	/* Aufrufen */
@@ -5940,8 +5753,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 	wind_update( BEG_UPDATE);
 	/* MCTRL nur, wenn kein FSEL-Cookie oder Version < 0x200 */
 	use_mctrl = 0;
-	if ((selectric == NULL) || (selectric->id != 'SLCT')
-			|| (selectric->version < 0x200)) {
+	if ((selectric == NULL) || (selectric->id != 'SLCT') || (selectric->version < 0x200)) {
 		use_mctrl = 1;
 	}
 	if (use_mctrl)
@@ -5953,15 +5765,15 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 	if (!tb.mbusy)
 		graf_mouse(tb.mform, 0L);
 
-	/* Auswahl Åber Freedom? */
+	/* Auswahl ueber Freedom? */
 	if (fdm && (fdm->magic == '!Fdm')) {
-		/* Falls gewÅnscht, dann sofortige RÅckkehr */
+		/* Falls gewuenscht, dann sofortige Rueckkehr */
 		if (fret) {
 			*fs_eexbutton = 0;
 			return 1;
 		}
 		/* Jo - dann jetzt auf Antwort von Freedom warten und wÑhrenddessen
-		 die Åbrigen AES-Messages bearbeiten */
+		 die uebrigen AES-Messages bearbeiten */
 		tb.sm_modal++;
 		if ((tb.sm_modal == 1) && (tb.modal_on != 0L))
 			tb.modal_on();
@@ -5969,15 +5781,17 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 		while (!done) {
 			mevent.ev_mflags = MU_MESAG;
 			EvntMulti(&mevent);
+
 			/* Unter Single-TOS ggf. neues Top-Window ermitteln */
 			if (!(tb.sys & SY_MULTI) && !(tb.sys & SY_WINX)) {
 				wind_get(0, WF_TOP, &handle);
 				win = win_getwinfo(handle);
 				win_newtop(win);
 			}
+
 			/* Nachrichten auswerten */
 			switch (mevent.ev_mmgpbuf[0]) {
-			case FILE_SELECTED: /* Freedom-RÅckantwort */
+			case FILE_SELECTED: /* Freedom-Rueckantwort */
 				done = 1;
 				ret = 1;
 				memcpy(&fpath, &mevent.ev_mmgpbuf[4], 4L);
@@ -5990,12 +5804,14 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 					strcpy(fs_einsel, fname);
 				}
 				break;
+
 			case WM_ICONIFY:
 			case WM_UNICONIFY:
 			case WM_ALLICONIFY:
 			case WM_CLOSED:
 				mybeep();
 				break;
+
 			case WM_TOPPED:
 			case WM_NEWTOP:
 			case WM_ONTOP:
@@ -6009,6 +5825,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 				aesmsg[7] = 0;
 				appl_write(fdm->server, 16, aesmsg);
 				break;
+
 			case WM_REDRAW:
 			case WM_M_BDROPPED:
 			case WM_BOTTOMED:
@@ -6028,6 +5845,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 						tb.msg_handler(&mevent, 0L);
 				}
 				break;
+
 			default: /* Sonstige Messages (AV etc.) */
 				if (tb.msg_handler)
 					tb.msg_handler(&mevent, 0L);
@@ -6040,7 +5858,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 				tb.modal_off();
 		}
 	} else {
-		/* Nî - dann einfach die RÅckgabewerte vom OS verwenden */
+		/* Nî - dann einfach die Rueckgabewerte vom OS verwenden */
 		strcpy(fs_einpath, fpath);
 	}
 
@@ -6050,7 +5868,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 /**-------------------------------------------------------------------------
  magx_switch()
 
- Aktiviert die MenÅleiste einer Applikation unter MagiC und toppt
+ Aktiviert die Menueleiste einer Applikation unter MagiC und toppt
  deren Fenster in der richtigen Reihenfolge, wenn es nicht die
  aufrufende Applikation selbst und der Parameter top ungleich Null
  ist. Tut auch unter N.AES!
@@ -6062,11 +5880,9 @@ void magx_switch(int id, int top) {
 	int ap_id, twin, magictop, notme, dummy, win, owner, above, winds;
 	static int windows[256];
 
-	/* Nur wenn MagiC oder N.AES Åberhaupt vorhanden */
-#ifndef _NAES
+	/* Nur wenn MagiC oder N.AES ueberhaupt vorhanden */
 	if (!(tb.sys & SY_MAGX) && !(tb.sys & SY_NAES))
 		return;
-#endif
 
 	notme = 1;
 	if (id == -(tb.app_id + 1)) {
@@ -6076,13 +5892,12 @@ void magx_switch(int id, int top) {
 	if (id < 0)
 		return;
 
-	/* EigentÅmer der aktiven MenÅleiste ermitteln */
+	/* Eigentuemer der aktiven Menueleiste ermitteln */
 	ap_id = menu_bar(0x0L, -1);
-	/* EigentÅmer des obersten Fensters ermitteln */
+	/* Eigentuemer des obersten Fensters ermitteln */
 	if (new_wind_get(0, WF_TOP, &twin, &owner, &dummy, &magictop)) {
 		if ((twin == -2) && (tb.sys & SY_MAGX)) {
-			if (!new_wind_get(magictop, WF_OWNER, &owner, &dummy, &dummy,
-					&dummy))
+			if (!new_wind_get(magictop, WF_OWNER, &owner, &dummy, &dummy, &dummy))
 				owner = -1;
 		}
 	} else
@@ -6109,22 +5924,22 @@ void magx_switch(int id, int top) {
 			}
 		}
 	}
-#ifndef _NAES
+
 	if (tb.sys & SY_MAGX) {
 		if (tb.scr_id >= 0) {
-			aesmsg[0] = 101; /* Special-Event fÅr den MagiC-Screen-Manager */
+			aesmsg[0] = 101; /* Special-Event fuer den MagiC-Screen-Manager */
 			aesmsg[1] = tb.app_id;
 			aesmsg[2] = 0;
 			aesmsg[3] = 0;
 			aesmsg[4] = 'MA';
 			aesmsg[5] = 'GX';
-			aesmsg[6] = 2; /* Unterfunktion: MenÅleiste umschalten */
-			aesmsg[7] = id; /* ID des EigentÅmers */
+			aesmsg[6] = 2; /* Unterfunktion: Menueleiste umschalten */
+			aesmsg[7] = id; /* ID des Eigentuemers */
 			appl_write(tb.scr_id, 16, aesmsg);
 		}
 	} else
-#endif /* _NAES */
 		appl_control(id, 12, 0L);
+
 	/* Bei Bedarf jetzt alle Fenster toppen */
 	if (top && (!notme || (id != tb.app_id))) {
 		for (win = 0; win < winds; win++) {
@@ -6148,9 +5963,9 @@ void magx_switch(int id, int top) {
  * flag: TRUE  - Screen -> Buffer
  *       FALSE - Buffer -> Screen
  *
- * RÅckgabe:
+ * Rueckgabe:
  * FALSE: Kein Speicher mehr frei (bei flag == TRUE) oder kein
- *        zurÅckzukopierender Puffer vorhanden (flag == FALSE)
+ *        zurueckzukopierender Puffer vorhanden (flag == FALSE)
  * TRUE: Alles OK. Nur dann darf nach flag == TRUE ein Aufruf
  *       mit flag == FALSE folgen
  */
@@ -6195,8 +6010,7 @@ int Screen2Buffer(int x, int y, int w, int h, int flag) {
 	buffers[count].fd_r3 = 0;
 
 	if (flag == TRUE) {
-		msize = (long) buffers[count].fd_wdwidth * 2L * (long) h
-				* (long) tb.planes;
+		msize = (long) buffers[count].fd_wdwidth * 2L * (long) h * (long) tb.planes;
 		buffers[count].fd_addr = malloc(msize);
 		if (!buffers[count].fd_addr)
 			return (FALSE);
@@ -6290,15 +6104,15 @@ void grf_ghostbox(int *pxy, int n) {
  * grf_dragbox
  *
  * Wie graf_dragbox, allerdings tastaturbedienbar und auch mit nicht
- * gedrÅckter Maustaste aufrufbar.
+ * gedrueckter Maustaste aufrufbar.
  *
  * Eingabe:
  * w/h: Ausmaûe der zu plazierenden Box
  * bx/by/bw/bh: Koordinaten und Ausmaûe der begrenzenden Box
- * sx/sy: Startkoordinaten (-1 fÅr jeweils aktuelle Mausposition)
+ * sx/sy: Startkoordinaten (-1 fuer jeweils aktuelle Mausposition)
  * dx/dy: Zeiger auf Zielkoordinaten
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Fehler aufgetreten
  * sonst: Alles OK, Zielkoordinaten in *dx und *dy abgelegt.
  */
@@ -6307,8 +6121,7 @@ int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
 	EVENT event;
 	int lx, ly, xy[10], key, d, done = 0;
 
-	if ((w <= 0) || (h <= 0) || (bx < 0) || (by < 0) || (bw <= 0) || (bh <= 0)
-			|| (w > bw) || (h > bh)) {
+	if ((w <= 0) || (h <= 0) || (bx < 0) || (by < 0) || (bw <= 0) || (bh <= 0) || (w > bw) || (h > bh)) {
 		return (0);
 	}
 	wind_update( BEG_UPDATE);
@@ -6428,45 +6241,6 @@ int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
 }
 
 /**
- * dial_setopt
- *
- * Setzt den Status eines Dialogobjektes anhand eines Optionswertes.
- *
- * Eingabe:
- * tree: Zeiger auf den Objektbaum
- * obj: Nummer des Objektes
- * state: Zu setzende bzw. lîschende Statusmaske (ob_state) des
- *        Objektes
- * opt: Zu setzende Option (0: state wird entfernt, sonst: state wird
- *      gesetzt)
- */
-void dial_setopt(OBJECT *tree, int obj, int state, int opt) {
-	if (opt)
-		tree[obj].ob_state |= state;
-	else
-		tree[obj].ob_state &= ~state;
-}
-
-/**
- * dial_getopt
- *
- * Ermittelt anhand des Status eines Dialogobjektes einen
- * Optionswert.
- *
- * Eingabe:
- * tree: Zeiger auf den Objektbaum
- * obj: Nummer des Objektes
- * state: Zu testende Statusmaske (ob_state) des Objektes
- *
- * RÅckgabe:
- * 0: Option nicht gesetzt ((ob_state & state) == 0)
- * 1: Option gesetzt ((ob_state & state) != 0)
- */
-int dial_getopt(OBJECT *tree, int obj, int state) {
-	return (!!(tree[obj].ob_state & state));
-}
-
-/**
  * _v_opnvwk
  *
  * Spezielles v_opnvwk, das einen Fehler im TrueColor-Modus des
@@ -6503,7 +6277,7 @@ void _v_opnvwk(int *work_in, int *handle, int *work_out) {
  * deflt: Zu liefernder Name, wenn Applikationsname nicht ermittelt
  +        werden kann.
  *
- * RÅckgabe:
+ * Rueckgabe:
  * Zeiger auf statischen Puffer mit dem Applikationsnamen oder
  * deflt
  */
@@ -6537,21 +6311,19 @@ char *appl_name(int id, char *deflt) {
  * Verschickt eine AES-Nachricht an eine Applikation.
  *
  * Eingabe:
- * id: AES-ID der EmpfÑngerapplikation
+ * id: AES-ID der Empfaengergerapplikation
  * message: Die zu verschickende Nachricht
  * pointers: Bitvektor, der angibt, welche Parameter Pointer sind.
  *        - PT34: par1 ist Pointer, par2 wird nicht beachtet
  *        - PT45: par2  "     "   , par3   "    "       "
  *        - PT56: par3  "     "   , par4   "    "       "
  *        - PT67: par4  "     "   , par5   "    "       "
- *        NatÅrlich sind Kombinationen wie PT34|PT45 sinnlos!
- * par1 - par5: Die Parameter fÅr die Nachricht, die fÅr msg[3] bis
+ *        Natuerlich sind Kombinationen wie BV34|BV45 sinnlos!
+ * par1 - par5: Die Parameter fuerr die Nachricht, die fuer msg[3] bis
  *              msg[7] eingesetzt werden. Siehe auch pointers.
  */
 void appl_send(int id, int message, int pointers, long par1, long par2,
 		long par3, long par4, long par5) {
-	int aesmsg[8];
-
 	aesmsg[0] = message;
 	aesmsg[1] = tb.app_id;
 	aesmsg[2] = 0;
@@ -6561,15 +6333,16 @@ void appl_send(int id, int message, int pointers, long par1, long par2,
 	aesmsg[6] = (int) par4;
 	aesmsg[7] = (int) par5;
 	if (pointers & PT34)
-		long_2_int(par1, &aesmsg[3], &aesmsg[4]);
+		long2int(par1, &aesmsg[3], &aesmsg[4]);
 	if (pointers & PT45)
-		long_2_int(par2, &aesmsg[4], &aesmsg[5]);
+		long2int(par2, &aesmsg[4], &aesmsg[5]);
 	if (pointers & PT56)
-		long_2_int(par3, &aesmsg[5], &aesmsg[6]);
+		long2int(par3, &aesmsg[5], &aesmsg[6]);
 	if (pointers & PT67)
-		long_2_int(par4, &aesmsg[6], &aesmsg[7]);
+		long2int(par4, &aesmsg[6], &aesmsg[7]);
 	appl_write(id, 16, aesmsg);
 }
+
 
 /**
  * calc_small_text_width
@@ -6579,7 +6352,7 @@ void appl_send(int id, int message, int pointers, long par1, long par2,
  * Eingabe:
  * text: Zeiger auf Text
  *
- * RÅckgabe:
+ * Rueckgabe:
  * Breite von text in Pixeln
  */
 int calc_small_text_width(char *text) {
