@@ -21,8 +21,10 @@
  * @license    LGPL
  */
 
+#define USERDEF_LIB
+#include "..\include\dudolib.h"
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #ifdef __MINT__
 #include <mintbind.h>
@@ -30,8 +32,6 @@
 #include <tos.h>
 #endif
 
-#define USERDEF_LIB
-#include "..\include\dudolib.h"
 #pragma warn -rpt
 #pragma warn -sus
 #include ".\rsrc\userimg.h"
@@ -69,21 +69,25 @@ static BOOLEAN fontsLoaded = FALSE;
 /*------------------------------------------------------------------*/
 /*  local function prototypes                                       */
 /*------------------------------------------------------------------*/
-static void fix_editfield(OBJECT *tree);
-static void fix_popup(OBJECT *tree, WORD i);
-static WORD set_BOX(OBJECT *tree, WORD object, UBPARM *ubparm);
-static WORD set_BUTTON(OBJECT *tree, WORD object, UBPARM *ubparm);
-#ifdef _USR_EDITFIELD_
-static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield);
-#else
-static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm);
+#if 0
+static void fix_editfield(OBJECT *objectTree);
 #endif
-static void set_arrowbut(OBJECT *tree, WORD object, USERBLK *userblk, UBPARM *ubparm);
-static void set_dcrbutton(OBJECT *tree, WORD object, USERBLK *userblk, UBPARM *ubparm);
-static void set_underline(OBJECT *tree, WORD object, UBPARM *ubparm);
-static void objc_create(OBJECT *tree, WORD obj, WORD next, WORD head, WORD tail,
+static void fixPopup(OBJECT *objectTree, WORD objectIdx);
+static WORD set_BOX(OBJECT *objectTree, WORD object, UBPARM *ubparm);
+static WORD set_BUTTON(OBJECT *objectTree, WORD object, UBPARM *ubparm);
+#ifdef _USR_EDITFIELD_
+static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield);
+#else
+static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm);
+#endif
+static void set_arrowbut(OBJECT *objectTree, WORD object, USERBLK *userblk, UBPARM *ubparm);
+static void set_dcrbutton(OBJECT *objectTree, WORD object, USERBLK *userblk, UBPARM *ubparm);
+static void set_underline(OBJECT *objectTree, WORD object, UBPARM *ubparm);
+#if 0
+static void objc_create(OBJECT *objectTree, WORD obj, WORD next, WORD head, WORD tail,
 		WORD type, WORD flags, WORD state, LONG spec, WORD x, WORD y, WORD w,
 		WORD h);
+#endif
 static void transformImages(void);
 static BOOLEAN get_cookie(LONG cookie, LONG *value);
 
@@ -124,7 +128,7 @@ WORD initDudolib(void) {
 
 	userdef = (USERDEF *) malloc(sizeof(USERDEF));
 	if (userdef == NULL)
-		return USR_OUTOFMEMORY;
+		return (USR_OUTOFMEMORY);
 
 	/* VDI-Workstation oeffnen. */
 	userdef->vdi_handle = graf_handle(&aeschar_w, &aeschar_h, &du, &du);
@@ -132,7 +136,7 @@ WORD initDudolib(void) {
 	if (userdef->vdi_handle <= 0) {
 		free(userdef);
 		userdef = NULL;
-		return USR_NOVDIHANDLE;
+		return (USR_NOVDIHANDLE);
 	}
 
 	/* AES Font ermitteln und in dieser Groesse fuer die virtuelle Workstation setzen. */
@@ -193,7 +197,7 @@ WORD initDudolib(void) {
 	if (userdef->img_size != IMGSIZE_NONE)
 		transformImages();
 
-	return USR_NOERROR;
+	return (USR_NOERROR);
 }
 
 /**
@@ -215,7 +219,7 @@ void releaseDudolib(void) {
 /**
  * Diese Routine installiert die Userdefined Objects fuer einen bestimmten Dialog.
  *
- * @param *tree Zeiger auf Objekt-Baum, in dem Userdef's installiert werden sollen.
+ * @param *objectTree Zeiger auf Objekt-Baum, in dem Userdef's installiert werden sollen.
  * @param is_menu bei dem Objekt-Baum handelt es sich um eine Menueleiste (TRUE) oder nicht (FALSE)
  *
  * @return USR_NOERROR       - kein Fehler/alles Ok
@@ -228,7 +232,7 @@ void releaseDudolib(void) {
  *   is_menu - gibt an, ob der uebergebene Baum eine Menueleiste
  *             ist (TRUE) oder nicht (FALSE).
  * Typ OBJECT:
- *   *tree   - Zeiger auf den Dialog, in dem Userdef's installiert
+ *   *objectTree   - Zeiger auf den Dialog, in dem Userdef's installiert
  *             werden sollen.
  *
  * Rueckgabe-Variablen:
@@ -240,7 +244,7 @@ void releaseDudolib(void) {
  *   USR_NOTINSTALLED  - die Library wurde noch nicht initialisiert.
  *   USR_OUTOFMEMORY   - kein Speicher mehr frei.
  */
-WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
+WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 #ifdef _USR_EDITFIELD_
 	BOOLEAN isEditfield = FALSE;
 #endif
@@ -256,8 +260,8 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 		do {
 			++i;
 
-			if ((tree[i].ob_type & 0xFF) == G_STRING) {
-				if ((tree[i].ob_state & DISABLED) && (tree[i].ob_spec.free_string[0] == '-')) {
+			if ((objectTree[i].ob_type & 0xFF) == G_STRING) {
+				if ((objectTree[i].ob_state & DISABLED) && (objectTree[i].ob_spec.free_string[0] == '-')) {
 					userblk = (USERBLK *) malloc(sizeof(USERBLK));
 					if (userblk == NULL)
 						return (USR_OUTOFMEMORY);
@@ -276,12 +280,12 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 					userblk->ub_code = separator;
 					userblk->ub_parm = (LONG) ubparm;
 
-					tree[i].ob_type &= 0xff00U;
-					tree[i].ob_type |= G_USERDEF;
-					tree[i].ob_spec.userblk = userblk;
+					objectTree[i].ob_type &= 0xff00U;
+					objectTree[i].ob_type |= G_USERDEF;
+					objectTree[i].ob_spec.userblk = userblk;
 				}
 			}
-		} while (!(tree[i].ob_flags & LASTOB));
+		} while (!(objectTree[i].ob_flags & LASTOB));
 	} else {
 		do {
 			++i;
@@ -291,31 +295,31 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 			 * nur wenn noch kein erweiterter Objekttyp eingetragen
 			 * wurde.
 			 */
-			if ((tree[i].ob_state & WHITEBAK) && (tree[i].ob_type & 0xFF00) == 0) {
-				switch (tree[i].ob_type & 0xff) {
+			if ((objectTree[i].ob_state & WHITEBAK) && (objectTree[i].ob_type & 0xFF00) == 0) {
+				switch (objectTree[i].ob_type & 0xff) {
 				case G_STRING:
-					if ((tree[i].ob_state >> 8) == 255) {
-						tree[i].ob_type &= 0xFF;
-						tree[i].ob_type |= UNDERLINE << 8;
+					if ((objectTree[i].ob_state >> 8) == 255) {
+						objectTree[i].ob_type &= 0xFF;
+						objectTree[i].ob_type |= UNDERLINE << 8;
 					} else {
-						tree[i].ob_type &= 0xFF;
-						tree[i].ob_type |= TRANSTEXT << 8;
+						objectTree[i].ob_type &= 0xFF;
+						objectTree[i].ob_type |= TRANSTEXT << 8;
 					}
 					break;
 				case G_BUTTON:
-					tree[i].ob_type &= 0xFF;
-					tree[i].ob_type |= DCRBUTTON << 8;
+					objectTree[i].ob_type &= 0xFF;
+					objectTree[i].ob_type |= DCRBUTTON << 8;
 					break;
 				}
 			}
 
-			if ((i == 0) && (tree[i].ob_type & 0xff) == G_BOX && (tree[i].ob_state & OUTLINED)) {
-				tree[i].ob_type &= 0xFF;
-				tree[i].ob_type |= BACKGRDBOX << 8;
+			if ((i == 0) && (objectTree[i].ob_type & 0xff) == G_BOX && (objectTree[i].ob_state & OUTLINED)) {
+				objectTree[i].ob_type &= 0xFF;
+				objectTree[i].ob_type |= BACKGRDBOX << 8;
 			}
 
 #ifdef _USR_EDITFIELD_
-			if ((tree[i].ob_flags & EDITABLE) && (tree[i].ob_type >> 8) > 0)
+			if ((objectTree[i].ob_flags & EDITABLE) && (objectTree[i].ob_type >> 8) > 0)
 				isEditfield = TRUE;
 			else
 				isEditfield = FALSE;
@@ -326,9 +330,9 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 			 * wird ueberprueft, welcher Userdef gesetzt werden muss.
 			 */
 #ifdef _USR_EDITFIELD_
-			if ((tree[i].ob_type >> 8) > 0 || isEditfield == TRUE) {
+			if ((objectTree[i].ob_type >> 8) > 0 || isEditfield == TRUE) {
 #else
-			if ((tree[i].ob_type >> 8) > 0) {
+			if ((objectTree[i].ob_type >> 8) > 0) {
 #endif
 				userblk = (USERBLK *) malloc(sizeof(USERBLK));
 				if (userblk == NULL)
@@ -344,12 +348,12 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 				ubparm->magic = 'DIRK';
 
 				/* alte Objekt-Strukturen merken */
-				ubparm->ob_spec = tree[i].ob_spec;
-				ubparm->ob_type = tree[i].ob_type;
-				ubparm->ob_size.g_x = tree[i].ob_x;
-				ubparm->ob_size.g_y = tree[i].ob_y;
-				ubparm->ob_size.g_w = tree[i].ob_width;
-				ubparm->ob_size.g_h = tree[i].ob_height;
+				ubparm->ob_spec = objectTree[i].ob_spec;
+				ubparm->ob_type = objectTree[i].ob_type;
+				ubparm->ob_size.g_x = objectTree[i].ob_x;
+				ubparm->ob_size.g_y = objectTree[i].ob_y;
+				ubparm->ob_size.g_w = objectTree[i].ob_width;
+				ubparm->ob_size.g_h = objectTree[i].ob_height;
 
 				/* Default-Werte setzen. */
 				ubparm->uline_pos = -1;
@@ -363,11 +367,11 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 				 * UBPARM-Struktur mit den Werten des Objekt-Typs
 				 * fuellen.
 				 */
-				switch (tree[i].ob_type & 0xFF) {
+				switch (objectTree[i].ob_type & 0xFF) {
 				case G_BOX:
 				case G_IBOX:
 				case G_BOXCHAR:
-					if (set_BOX(tree, i, ubparm) == USR_OUTOFMEMORY) {
+					if (set_BOX(objectTree, i, ubparm) == USR_OUTOFMEMORY) {
 						free(userblk);
 						free(ubparm);
 						return (USR_OUTOFMEMORY);
@@ -376,7 +380,7 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 
 				case G_STRING:
 				case G_BUTTON:
-					if (set_BUTTON(tree, i, ubparm) == USR_OUTOFMEMORY) {
+					if (set_BUTTON(objectTree, i, ubparm) == USR_OUTOFMEMORY) {
 						free(userblk);
 						free(ubparm);
 						return (USR_OUTOFMEMORY);
@@ -388,9 +392,9 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 				case G_FTEXT:
 				case G_FBOXTEXT:
 #ifdef _USR_EDITFIELD_
-					if (set_TEXT(tree, i, ubparm, isEditfield) == USR_OUTOFMEMORY) {
+					if (set_TEXT(objectTree, i, ubparm, isEditfield) == USR_OUTOFMEMORY) {
 #else
-					if (set_TEXT(tree, i, ubparm) == USR_OUTOFMEMORY) {
+					if (set_TEXT(objectTree, i, ubparm) == USR_OUTOFMEMORY) {
 #endif
 						free(userblk);
 						free(ubparm);
@@ -407,9 +411,9 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 				 * zugegriffen werden.
 				 */
 				userblk->ub_parm = (LONG) ubparm;
-				tree[i].ob_type &= 0xff00U;
-				tree[i].ob_type |= G_USERDEF;
-				tree[i].ob_spec.userblk = userblk;
+				objectTree[i].ob_type &= 0xff00U;
+				objectTree[i].ob_type |= G_USERDEF;
+				objectTree[i].ob_spec.userblk = userblk;
 
 				/*
 				 * Nun noch die Zeichenroutinen einhaengen.
@@ -419,36 +423,36 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 					printf("editfield\n");
 					ubparm->scrollOffset = 0;
 					ubparm->cursorIndex = 0;
-					tree[i].ob_flags &= ~EDITABLE;
+					objectTree[i].ob_flags &= ~EDITABLE;
 					userblk->ub_code = backgrdbox;
 				} else {
 #endif
 					switch (ubparm->ob_type >> 8) {
 					case BACKGRDBOX:
-						if (tree[i].ob_state & SHADOWED) {
+						if (objectTree[i].ob_state & SHADOWED) {
 							ubparm->isPopup = TRUE;
-							fix_popup(tree, i);
+							fixPopup(objectTree, i);
 
-							tree[i].ob_width += 7;
-							tree[i].ob_height += 7;
+							objectTree[i].ob_width += 7;
+							objectTree[i].ob_height += 7;
 						} else
 							ubparm->isPopup = FALSE;
 
-						tree[i].ob_state = NORMAL;
+						objectTree[i].ob_state = NORMAL;
 						ubparm->ob_spec.obspec.framesize = 0;
 						userblk->ub_code = backgrdbox;
 
-						setBackgroundBorderLine(tree, i, FALSE);
-						setBackgroundBorderOffset(tree, i, 0, 0, 0, 0);
+						setBackgroundBorderLine(objectTree, i, FALSE);
+						setBackgroundBorderOffset(objectTree, i, 0, 0, 0, 0);
 						break;
 
 					case ARROWBUT:
 						userblk->ub_code = arrowbutton;
-/*						set_arrowbut(tree, i, userblk, ubparm);*/
+/*						set_arrowbut(objectTree, i, userblk, ubparm);*/
 						break;
 
 					case DCRBUTTON:
-						set_dcrbutton(tree, i, userblk, ubparm);
+						set_dcrbutton(objectTree, i, userblk, ubparm);
 						break;
 
 					case UNDERLINE:
@@ -456,7 +460,7 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 						break;
 
 					case TRANSTEXT:
-						set_underline(tree, i, ubparm);
+						set_underline(objectTree, i, ubparm);
 						userblk->ub_code = transtext;
 						break;
 
@@ -465,25 +469,25 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 						break;
 
 					case CARDBOX:
-						tree[i].ob_width += 2;
+						objectTree[i].ob_width += 2;
 						userblk->ub_code = cardbox;
 						break;
 
 					case CARDTITLE:
-						tree[i].ob_height++;
-						set_underline(tree, i, ubparm);
+						objectTree[i].ob_height++;
+						set_underline(objectTree, i, ubparm);
 						userblk->ub_code = cardtitle;
 						break;
 
 					case CARDLINE:
-						tree[i].ob_height++;
-						tree[i].ob_width += 2;
+						objectTree[i].ob_height++;
+						objectTree[i].ob_width += 2;
 						userblk->ub_code = cardline;
 						break;
 
 					case SEPARATOR:
 						ubparm->isMenu = FALSE;
-						if (tree[i].ob_state & DRAW3D)
+						if (objectTree[i].ob_state & DRAW3D)
 							ubparm->separator3d = TRUE;
 						else
 							ubparm->separator3d = FALSE;
@@ -497,8 +501,8 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 						 * deshalb muss der dafuer allozierte Speicher
 						 * wieder freigegeben werden.
 						 */
-						tree[i].ob_spec = ubparm->ob_spec;
-						tree[i].ob_type = ubparm->ob_type;
+						objectTree[i].ob_spec = ubparm->ob_spec;
+						objectTree[i].ob_type = ubparm->ob_type;
 						free(userblk);
 						free(ubparm);
 					} /* switch */
@@ -506,10 +510,10 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
 				}
 #endif
 			}
-		} while (!(tree[i].ob_flags & LASTOB));
+		} while (!(objectTree[i].ob_flags & LASTOB));
 	}
 
-	return USR_NOERROR;
+	return (USR_NOERROR);
 }
 
 /**
@@ -520,7 +524,7 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
  * Eingabe-Variablen:
  *
  * Typ OBJECT:
- *   *tree - Zeiger auf den Objektbaum
+ *   *objectTree - Zeiger auf den Objektbaum
  *
  * Rueckgabe-Variablen:
  *
@@ -529,28 +533,28 @@ WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu) {
  *
  *   USR_NOERROR       - kein Fehler/alles Ok
  */
-WORD unsetUserdefs(OBJECT *tree) {
+WORD unsetUserdefs(OBJECT *objectTree) {
 	WORD i = -1;
 	LONG magic = -1l;
 	USERBLK *userblk;
 	UBPARM *ubparm;
 
-	if (tree == NULL)
-		return USR_NOOBJECT;
+	if (objectTree == NULL)
+		return (USR_NOOBJECT);
 
 	do {
 		++i;
 
-		if ((tree[i].ob_type & 0x00ff) == G_USERDEF) {
-			userblk = tree[i].ob_spec.userblk;
+		if ((objectTree[i].ob_type & 0x00ff) == G_USERDEF) {
+			userblk = objectTree[i].ob_spec.userblk;
 			if ((ubparm = (UBPARM *) userblk->ub_parm) != NULL && ubparm->magic == 'DIRK') {
 				magic = ubparm->magic;
-				tree[i].ob_spec = ubparm->ob_spec;
-				tree[i].ob_type = ubparm->ob_type;
-				tree[i].ob_x = ubparm->ob_size.g_x;
-				tree[i].ob_y = ubparm->ob_size.g_y;
-				tree[i].ob_width = ubparm->ob_size.g_w;
-				tree[i].ob_height = ubparm->ob_size.g_h;
+				objectTree[i].ob_spec = ubparm->ob_spec;
+				objectTree[i].ob_type = ubparm->ob_type;
+				objectTree[i].ob_x = ubparm->ob_size.g_x;
+				objectTree[i].ob_y = ubparm->ob_size.g_y;
+				objectTree[i].ob_width = ubparm->ob_size.g_w;
+				objectTree[i].ob_height = ubparm->ob_size.g_h;
 
 				if (ubparm->text != NULL)
 					free(ubparm->text);
@@ -562,36 +566,50 @@ WORD unsetUserdefs(OBJECT *tree) {
 				magic = -1l;
 			}
 		}
-	} while (!(tree[i].ob_flags & LASTOB));
+	} while (!(objectTree[i].ob_flags & LASTOB));
 
-	return USR_NOERROR;
+	return (USR_NOERROR);
 }
 
 /**
+ * Diese Methode liefert den OBSPEC des Userdefs.
  *
+ * @param *objectTree Zeiger auf Objekt-Baum
+ * @param objectIdx Objekt-Index des Text-Objekts im Objekt-Baum
+ * @return
  */
 #ifdef __GNUC__
-U_OB_SPEC get_obspec(OBJECT *tree, WORD object) {
+U_OB_SPEC get_obspec(OBJECT *objectTree, WORD objectIdx) {
 #else
-OBSPEC get_obspec(OBJECT *tree, WORD object) {
+OBSPEC get_obspec(OBJECT *objectTree, WORD objectIdx) {
 #endif
 	UBPARM *ubparm;
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return (tree[object].ob_spec);
+	if ((objectTree[objectIdx].ob_type & 0xFF) != G_USERDEF)
+		return (objectTree[objectIdx].ob_spec);
 
-	ubparm = (UBPARM *) tree[object].ob_spec.userblk->ub_parm;
+	ubparm = (UBPARM *) objectTree[objectIdx].ob_spec.userblk->ub_parm;
 	if (ubparm->magic == 'DIRK')
 		return (ubparm->ob_spec);
+
+	return (objectTree[objectIdx].ob_spec);
 }
 
-LONG get_obtype(OBJECT *tree, WORD object) {
+/**
+ * Diese Methode liefert Object-Typ des allgemeinen Objekts oder des Userdefs.
+ * Im Fall, dass es sich um ein fremdes Userdef handelt, wird NULL geliefert.
+ *
+ * @param *objectTree Zeiger auf Objekt-Baum
+ * @param objectIdx Objekt-Index des Text-Objekts im Objekt-Baum
+ * @return
+ */
+LONG get_obtype(OBJECT *objectTree, WORD objectIdx) {
 	UBPARM *ubparm;
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return (tree[object].ob_type);
+	if ((objectTree[objectIdx].ob_type & 0xFF) != G_USERDEF)
+		return (objectTree[objectIdx].ob_type);
 
-	ubparm = (UBPARM *) tree[object].ob_spec.userblk->ub_parm;
+	ubparm = (UBPARM *) objectTree[objectIdx].ob_spec.userblk->ub_parm;
 	if (ubparm->magic == 'DIRK')
 		return (ubparm->ob_type);
 
@@ -672,7 +690,7 @@ void setShortcutLineColor(WORD color) {
 /*  private functions                                               */
 /*------------------------------------------------------------------*/
 #if 0
-void fix_editfield(OBJECT *tree) {
+void fix_editfield(OBJECT *objectTree) {
 	WORD i = -1,
 	lastobj = -1;
 
@@ -680,18 +698,18 @@ void fix_editfield(OBJECT *tree) {
 
 	do {
 		++lastobj;
-	} while (!(tree[lastobj].ob_flags & LASTOB));
+	} while (!(objectTree[lastobj].ob_flags & LASTOB));
 
 	test = lastobj;
 	do {
 		i++;
 
-		if (tree[i].ob_type == G_FTEXT) {
+		if (objectTree[i].ob_type == G_FTEXT) {
 			/*
 			 * Beim bisher letzten Objekt wird das Flag 'LASTOB'
 			 * geloescht.
 			 */
-			tree[lastobj].ob_flags &= ~LASTOB;
+			objectTree[lastobj].ob_flags &= ~LASTOB;
 			lastobj++;
 
 			/*
@@ -699,61 +717,61 @@ void fix_editfield(OBJECT *tree) {
 			 * wird. Dieses wird zunaechst als letztes Objekt
 			 * aufgenommen.
 			 */
-			objc_create(tree, lastobj, i, -1, -1,
-					tree[i].ob_type, tree[i].ob_flags,
-					tree[i].ob_state | LASTOB, (LONG)(tree[i].ob_spec.index),
-					tree[i].ob_x, tree[i].ob_y,
-					tree[i].ob_width, tree[i].ob_height);
+			objc_create(objectTree, lastobj, i, -1, -1,
+					objectTree[i].ob_type, objectTree[i].ob_flags,
+					objectTree[i].ob_state | LASTOB, (LONG)(objectTree[i].ob_spec.index),
+					objectTree[i].ob_x, objectTree[i].ob_y,
+					objectTree[i].ob_width, objectTree[i].ob_height);
 
 			/*
 			 * Das Edit-Feld durch die Box ersetzen.
 			 */
-			tree[i].ob_type = G_BUTTON|0x1300;
-			tree[i].ob_flags &= ~EDITABLE;
-			tree[i].ob_spec.free_string = "Test";
+			objectTree[i].ob_type = G_BUTTON|0x1300;
+			objectTree[i].ob_flags &= ~EDITABLE;
+			objectTree[i].ob_spec.free_string = "Test";
 
 			/*
 			 * Vater von dem Editfeld wird das neu erzeugte Objekt.
 			 */
-			tree[i].ob_head = lastobj;
-			tree[i].ob_tail = lastobj;
+			objectTree[i].ob_head = lastobj;
+			objectTree[i].ob_tail = lastobj;
 
 			/*
 			 * Das neue Objekt als Kind der Box hinzufuegen.
 			 */
-			/*			objc_add(tree, i, lastobj);*/
+			/*			objc_add(objectTree, i, lastobj);*/
 
 			/*
 			 * Objektnummer des Edit-Feldes anpassen.
 			 */
-			/*			objc_order(tree, lastobj, i+1);*/
+			/*			objc_order(objectTree, lastobj, i+1);*/
 			/*			i++;*/
 
 			/*	lastobj++;
-			 objc_create(tree, lastobj, tree[i].ob_next, i, i,
+			 objc_create(objectTree, lastobj, objectTree[i].ob_next, i, i,
 			 G_BUTTON|0x0F00, 0x0400,
 			 NORMAL|LASTOB, 0x00021100L,
-			 tree[i].ob_x, tree[i].ob_y,
-			 tree[i].ob_width, tree[i].ob_height);
+			 objectTree[i].ob_x, objectTree[i].ob_y,
+			 objectTree[i].ob_width, objectTree[i].ob_height);
 
 			 /*
 			 * Vater von dem Editfeld wird das neu erzeugte Objekt.
 			 */
-			/*	tree[i].ob_next = lastobj;*/
+			/*	objectTree[i].ob_next = lastobj;*/
 
 			/*
 			 * Beim bisher letzten Objekt wird das Flag 'LASTOB' geloescht.
 			 */
-			tree[lastobj-1].ob_flags &= ~LASTOB;
+			objectTree[lastobj-1].ob_flags &= ~LASTOB;
 
-			if (tree[tree[lastobj].ob_next].ob_head == lastobj)
-			tree[tree[lastobj].ob_next].ob_head = lastobj;*/
+			if (objectTree[objectTree[lastobj].ob_next].ob_head == lastobj)
+			objectTree[objectTree[lastobj].ob_next].ob_head = lastobj;*/
 
-			/*	objc_order(tree, lastobj, i-1);*/
+			/*	objc_order(objectTree, lastobj, i-1);*/
 
 		}
 
-		/*objc_create(OBJECT *tree, WORD obj, WORD next, WORD head,
+		/*objc_create(OBJECT *objectTree, WORD obj, WORD next, WORD head,
 		 WORD tail, WORD type, WORD flags, WORD state,
 		 LONG spec, WORD x, WORD y, WORD w, WORD h)
 
@@ -767,67 +785,73 @@ void fix_editfield(OBJECT *tree) {
 		EDITABLE|LASTOB, NORMAL, (LONG)&rs_tedinfo[0],
 		0x0000, 0x0000, 0x000A, 0x0001*/
 
-	} while (!(tree[i].ob_flags & LASTOB) && i < test);
+	} while (!(objectTree[i].ob_flags & LASTOB) && i < test);
 }
 #endif
 
-static void set_arrowbut(OBJECT *tree, WORD object, USERBLK *userblk, UBPARM *ubparm) {
+/**
+ *
+ */
+static void set_arrowbut(OBJECT *objectTree, WORD objectIdx, USERBLK *userblk, UBPARM *ubparm) {
 	userblk->ub_code = arrowbutton;
-	ubparm->text[0] = tree[object].ob_spec.obspec.character;
+	ubparm->text[0] = objectTree[objectIdx].ob_spec.obspec.character;
 	ubparm->text[1] = EOS;
 }
 
 /**
  *
  */
-static void fix_popup(OBJECT *tree, WORD i) {
+static void fixPopup(OBJECT *objectTree, WORD objectIdx) {
 	WORD j;
 
-	j = tree[i].ob_head;
+	j = objectTree[objectIdx].ob_head;
 	if (j == NIL)
 		return;
 
 	do {
-		tree[j].ob_x += 2;
-		tree[j].ob_y += 2;
-		j = tree[j].ob_next;
-	} while (j != i);
+		objectTree[j].ob_x += 2;
+		objectTree[j].ob_y += 2;
+		j = objectTree[j].ob_next;
+	} while (j != objectIdx);
 }
 
-static void set_dcrbutton(OBJECT *tree, WORD object, USERBLK *userblk, UBPARM *ubparm) {
+/**
+ *
+ */
+static void set_dcrbutton(OBJECT *objectTree, WORD object, USERBLK *userblk, UBPARM *ubparm) {
 	WORD extent[8];
 
-	set_underline(tree, object, ubparm);
+	set_underline(objectTree, object, ubparm);
 
-	if ((tree[object].ob_flags & ~LASTOB) == TOUCHEXIT) {
-		tree[object].ob_x--;
-		tree[object].ob_y--;
-		tree[object].ob_width += 2;
-		tree[object].ob_height += 2;
+	if ((objectTree[object].ob_flags & ~LASTOB) == TOUCHEXIT) {
+		objectTree[object].ob_x--;
+		objectTree[object].ob_y--;
+		objectTree[object].ob_width += 2;
+		objectTree[object].ob_height += 2;
 
 		userblk->ub_code = exitbutton;
 		return;
 	}
 
 	/* Exit-Button: EXIT, !RBUTTON */
-	if ((tree[object].ob_flags & EXIT) && (tree[object].ob_flags & RBUTTON) == FALSE) {
-		tree[object].ob_x -= 4;
-		tree[object].ob_y -= 5;
-		tree[object].ob_width += 8;
-		tree[object].ob_height += 10;
+	if ((objectTree[object].ob_flags & EXIT) && (objectTree[object].ob_flags & RBUTTON) == FALSE) {
+		objectTree[object].ob_x -= 4;
+		objectTree[object].ob_y -= 5;
+		objectTree[object].ob_width += 8;
+		objectTree[object].ob_height += 10;
 
 		userblk->ub_code = exitbutton;
 		return;
 	}
 
 	/* Radiobutton: RBUTTON */
-	if (tree[object].ob_flags & RBUTTON) {
+	if (objectTree[object].ob_flags & RBUTTON) {
 		userblk->ub_code = radiobutton;
 	}
 	/* Checkbox: !RBUTTON, !EXIT, !SHADOWED */
-	else if ((tree[object].ob_flags & RBUTTON) == FALSE
-			&& (tree[object].ob_flags & EXIT) == FALSE
-			&& (tree[object].ob_flags & SHADOWED) == FALSE) {
+	else if ((objectTree[object].ob_flags & RBUTTON) == FALSE
+			&& (objectTree[object].ob_flags & EXIT) == FALSE
+			&& (objectTree[object].ob_flags & SHADOWED) == FALSE) {
 		userblk->ub_code = checkbox;
 	}
 	/*
@@ -841,43 +865,51 @@ static void set_dcrbutton(OBJECT *tree, WORD object, USERBLK *userblk, UBPARM *u
 	vqt_extent(userdef->vdi_handle, ubparm->text, extent);
 
 	if (userdef->char_w <= 8)
-		tree[object].ob_width = userdef->spaceChar_w * 3 + extent[2];
+		objectTree[object].ob_width = userdef->spaceChar_w * 3 + extent[2];
 	else
-		tree[object].ob_width = userdef->spaceChar_w * 2 + extent[2];
+		objectTree[object].ob_width = userdef->spaceChar_w * 2 + extent[2];
 }
 
-static WORD set_BOX(OBJECT *tree, WORD object, UBPARM *ubparm) {
+/**
+ *
+ */
+static WORD set_BOX(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
 	ubparm->text = (BYTE *) malloc(2);
 	if (ubparm->text == NULL)
 		return (USR_OUTOFMEMORY);
 
-	ubparm->text[0] = tree[object].ob_spec.obspec.character;
+	ubparm->text[0] = objectTree[object].ob_spec.obspec.character;
 	ubparm->text[1] = EOS;
-	ubparm->te_rahmencol = tree[object].ob_spec.obspec.framecol;
-	ubparm->te_textcol = tree[object].ob_spec.obspec.textcol;
+	ubparm->te_rahmencol = objectTree[object].ob_spec.obspec.framecol;
+	ubparm->te_textcol = objectTree[object].ob_spec.obspec.textcol;
 	ubparm->uline_pos = -1;
 
 	return (USR_NOERROR);
 }
 
-static WORD set_BUTTON(OBJECT *tree, WORD object, UBPARM *ubparm) {
-	ubparm->text = (BYTE *) malloc(
-			strlen(tree[object].ob_spec.free_string) + 1);
+/**
+ *
+ */
+static WORD set_BUTTON(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
+	ubparm->text = (BYTE *) malloc(strlen(objectTree[object].ob_spec.free_string) + 1);
 	if (ubparm->text == NULL)
 		return (USR_OUTOFMEMORY);
 
-	strcpy(ubparm->text, tree[object].ob_spec.free_string);
+	strcpy(ubparm->text, objectTree[object].ob_spec.free_string);
 
-	if (tree[object].ob_state & WHITEBAK) {
-		tree[object].ob_type &= 0xFF;
-		tree[object].ob_type |= 18 << 8;
+	if (objectTree[object].ob_state & WHITEBAK) {
+		objectTree[object].ob_type &= 0xFF;
+		objectTree[object].ob_type |= 18 << 8;
 	}
 
 	return (USR_NOERROR);
 }
 
+/**
+ *
+ */
 #ifdef _USR_EDITFIELD_
-static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield) {
+static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield) {
 	if (isEditfield == TRUE) {
 		ubparm->text = (BYTE *) malloc((ubparm->ob_type >> 8) + 1);
 		if (ubparm->text == NULL)
@@ -886,18 +918,18 @@ static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm, BOOLEAN isEditfi
 		ubparm->ob_spec.tedinfo->te_ptext = ubparm->text;
 	} else {
 #else
-		static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm) {
+static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
 #endif
-		ubparm->text = (BYTE *) malloc(strlen(tree[object].ob_spec.tedinfo->te_ptext) + 1);
+		ubparm->text = (BYTE *) malloc(strlen(objectTree[object].ob_spec.tedinfo->te_ptext) + 1);
 		if (ubparm->text == NULL)
 			return (USR_OUTOFMEMORY);
 
-		strcpy(ubparm->text, tree[object].ob_spec.tedinfo->te_ptext);
+		strcpy(ubparm->text, objectTree[object].ob_spec.tedinfo->te_ptext);
 #ifdef _USR_EDITFIELD_
 	}
 #endif
 
-	switch (tree[object].ob_spec.tedinfo->te_just) {
+	switch (objectTree[object].ob_spec.tedinfo->te_just) {
 	case TE_LEFT:
 		ubparm->te_just = TA_LEFT;
 		break;
@@ -910,9 +942,9 @@ static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm, BOOLEAN isEditfi
 		ubparm->te_just = TA_CENTER;
 		break;
 	}
-	ubparm->te_rahmencol = (int) ((unsigned int) (tree[object].ob_spec.tedinfo->te_color) >> 12);
-	ubparm->te_textcol = ((tree[object].ob_spec.tedinfo->te_color) >> 8) & 0x0F;
-	ubparm->te_thickness = tree[object].ob_spec.tedinfo->te_thickness;
+	ubparm->te_rahmencol = (int) ((unsigned int) (objectTree[object].ob_spec.tedinfo->te_color) >> 12);
+	ubparm->te_textcol = ((objectTree[object].ob_spec.tedinfo->te_color) >> 8) & 0x0F;
+	ubparm->te_thickness = objectTree[object].ob_spec.tedinfo->te_thickness;
 	if (ubparm->te_thickness < 0)
 		ubparm->te_thickness *= -1;
 	ubparm->uline_pos = -1;
@@ -920,7 +952,10 @@ static WORD set_TEXT(OBJECT *tree, WORD object, UBPARM *ubparm, BOOLEAN isEditfi
 	return (USR_NOERROR);
 }
 
-VOID clearObject(PARMBLK *parmblock) {
+/**
+ *
+ */
+void clearObject(PARMBLK *parmblock) {
 	WORD pxy[4];
 
 	pxy[0] = parmblock->pb_x;
@@ -934,10 +969,13 @@ VOID clearObject(PARMBLK *parmblock) {
 	v_bar(userdef->vdi_handle, pxy);
 }
 
-VOID clipping(PARMBLK *parmblock, BOOLEAN clip_on) {
+/**
+ *
+ */
+void clipping(PARMBLK *parmblock, BOOLEAN useClipping) {
 	WORD pxy[4];
 
-	if (clip_on == TRUE) {
+	if (useClipping == TRUE) {
 		pxy[0] = parmblock->pb_xc;
 		pxy[1] = parmblock->pb_yc;
 		pxy[2] = pxy[0] + parmblock->pb_wc - 1;
@@ -947,7 +985,10 @@ VOID clipping(PARMBLK *parmblock, BOOLEAN clip_on) {
 		vs_clip(userdef->vdi_handle, 0, pxy);
 }
 
-static VOID set_underline(OBJECT *tree, WORD object, UBPARM *ubparm) {
+/**
+ *
+ */
+static void set_underline(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
 	BYTE button_text[128];
 	WORD i, j;
 
@@ -956,9 +997,9 @@ static VOID set_underline(OBJECT *tree, WORD object, UBPARM *ubparm) {
 
 	ubparm->uline_pos = -1;
 
-	if (tree[object].ob_state & WHITEBAK) {
-		if (((tree[object].ob_state & ~0x8000) >> 8) != 0x7F)
-			ubparm->uline_pos = (tree[object].ob_state & ~0x8000) >> 8;
+	if (objectTree[object].ob_state & WHITEBAK) {
+		if (((objectTree[object].ob_state & ~0x8000) >> 8) != 0x7F)
+			ubparm->uline_pos = (objectTree[object].ob_state & ~0x8000) >> 8;
 /*		strcpy(ubparm->text, button_text);*/
 	} else {
 		i = j = 0;
@@ -980,7 +1021,10 @@ static VOID set_underline(OBJECT *tree, WORD object, UBPARM *ubparm) {
 	}
 }
 
-VOID v_xgtext(WORD x, WORD y, WORD text_effects, UBPARM *ubparm,
+/**
+ *
+ */
+void v_xgtext(WORD x, WORD y, WORD text_effects, UBPARM *ubparm,
 		PARMBLK *parmblk) {
 	BYTE zeichen[2], temp[128];
 	WORD extent[8];
@@ -1013,20 +1057,20 @@ VOID v_xgtext(WORD x, WORD y, WORD text_effects, UBPARM *ubparm,
 }
 
 #if 0
-static VOID objc_create(OBJECT *tree, WORD obj, WORD next, WORD head, WORD tail,
+static void objc_create(OBJECT *objectTree, WORD obj, WORD next, WORD head, WORD tail,
 		WORD type, WORD flags, WORD state, LONG spec, WORD x, WORD y, WORD w,
 		WORD h) {
-	tree[obj].ob_next = next;
-	tree[obj].ob_head = head;
-	tree[obj].ob_tail = tail;
-	tree[obj].ob_type = type;
-	tree[obj].ob_flags = flags;
-	tree[obj].ob_state = state;
-	tree[obj].ob_spec.index = spec;
-	tree[obj].ob_x = x;
-	tree[obj].ob_y = y;
-	tree[obj].ob_width = w;
-	tree[obj].ob_height = h;
+	objectTree[obj].ob_next = next;
+	objectTree[obj].ob_head = head;
+	objectTree[obj].ob_tail = tail;
+	objectTree[obj].ob_type = type;
+	objectTree[obj].ob_flags = flags;
+	objectTree[obj].ob_state = state;
+	objectTree[obj].ob_spec.index = spec;
+	objectTree[obj].ob_x = x;
+	objectTree[obj].ob_y = y;
+	objectTree[obj].ob_width = w;
+	objectTree[obj].ob_height = h;
 }
 #endif
 
@@ -1209,6 +1253,9 @@ static void transformImages(void) {
 	vr_trnfm(userdef->vdi_handle, &temp, &arrt_sel);
 }
 
+/**
+ *
+ */
 static BOOLEAN get_cookie(LONG cookie, LONG *value) {
 	LONG oldstack, *cookiejar;
 
@@ -1233,9 +1280,13 @@ static BOOLEAN get_cookie(LONG cookie, LONG *value) {
 		} else
 			cookiejar = &(cookiejar[2]);
 	} while (cookiejar[-2]);
+
 	return (FALSE);
 }
 
+/**
+ *
+ */
 WORD appl_xgetinfo(WORD type, WORD *out1, WORD *out2, WORD *out3, WORD *out4) {
 	BOOLEAN hasAgi = FALSE;
 	LONG du;
@@ -1252,4 +1303,4 @@ WORD appl_xgetinfo(WORD type, WORD *out1, WORD *out2, WORD *out3, WORD *out4) {
 		return (afnt->afnt_getinfo(type, out1, out2, out3, out4));
 
 	return (0);
-} /* appl_xgetinfo */
+}
