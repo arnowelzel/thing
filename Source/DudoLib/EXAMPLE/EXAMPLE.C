@@ -54,31 +54,31 @@ void main(void) {
 
 	/* Resource-Datei laden. */
 	if (loadRsrc() == FALSE) {
-		form_alert(1, "[3][Can't load RSC-File !][Cancel]");
+		form_alert(1, "[3][Can't load RSC-File !][Exit]");
 		exit(1);
 	}
 
 	/* Die einzelnen Karteikarten zusammenhaengen. */
-	if (cardAdd(&exampleCard, example, BUTTON_BACKGRD, example, BOX_BACKGRD) == USR_OUTOFMEMORY) {
+	if (cardAdd(&exampleCard, example, BUTTON_BACKGRD, BOX_BACKGRD) == USR_OUTOFMEMORY) {
 		form_alert(1, "[3][Out of memory!][Exit]");
 		exit(1);
 	}
-	if (cardAdd(&exampleCard, example, BUTTON_BUTTON, example, BOX_BUTTON) == USR_OUTOFMEMORY) {
-		form_alert(1, "[3][Out of memory!][Exit]");
-		cardRemoveAll(exampleCard);
-		exit(1);
-	}
-	if (cardAdd(&exampleCard, example, BUTTON_HEADLINE, example, BOX_HEADLINE) == USR_OUTOFMEMORY) {
+	if (cardAdd(&exampleCard, example, BUTTON_BUTTON, BOX_BUTTON) == USR_OUTOFMEMORY) {
 		form_alert(1, "[3][Out of memory!][Exit]");
 		cardRemoveAll(exampleCard);
 		exit(1);
 	}
-	if (cardAdd(&exampleCard, example, BUTTON_RAHMEN, example, BOX_RAHMEN) == USR_OUTOFMEMORY) {
+	if (cardAdd(&exampleCard, example, BUTTON_HEADLINE, BOX_HEADLINE) == USR_OUTOFMEMORY) {
 		form_alert(1, "[3][Out of memory!][Exit]");
 		cardRemoveAll(exampleCard);
 		exit(1);
 	}
-	if (cardAdd(&exampleCard, example, BUTTON_SEPARATOR, example, BOX_SEPARATOR) == USR_OUTOFMEMORY) {
+	if (cardAdd(&exampleCard, example, BUTTON_RAHMEN, BOX_RAHMEN) == USR_OUTOFMEMORY) {
+		form_alert(1, "[3][Out of memory!][Exit]");
+		cardRemoveAll(exampleCard);
+		exit(1);
+	}
+	if (cardAdd(&exampleCard, example, BUTTON_SEPARATOR, BOX_SEPARATOR) == USR_OUTOFMEMORY) {
 		form_alert(1, "[3][Out of memory!][Exit]");
 		cardRemoveAll(exampleCard);
 		exit(1);

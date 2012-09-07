@@ -34,4 +34,4 @@ pcstdlib.lib
 pcgemlib.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
-;memdebug.lib
+memdebug.lib
