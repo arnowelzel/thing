@@ -26,10 +26,7 @@
 /*------------------------------------------------------------------*/
 /*  private function prototypes                                     */
 /*------------------------------------------------------------------*/
-void activateCard(CARD *card);
-void deactivateCard(CARD *card);
-void cardShowFields(CARD *card, WORD objectIdx, WORD objectParentIdx);
-void cardHideFields(CARD *card, WORD objectIdx, WORD objectParentIdx);
+void handleEditfields(CARD *card, WORD objectIdx, BOOLEAN show);
 
 /*------------------------------------------------------------------*/
 /*  public functions                                                */
@@ -43,37 +40,35 @@ void cardHideFields(CARD *card, WORD objectIdx, WORD objectParentIdx);
  * gespeichert.
  *
  * @param **card Zeiger auf die Struktur der Karteikarten, die eine Einheit bilden
- * @param *head_tree Zeiger auf die Objekt-Struktur des Objekts, das den Reiter bildet
+ * @param *objectTree Zeiger auf die Objekt-Struktur, die Reiter und Karte enthaelt
  * @param head Objekt-Index des Reiters
- * @param *body_tree Zeiger auf die Objekt-Struktur des Objekts, das die Karteikarte bildet
  * @param body Objekt-Index der Karteikarte
- * @param (*redraw) Zeiger auf die Zeichenroutine, die das Objekt zeichnet
  */
-int cardAdd(CARD **card, OBJECT *head_tree, WORD head, OBJECT *body_tree,
-		WORD body, void(*redraw)(OBJECT *body_tree, WORD body, WORD x, WORD y,
-				WORD w, WORD h)) {
+int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx) {
 	WORD i;
 	CARD *newCard = NULL, *dummyCard = NULL;
 
 	newCard = (CARD *) malloc(sizeof(CARD));
 	if (newCard == NULL)
-		return USR_OUTOFMEMORY;
+		return (USR_OUTOFMEMORY);
 
-	newCard->head_tree = head_tree;
-	newCard->head = head;
-	newCard->body_tree = body_tree;
-	newCard->body = body;
-	newCard->redraw = redraw;
+	newCard->objectTree = objectTree;
+	newCard->head = objectHeadIdx;
+	newCard->body = objectBodyIdx;
+	newCard->redraw = NULL;
 	for (i = 0; i < MAXOBJECTS; i++)
-		newCard->state_list[i] = 0;
+		newCard->savedObjectFlags[i] = 0;
 	newCard->next = NULL;
 
 	if (*card == NULL) {
 		/*
 		 * erste Karteikarte in der Struktur per default:
-		 * -> gewaehlt, sichtbar, getoppt
+		 * -> gewaehlt, sichtbar
 		 */
-		activateCard(newCard);
+		setObjectSelected(newCard->objectTree, newCard->head);
+		newCard->top = TRUE;
+		setObjectFlags(newCard->objectTree, newCard->body, HIDETREE, FALSE);
+		handleEditfields(newCard, newCard->body, TRUE);
 
 		*card = newCard;
 	} else {
@@ -83,22 +78,25 @@ int cardAdd(CARD **card, OBJECT *head_tree, WORD head, OBJECT *body_tree,
 		}
 
 		/* alle weiteren Karteikarten liegen deaktiviert im Hintergrund */
-		deactivateCard(newCard);
+		unsetObjectSelected(newCard->objectTree, newCard->head);
+		newCard->top = FALSE;
+		setObjectFlags(newCard->objectTree, newCard->body, HIDETREE, TRUE);
+		handleEditfields(newCard, newCard->body, FALSE);
 
 		(*card)->next = newCard;
 		*card = dummyCard;
 	}
 
-	return USR_NOERROR;
+	return (USR_NOERROR);
 }
 
 /**
- * Mit Hilfe dieser Methode wird eine Karteikarte mit ihrem zugehoerigen Reiter aus
- * der Liste geloescht.
+ * Mit Hilfe dieser Methode werden alle Karteikarten mit ihrem zugehoerigen
+ * Reiter aus der Liste geloescht.
  *
  * @param *card Zeiger auf die Struktur der Karteikarte, die aus der Liste entfernt werden soll
  */
-void cardRemove(CARD *card) {
+void cardRemoveAll(CARD *card) {
 	CARD *dummyCard = NULL;
 
 	if (card == NULL)
@@ -108,7 +106,22 @@ void cardRemove(CARD *card) {
 		dummyCard = card;
 		card = card->next;
 		free(dummyCard);
+		dummyCard = NULL;
 	}
+}
+
+/**
+ * Mit dieser Methode kann der entsprechenden Karteikarte eine eigene
+ * Zeichenroutine zugewiesen werden.
+ *
+ * @param *card Zeiger auf die Struktur der Karteikarte, die eine eigene Zeichenroutine erhalten soll
+ * @param (*redraw) Zeiger auf die Zeichenroutine, die das Objekt zeichnet
+ */
+void setCardRedraw(CARD *card, void(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h)) {
+	if (card == NULL)
+		return;
+
+	card->redraw = redraw;
 }
 
 /**
@@ -116,9 +129,9 @@ void cardRemove(CARD *card) {
  * nicht mehr angewaehlt werden kann.
  *
  * @param *card Zeiger auf die Struktur der Karteikarten
- * @param head Objekt-Index des Reiters
+ * @param objectHeadIdx Objekt-Index des Reiters
  */
-void cardDisable(CARD *card, WORD head) {
+void cardDisable(CARD *card, WORD objectHeadIdx) {
 	CARD *disableCard = NULL, *activeCard = NULL;
 
 	if (card == NULL)
@@ -126,11 +139,11 @@ void cardDisable(CARD *card, WORD head) {
 
 	/* pruefen, ob der Reiter der aktiven Karte deaktiviert werden soll */
 	activeCard = getActiveCard(card);
-	if (activeCard == NULL || activeCard->head == head)
+	if (activeCard == NULL || activeCard->head == objectHeadIdx)
 		return;
 
 	disableCard = card;
-	while (disableCard->head != head) {
+	while (disableCard->head != objectHeadIdx) {
 		if (disableCard->next != NULL)
 			disableCard = disableCard->next;
 		else
@@ -138,8 +151,8 @@ void cardDisable(CARD *card, WORD head) {
 			return;
 	}
 
-	disableCard->head_tree[disableCard->head].ob_state |= DISABLED;
-	disableCard->head_tree[disableCard->head].ob_flags &= ~(SELECTABLE | TOUCHEXIT);
+	setObjectDisabled(disableCard->objectTree, disableCard->head);
+	setObjectFlags(disableCard->objectTree, disableCard->head, SELECTABLE | TOUCHEXIT, FALSE);
 }
 
 /**
@@ -147,16 +160,16 @@ void cardDisable(CARD *card, WORD head) {
  * angewaehlt werden kann.
  *
  * @param *card Zeiger auf die Struktur der Karteikarten
- * @param head Objekt-Index des Reiters
+ * @param objectHeadIdx Objekt-Index des Reiters
  */
-void cardEnable(CARD *card, WORD head) {
+void cardEnable(CARD *card, WORD objectHeadIdx) {
 	CARD *enableCard = NULL;
 
 	if (card == NULL)
 		return;
 
 	enableCard = card;
-	while (enableCard->head != head) {
+	while (enableCard->head != objectHeadIdx) {
 		if (enableCard->next != NULL)
 			enableCard = enableCard->next;
 		else
@@ -164,8 +177,8 @@ void cardEnable(CARD *card, WORD head) {
 			return;
 	}
 
-	enableCard->head_tree[enableCard->head].ob_state &= ~DISABLED;
-	enableCard->head_tree[enableCard->head].ob_flags |= SELECTABLE | TOUCHEXIT;
+	unsetObjectDisabled(enableCard->objectTree, enableCard->head);
+	setObjectFlags(enableCard->objectTree, enableCard->head, SELECTABLE | TOUCHEXIT, TRUE);
 }
 
 /**
@@ -178,27 +191,44 @@ CARD *getActiveCard(CARD *card) {
 	CARD *activeCard = NULL;
 
 	if (card == NULL)
-		return NULL;
+		return (NULL);
 
 	activeCard = card;
 	while (activeCard->top == FALSE) {
 		if (activeCard->next != NULL)
 			activeCard = activeCard->next;
 		else
-			return NULL;
+			return (NULL);
 	}
 
-	return activeCard;
+	return (activeCard);
+}
+
+/**
+ * Diese Methode liefert den Objekt-Index der aktiven Karteikarte.
+ *
+ * @param *card Zeiger auf die Struktur der Karteikarten
+ * @return Objekt-Index der aktiven Karteikarte
+ */
+int getActiveCardBodyIdx(CARD *card) {
+	CARD *activeCard = NULL;
+
+	activeCard = getActiveCard(card);
+	if (activeCard == NULL)
+		return (NIL);
+
+	return (activeCard->body);
 }
 
 /**
  * Mit dieser Methode wird eine Karteikarte getoppt.
  *
  * @param *card Zeiger auf die Struktur der Karteikarten
- * @param head Objekt-Index des Reiters, dessen zugehoerige Karteikarte angezeigt werden soll
+ * @param objectHeadIdx Objekt-Index des Reiters, dessen zugehoerige Karteikarte angezeigt werden soll
  * @param redraw TRUE - Karteikarte/Reiter neu zeichnen, FALSE sonst
  */
-void setActiveCard(CARD *card, WORD head, BOOLEAN redraw) {
+void setActiveCard(CARD *card, WORD objectHeadIdx, BOOLEAN redraw) {
+	BOOLEAN identicalCardBody;
 	WORD x, y;
 	CARD *activeCard, *newActiveCard;
 
@@ -213,48 +243,68 @@ void setActiveCard(CARD *card, WORD head, BOOLEAN redraw) {
 	 * Ist aktuelle Karteikarte identisch mit der Karteikarte, die getoppt
 	 * werden soll? Dann braucht nichts gemacht zu werden -> zurueck.
 	 */
-	if (activeCard->head == head)
+	if (activeCard->head == objectHeadIdx)
 		return;
-
-	/*
-	 * Aktuell getoppte Karte nach hinten legen:
-	 * -> Reiter abwaehlen, Karteikarte verstecken
-	 */
-	deactivateCard(activeCard);
 
 	/* Zu toppende Karteikarte suchen. */
 	newActiveCard = card;
-	while (newActiveCard->head != head) {
+	while (newActiveCard->head != objectHeadIdx) {
 		if (newActiveCard->next != NULL)
 			newActiveCard = newActiveCard->next;
 		else
 			return;
 	}
 
-	/* -> Reiter auswaehlen, Karteikarte anzeigen */
-	activateCard(newActiveCard);
+	/* Reiter der aktuell aktiven Karte deselektieren. */
+	unsetObjectSelected(activeCard->objectTree, activeCard->head);
+	activeCard->top = FALSE;
+
+	/* Reiter der zukuenftig aktiven Karte selektieren. */
+	setObjectSelected(newActiveCard->objectTree, newActiveCard->head);
+	newActiveCard->top = TRUE;
+
+	/* wenn die Karteikarten identisch sind, sind wir fertig, sonst... */
+	if (activeCard->body != newActiveCard->body) {
+		identicalCardBody = FALSE;
+
+		/* aktuelle Karteikarte verstecken */
+		setObjectFlags(activeCard->objectTree, activeCard->body, HIDETREE, TRUE);
+		handleEditfields(activeCard, activeCard->body, FALSE);
+
+		/* zukuenftig aktive Karteikarte anzeigen */
+		setObjectFlags(newActiveCard->objectTree, newActiveCard->body, HIDETREE, FALSE);
+		handleEditfields(newActiveCard, newActiveCard->body, TRUE);
+	} else {
+		identicalCardBody = TRUE;
+	}
 
 	/* Reiter/Karteikarte ggf. neu zeichnen */
 	if (redraw == TRUE) {
 		/* vorher getoppter Reiter */
-		objc_offset(activeCard->head_tree, activeCard->head, &x, &y);
-		objc_draw(activeCard->head_tree, activeCard->head, MAX_DEPTH, x, y,
-				activeCard->head_tree[activeCard->head].ob_width,
-				activeCard->head_tree[activeCard->head].ob_height + 1);
+		objc_offset(activeCard->objectTree, activeCard->head, &x, &y);
+		objc_draw(activeCard->objectTree, activeCard->head, MAX_DEPTH, x, y,
+				activeCard->objectTree[activeCard->head].ob_width,
+				activeCard->objectTree[activeCard->head].ob_height + 1);
 
 		/* aktueller Reiter */
-		objc_offset(newActiveCard->head_tree, newActiveCard->head, &x, &y);
-		objc_draw(newActiveCard->head_tree, newActiveCard->head, MAX_DEPTH, x,
-				y, newActiveCard->head_tree[newActiveCard->head].ob_width,
-				newActiveCard->head_tree[newActiveCard->head].ob_height + 1);
+		objc_offset(newActiveCard->objectTree, newActiveCard->head, &x, &y);
+		objc_draw(newActiveCard->objectTree, newActiveCard->head, MAX_DEPTH, x, y,
+				newActiveCard->objectTree[newActiveCard->head].ob_width,
+				newActiveCard->objectTree[newActiveCard->head].ob_height + 1);
 
-		/* aktuelle Karteikarte */
-		if (newActiveCard->redraw != NULL) {
-			objc_offset(newActiveCard->body_tree, newActiveCard->body, &x, &y);
-			(newActiveCard->redraw)(newActiveCard->body_tree,
-					newActiveCard->body, x, y,
-					newActiveCard->body_tree[newActiveCard->body].ob_width,
-					newActiveCard->body_tree[newActiveCard->body].ob_height);
+		if (!identicalCardBody) {
+			/* aktuelle Karteikarte */
+			objc_offset(newActiveCard->objectTree, newActiveCard->body, &x, &y);
+			if (newActiveCard->redraw != NULL) {
+				(newActiveCard->redraw)(newActiveCard->objectTree,
+						newActiveCard->body, x, y,
+						newActiveCard->objectTree[newActiveCard->body].ob_width,
+						newActiveCard->objectTree[newActiveCard->body].ob_height);
+			} else {
+				objc_draw(newActiveCard->objectTree, newActiveCard->body, MAX_DEPTH, x, y,
+						newActiveCard->objectTree[newActiveCard->body].ob_width,
+						newActiveCard->objectTree[newActiveCard->body].ob_height);
+			}
 		}
 	}
 }
@@ -264,106 +314,37 @@ void setActiveCard(CARD *card, WORD head, BOOLEAN redraw) {
 /*------------------------------------------------------------------*/
 
 /**
- * Mit dieser Methode wird eine Karteikarte getoppt.
  *
  * @param *card Zeiger auf die Struktur der Karteikarte
+ * @param objectIdx Objekt-Index des Objekts
+ * @param show Editfelder anzeigen (TRUE), verbergen (sonst)
  */
-void activateCard(CARD *card) {
-	if (card == NULL)
-		return;
-
-	card->top = TRUE;
-	card->head_tree[card->head].ob_state |= SELECTED;
-	card->body_tree[card->body].ob_flags &= ~HIDETREE;
-
-	cardShowFields(card, card->body_tree[card->body].ob_head, card->body_tree[card->body].ob_next);
-}
-
-/**
- * Mit dieser Methode wird eine Karteikarte nach hinten gelegt.
- *
- * @param *card Zeiger auf die Struktur der Karteikarte
- */
-void deactivateCard(CARD *card) {
-	if (card == NULL)
-		return;
-
-	card->top = FALSE;
-	card->head_tree[card->head].ob_state &= ~SELECTED;
-	card->body_tree[card->body].ob_flags |= HIDETREE;
-
-	cardHideFields(card, card->body_tree[card->body].ob_head, card->body_tree[card->body].ob_next);
-}
-
-void cardShowFields(CARD *card, WORD objectIdx, WORD objectParentIdx) {
-	if (card == NULL)
-		return;
+void handleEditfields(CARD *card, WORD objectIdx, BOOLEAN show) {
+	WORD i;
 
 	/*
-	 * Alle Objekte auf gleicher Ebene durchlaufen.
+	 * Laeuft ueber alle Kindobjeckte, der aktuellen Ebene.
+	 * Abbruchbedingung:
+	 *   i == objectIndex (i = letztes Objekt, ob_head = parent)
+	 *   i == NIL (es gibt kein Kind)
 	 */
-	while (objectIdx != objectParentIdx) {
-		/*
-		 * selektier- und editierbare Objekte finden:
-		 * -> gespeicherte Flags loeschen, Objekt-Flags anpassen
-		 */
-#if 0
-		if (card->state_list[objectIdx] & SELECTABLE) {
-			/*			setObjectFlags(card->body_tree, objectIdx, SELECTABLE, TRUE);*/
-			card->body_tree[objectIdx].ob_flags |= SELECTABLE;
-			card->state_list[objectIdx] &= ~SELECTABLE;
-		}
-#endif
-		if (card->state_list[objectIdx] & EDITABLE) {
-			/*			setObjectFlags(card->body_tree, objectIdx, EDITABLE, TRUE);*/
-			card->body_tree[objectIdx].ob_flags |= EDITABLE;
-			card->state_list[objectIdx] &= ~EDITABLE;
+	for (i = card->objectTree[objectIdx].ob_head; (i != objectIdx) && (i != NIL); i = card->objectTree[i].ob_next) {
+		/* editierbare Objekte finden: */
+		if (show) {
+			if (card->savedObjectFlags[i] & EDITABLE) {
+				/* -> gespeicherte Flags loeschen, Objekt-Flags anpassen */
+				setObjectFlags(card->objectTree, i, EDITABLE, TRUE);
+				card->savedObjectFlags[i] &= ~EDITABLE;
+			}
+		} else {
+			if (getObjectFlags(card->objectTree, i, EDITABLE)) {
+				/* -> alte Flags merken, Objekt-Flags anpassen */
+				card->savedObjectFlags[i] |= EDITABLE;
+				setObjectFlags(card->objectTree, i, EDITABLE, FALSE);
+			}
 		}
 
-		/*
-		 * Kindobjekte bearbeiten.
-		 */
-		if (card->body_tree[objectIdx].ob_head != NIL)
-			cardShowFields(card, card->body_tree[objectIdx].ob_head, objectIdx);
-
-		objectIdx = card->body_tree[objectIdx].ob_next;
-	}
-}
-
-void cardHideFields(CARD *card, WORD objectIdx, WORD objectParentIdx) {
-	if (card == NULL)
-		return;
-
-	/*
-	 * Alle Objekte auf gleicher Ebene durchlaufen.
-	 */
-	while (objectIdx != objectParentIdx) {
-
-		/*
-		 * selektier- und editierbare Objekte finden:
-		 * -> alte Flags merken, Objekt-Flags anpassen
-		 */
-#if 0
-		if (card->body_tree[objectIdx].ob_flags & SELECTABLE) {
-			card->state_list[objectIdx] |= SELECTABLE;
-			/*			setObjectFlags(card->body_tree, objectIdx, SELECTABLE, FALSE);*/
-
-			card->body_tree[objectIdx].ob_flags &= ~SELECTABLE;
-		}
-#endif
-		if (card->body_tree[objectIdx].ob_flags & EDITABLE) {
-			card->state_list[objectIdx] |= EDITABLE;
-			/*			setObjectFlags(card->body_tree, objectIdx, EDITABLE, FALSE);*/
-
-			card->body_tree[objectIdx].ob_flags &= ~EDITABLE;
-		}
-
-		/*
-		 * Kindobjekte bearbeiten.
-		 */
-		if (card->body_tree[objectIdx].ob_head != NIL)
-			cardHideFields(card, card->body_tree[objectIdx].ob_head, objectIdx);
-
-		objectIdx = card->body_tree[objectIdx].ob_next;
+		/* Kindobjekte bearbeiten. */
+		handleEditfields(card, i, show);
 	}
 }
