@@ -1,51 +1,15 @@
 ## THING.STG
 ## Quelltext zur ST-GUIDE-Dokumentation zu Thing
 
-@if MAINFILE == NTHING.STG
-@define NAES 1
-@define MING 0
-@define SWARE 0
-@else
-@if MAINFILE == nthing.stg
-@define NAES 1
-@define MING 0
-@define SWARE 0
-@else
-@if MAINFILE == MING.STG
-@define NAES 0
-@define MING 1
-@define SWARE 0
-@else
-@if MAINFILE == ming.stg
-@define NAES 0
-@define MING 1
-@define SWARE 0
-@else
-@define NAES 0
-@define MING 0
-@define SWARE 1
-@endif
-@endif
-@endif
-@endif
-
 @options +z
 @options -s
 @author "Arno Welzel/Thomas Binder"
-@if @:NAES
-@database "Dokumentation zu N.Thing"
-@else
-@if @:MING
-@database "Dokumentation zu Ming"
-@else
 @database "Dokumentation zu Thing"
-@endif
-@endif
 @subject "Dokumentation/Shells"
-@$VER: thing.hyp 1.27
+@$VER: thing.hyp 1.50
 @hostname THING
 
-@define VERSION 1.27
+@define VERSION 1.50
 
 @default %I
 @help %Hilfe
@@ -69,15 +33,7 @@
 ## Inhaltsverzeichnis
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node %I "Dokumentation zu N.Thing @:"VERSION" - Inhaltsverzeichnis"
-@else
-@if @:MING
-@node %I "Dokumentation zu Ming @:"VERSION" - Inhaltsverzeichnis"
-@else
 @node %I "Dokumentation zu Thing @:"VERSION" - Inhaltsverzeichnis"
-@endif
-@endif
 @symbol "Inhaltsverzeichnis"
 @noref
 @prev %I
@@ -102,11 +58,7 @@
      ù Applikationen                   ù @{"Protokolle (AV, Font, D&D)" link Protokolle}
      ù Objektgruppen                   ù Environmentvariablen
      ù Kontextmens                    ù @{"H„ufig gestellte Fragen (FAQ)" link FAQ}
-@if @:SWARE
-     ù Registrierung                   ù History
-@else
                                        ù History
-@endif
 
 @line 2 2 0
 @line 4 0 1
@@ -118,35 +70,13 @@
      ù @{"Bekannte Probleme" link Probleme}
      ù @{"'ThingImg' von Thomas Knneth" link ThingImg}
 
-@if @:MING
-@{B}Da es sich bei Ming lediglich um eine Version von Thing speziell fr den 
-Milan handelt und eine vollst„ndige Anpassung des Namens sowohl in der 
-Dokumentation als auch bei allen Hilfsdateien sehr aufwendig gewesen w„re 
-und auerdem fr 'Thing-Kenner' eine unangenehme Umgew”hnung bedeutet 
-h„tte, ist in der Anleitung immer von 'Thing' die Rede. Gleiches gilt auch 
-fr alle Hilfsdateien, die 'Thing' im Namen haben, sie heien auch bei 
-Ming nicht anders.@{b}
-
-Auerdem enth„lt die Dokumentation einige Hinweise zur Benutzung mit dem 
-Betriebssystem MagiC, was momentan noch nicht fr den Milan erh„ltlich 
-ist. Es ist allerdings zu erwarten, da eine Anpassung erfolgen wird.
-
-@endif
 @endnode
 
 ## ------------------------------------------------------------------------
 ## Hilfeseite
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node %Hilfe "Dokumentation zu N.Thing - Hilfe"
-@else
-@if @:MING
-@node %Hilfe "Dokumentation zu Ming - Hilfe"
-@else
 @node %Hilfe "Dokumentation zu Thing - Hilfe"
-@endif
-@endif
 @symbol "Hilfe?!"
 @noref
 @prev %Hilfe
@@ -159,29 +89,10 @@ ist. Es ist allerdings zu erwarten, da eine Anpassung erfolgen wird.
 Hilfe                                                                 Thing
 @line 1 75 0 0 7
 
-@if @:NAES
-Sie lesen gerade die Hypertext-Dokumentation zu N.Thing, dem Desktop fr 
-N.AES. Hilfe zu bestimmten Funktionen kann auf zwei Arten angefordert 
-werden:
-@else
-@if @:MING
-Sie lesen gerade die Hypertext-Dokumentation zu Ming, dem Desktop fr den 
-Milan. Da es sich bei Ming lediglich um eine Version von Thing speziell 
-fr den Milan handelt und eine vollst„ndige Anpassung des Namens sowohl in 
-der Dokumentation als auch bei allen Hilfsdateien sehr aufwendig gewesen 
-w„re und auerdem fr 'Thing-Kenner' eine unangenehme Umgew”hnung bedeutet 
-h„tte, ist in der Anleitung immer von 'Thing' die Rede. Gleiches gilt auch 
-fr alle Hilfsdateien, die 'Thing' im Namen haben, sie heien auch bei 
-Ming nicht anders.
-
-Hilfe zu bestimmten Funktionen kann auf zwei Arten angefordert werden:
-@else
 Sie lesen gerade die Hypertext-Dokumentation zu Thing, dem alternativen
 Desktop fr Atari Computer und alle anderen Maschinen, auf denen 68k-GEM
 l„uft. Hilfe zu bestimmten Funktionen kann auf zwei Arten angefordert
 werden:
-@endif
-@endif
 
 @box 38 9 1
  1) Einen Meneintrag mit gedrckter  Control -Taste ausw„hlen.
@@ -211,15 +122,7 @@ ursprnglichen Seite zurckkehren.
 ## Installation
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Installation "Dokumentation zu N.Thing - Installation"
-@else
-@if @:MING
-@node Installation "Dokumentation zu Ming - Installation"
-@else
 @node Installation "Dokumentation zu Thing - Installation"
-@endif
-@endif
 @prev Installation
 @xref Einfhrung
 @include header.stg
@@ -228,23 +131,16 @@ ursprnglichen Seite zurckkehren.
 @line 4 0 1
 @line 2 2 1
     Installation
-@if @:MING
-@else
      ù @{"Update von einer „lteren Version" link %InstallationUPD}
-@endif
      ù @{Systemvorraussetzungen link %InstallationSV}
      ù @{"Einrichten von Thing" link %InstallationET}
-@if @:SWARE
      ù @{"Anpassung an das Betriebssystem" link %InstallationS}
-@endif
 
 @endnode
 
 ## ------------------------------------------------------------------------
 
 
-@if @:MING
-@else
 @node %InstallationUPD "Update von einer „lteren Version"
 @toc Installation
 @autorefoff
@@ -255,24 +151,15 @@ Installation, Update von einer „lteren Version                        Thing
 @autorefoff
 Fr ein Update sind folgende Dateien zu kopieren:
 
-@if @:NAES
-  THING\THING.APP ......... in das Startverzeichnis von Thing (@{* link %thingdir})
-@else
   THING\THING.APP ......... in das Startverzeichnis von Thing
-@endif
   THING\THING.RSC
   THING\THINGTXT.RSC <-- Neu in Thing 1.20!
   THING\THINGIMG.OVL <-- Neu in Thing 1.09!
   THING\THINGREG.OVL <-- Neu in Thing 1.20!
   THING\THINGRUN.PRG
 
-@if @:NAES
-  HELP\THING.HYP .......... in den GUIDES-Ordner von ST-Guide (@{* link %helpdir})
-  HELP\THING.REF
-@else
   DOC\THING.HYP ........... in den GUIDES-Ordner von ST-Guide
   DOC\THING.REF ........... dito
-@endif
 
 Wer viel Speicher hat und mit mindestens 16 Farben arbeitet, kann statt 
 THING.RSC auch THINGCOL.RSC installieren (im Zielverzeichnis mu die Datei 
@@ -289,14 +176,6 @@ seine eigene Icon-Sammlung kopieren.
 
 @{U}Was „ndert sich?@{u}
 
-@if @:SWARE
-Thing kostet seit Version 1.20 bei Neuregistrierungen jetzt 30 DM statt wie 
-frher 25 DM; das Update von Thing 1.0x ist nicht kostenlos und bedarf 
-daher einer Gebhr von 15 DM. Updates von Version 1.20 sind dagegen 
-natrlich kostenlos - gegen eine @{Spende link Autor} habe ich allerdings trotzdem nichts 
-einzuwenden :)
-
-@endif
 @autorefon
 Den Abschnitt 'Wichtige Hinweise' sollte man sich auch durchlesen, da sich 
 hier Informationen finden, die fr Benutzer der letzten ”ffentlichen Thing-
@@ -341,19 +220,7 @@ allein genommen kaum erw„hnenswert sind, insgesamt gesehen jedoch den
 Bedienungskomfort und die M”glichkeiten von und mit Thing sprbar 
 verbessern bzw. erweitern. Genaueres kann man der History entnehmen.
 
-@if @:SWARE
-@box 1 75 7
-
-@image icwarn.img 2
-      Thing ben”tigt seit Version 1.20 neue Schlssel, d.h. die von 
-      Version 1.0x funktionieren nicht mehr. Wer noch einen alten 
-      Schlssel hat und nicht schon bei Erscheinen von Version 1.20 die 
-      Updategebhr in H”he von DM 15,- bezahlt hat, kann dies immer noch 
-      tun, um einen fr Thing 1.2x passenden Schlssel zu erhalten.
-
-@endif
 @endnode
-@endif
 
 ## ------------------------------------------------------------------------
 
@@ -365,37 +232,11 @@ Installation, Systemvorraussetzungen                                  Thing
 @line 1 75 0 0 7
 @autorefon
 
-@if @:NAES
-N.Thing ist eine spezielle Version von Thing, die nur unter N.AES l„uft und 
-dabei nicht den Einschr„nkungen der unregistrierten Shareware-Version 
-unterliegt. N.Thing ist integraler Bestandteil der N.AES-Distribution und 
-unterliegt daher den gleichen Nutzungsbestimmungen.
-
-Wer bereits eine registrierte Shareware-Version von Thing benutzt, kann 
-diese mit N.AES selbstverst„ndlich weiterverwenden. Gleiche Versionsnummer 
-vorausgesetzt, sind Thing und N.Thing im Funktionsumfang absolut identisch, 
-nur da N.Thing eben @{U}nur@{u} mit N.AES l„uft, w„hrend Thing @{U}auch@{u} mit N.AES 
-benutzt werden kann.
-@else
-@if @:MING
-Ming ist eine spezielle Version von Thing, die nur auf dem Milan l„uft und 
-dabei nicht den Einschr„nkungen der unregistrierten Shareware-Version 
-unterliegt. Ming ist Bestandteil des Milan-Betriebssystems und unterliegt 
-daher den gleichen Nutzungsbestimmungen.
-
-Wer bereits eine registrierte Shareware-Version von Thing benutzt, kann 
-diese auf dem Milan selbstverst„ndlich weiterverwenden. Gleiche 
-Versionsnummer vorausgesetzt, sind Thing und Ming im Funktionsumfang 
-absolut identisch, nur da Ming eben @{U}nur@{u} auf dem Milan l„uft, w„hrend 
-Thing @{U}auch@{u} auf dem Milan benutzt werden kann.
-@else
 Thing l„uft unter TOS 1.04 oder neuer, MagiC 2.00 oder neuer, MultiTOS, 
 N.AES und Geneva (wobei erst ab Geneva 6 ein reibungsloser Betrieb m”glich 
 ist). Der Einsatz mit TOS 1.02 oder 1.00 ist aus technischen Grnden leider 
 nicht m”glich, da hier einige wichtige Betriebssystemfunktionen fehlen, die 
 Thing ben”tigt.
-@endif
-@endif
 
 Bildschirmaufl”sung, Farbtiefe etc. sind egal. Allerdings wird eine
 Mindestaufl”sung von 640*200 Punkten (bzw. 80*25 Zeichen darstellbar)
@@ -423,36 +264,6 @@ Installation, Einrichten von Thing                                    Thing
 @line 1 75 0 0 7
 @autorefon
 
-@if @:NAES
-Im Normalfall wird Thing bei der Installation von N.AES automatisch so 
-mitkopiert, da keine weiteren vorbereitenden Schritte notwendig sind. Wer 
-jedoch mit dem Standardverzeichnis C:\THING\ nicht einverstanden ist, mu 
-dieses verschieben oder umbenennen und danach in der Datei N_AES.CNF (die 
-normalerweise nach der Installation im Verzeichnis C:\N_AES\ liegt) die 
-Zeile
-
-shell c:\thing\Thing.app
-
-entsprechend anpassen.
-
-Damit Thing auch als AV-Server und Fontselektor eingesetzt werden kann, mu 
-man noch die Environmentvariablen AVSERVER und FONTSELECT setzen. Dazu 
-erg„nzt man N_AES.CNF um folgende Eintr„ge:
-
-@autorefoff
-  export AVSERVER=THING
-  export FONTSELECT=THING
-@autorefon
-
-Das ist bei der mitgelieferten N_AES.CNF brigens bereits der Fall, daher 
-mu man darauf nur dann achten, wenn man eine eigene N_AES.CNF erstellen 
-will.
-@else
-@if @:MING
-Im Normalfall sollte Ming (bzw. Thing) auf dem Milan bereits einsatzfertig 
-ausgeliefert werden. N„heres entnehmen Sie bitte ggf. der Dokumentation 
-zum Rechner.
-@else
 Wenn es auch kein Installationsprogramm gibt, so ist die Installation von 
 Thing nicht sehr kompliziert. Im Wesentlichen sind nur einige Dateien zu 
 kopieren und -- je nach Betriebssystem -- ein paar kleine Anpassungen vor-
@@ -472,8 +283,6 @@ zu kopieren:
   THING\ICONS.RSC
   THING\ICONS.INF
 @autorefon
-@endif
-@endif
 
 Wenn man Speicherplatz sparen m”chte, kann man statt ICONS.RSC auch die
 monochromen Icons MONOICON.RSC oder fr die niedrige ST-Aufl”sung 640*200
@@ -490,18 +299,6 @@ arbeitet, kann alternativ zu THING.RSC auch die Datei THINGCOL.RSC
 installieren (im Zielverzeichnis mu sie dann aber trotzdem THING.RSC 
 heien); der Infodialog enth„lt dann das neue Thing-Logo in Farbe.
 
-@if @:NAES
-Wer die Online-Hilfe benutzen will und nicht die vorgefertigte ST-Guide-
-Installation von N.AES vorgenommen hat, mu die Hypertext-Datei in den 
-GUIDES-Ordner von ST-Guide kopieren:
-
-@autorefoff
-  HELP\THING.HYP
-  HELP\THING.REF
-@autorefon
-@else
-@if @:MING
-@else
 Fr die Verwendung der Online-Hilfe mu die Hypertext-Datei in den GUIDES-
 Ordner von ST-Guide kopiert werden:
 
@@ -509,10 +306,7 @@ Ordner von ST-Guide kopiert werden:
   DOC\THING.HYP
   DOC\THING.REF
 @autorefon
-@endif
-@endif
 
-@if @:SWARE
 Damit das Consolefenster von Thing benutzt werden kann, mu nun TOS2GEM 
 installiert werden. Dazu kopiert man die Datei
 
@@ -522,28 +316,6 @@ installiert werden. Dazu kopiert man die Datei
 
 in den AUTO-Ordner. Die Position im AUTO-Ordner ist normalerweise egal.
 
-@else
-@if @:MING
-Thing bietet ber das Zusatzprogramm TOS2GEM auch ein Console-Fenster an, 
-in dem TOS-Programme ausgefhrt werden. Leider wei ich zur Zeit nicht, ob 
-der Milan mit TOS2GEM ausgeliefert werden wird, so da man es sich bei 
-Bedarf eventuell selbst besorgen mu.
-
-@endif
-@endif
-@if @:NAES
-@box 1 75 9
-
-@image ictip.img 2
-      Unter N.AES wird man das mittels TOS2GEM realisierte Console-Fenster 
-      von Thing nicht ben”tigen, da bereits tw100 zur parallelen 
-      Ausfhrung von TOS-Programmen mitgeliefert und automatisch von Thing 
-      benutzt wird. Aus diesem Grund ist TOS2GEM in der N.AES-Distribution 
-      nicht vorhanden; wer es trotzdem benutzen will, mu sich das Archiv 
-      T2G_R8_D.LZH aus einer Mailbox / per ftp besorgen oder direkt bei 
-      mir nachfragen.
-
-@else
 @box 1 75 10
 
 @image ictip.img 2
@@ -562,7 +334,6 @@ Bedarf eventuell selbst besorgen mu.
 
 ## ------------------------------------------------------------------------
 
-@if @:SWARE
 @node %InstallationS "Anpassung an das Betriebssystem"
 @toc Installation
 @symbol "Anpassungen an das Betriebssystem"
@@ -814,22 +585,13 @@ Wobei man hier natrlich statt 'd:\tools\st-guide\st-guide.prg' den
 tats„chlich verwendeten Pfad/Namen angeben mu.
 
 @endnode
-@endif
 
 #@include a2-intro.stg
 ## ------------------------------------------------------------------------
 ## Einfhrung
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Einfhrung "Dokumentation zu N.Thing - Einfhrung"
-@else
-@if @:MING
-@node Einfhrung "Dokumentation zu Ming - Einfhrung"
-@else
 @node Einfhrung "Dokumentation zu Thing - Einfhrung"
-@endif
-@endif
 @prev Einfhrung
 @xref Installation
 @include header.stg
@@ -845,13 +607,7 @@ tats„chlich verwendeten Pfad/Namen angeben mu.
      ù @{Cursor link %EinfhrungCRSR}
      ù @{Fenster link %EinfhrungWIN}
      ù @{Console-Fenster link %EinfhrungCON}
-@if @:SWARE
      ù @{"Thing und TOSWIN unter MiNT"  link TOSWIN}
-@else
-@if @:MING
-     ù @{"Thing und TOSWIN unter MiNT"  link TOSWIN}
-@endif
-@endif
      ù @{"Thing und Let'em Fly" link %EinfhrungLFY}
      ù @{"Thing und Kobold" link %EinfhrungK}
      ù @{"Thing und Alice" link %EinfhrungALC}
@@ -863,9 +619,7 @@ tats„chlich verwendeten Pfad/Namen angeben mu.
 @node %EinfhrungN "Nutzungsbedingungen"
 @toc Einfhrung
 @symbol Rechtliches
-@if @:SWARE
 @symbol Shareware
-@endif
 @symbol Nutzungsbedingungen
 @xref Installation
 @autorefoff
@@ -873,16 +627,6 @@ Einfhrung, Nutzungsbedingungen                                       Thing
 @line 1 75 0 0 7
 @autorefon
 
-@if @:NAES
-N.Thing geh”rt zum Lieferumfang des N.AES-Pakets von Woller Systeme und 
-unterliegt daher dessen Nutzungsbedingungen.
-
-@else
-@if @:MING
-Ming geh”rt zum Lieferumfang des Milan-Computers der Milan Computersysteme 
-GbR und unterliegt daher den Nutzungsbedingungen der Systemsoftware dieses 
-Rechners.
-@else
 Thing ist Shareware. Das heit, das Programm kann zwar in vollem Umfang
 genutzt werden, jedoch erinnert ein sehr 'dezenter' Hinweis auf dem Desktop
 an die notwendige Registrierung ;-) Darber hinaus, werden als @{I}einzige@{i}
@@ -900,9 +644,6 @@ nicht einverstanden ist.
 
 Eine Weitergabe ber Mailboxen etc. ist ausdrcklich erwnscht. Jedoch
 darf das Paket nur im @{I}Originalzustand und kostenlos@{i} kopiert werden.
-@{B}Ein Vertrieb ber den PD/Shareware-Handel oder auf CD-ROMs und „hnlichen
-Datentr„gern und Verbreitungswegen ist nur mit meiner ausdrcklichen 
-schriftlichen Genehmigung gestattet!@{b}
 
 @box 2 67 27
 @symbol Autor
@@ -933,9 +674,6 @@ schriftlichen Genehmigung gestattet!@{b}
   EMail ....... : welzel@augusta.de (InterNet)
                   Arno ist nicht mehr ber das MausNet erreichbar!
 
-
-@endif
-@endif
 @endnode
 
 ## ------------------------------------------------------------------------
@@ -957,21 +695,10 @@ von Benutzern realisiert. Eine groe Zahl an registrierten Benutzern und
 die zum Teil recht ausfhrlichen Berichte in 'ST-Computer', 'Atari World'
 und 'ST Format' haben mich doch sehr motiviert :).
 
-@if @:NAES
-Die vorliegende Version N.Thing ist ausschlielich fr den Gebrauch mit 
-dem Betriebssystem N.AES geeignet, dem schnellen MultiTOS von Jens 
-Hiescher und Rainer Mannigel (im Vertrieb bei Woller Systeme, Berlin).
-@else
-@if @:MING
-Die vorliegende Version Ming ist ausschlielich fr den Gebrauch mit dem 
-Milan der Milan Computersysteme GbR bestimmt.
-@else
 Mittlerweile ist Thing auch 'richtige' Shareware mit Schlssel-
 Registrierung, wobei die Einschr„nkungen aber wirklich minimal sind 
 (eventuell gesicherte Informationen ber ge”ffnete Fenster werden beim 
 n„chsten Start nicht bercksichtigt).
-@endif
-@endif
 
 Die Hypertext-Dokumentation wurde ebenfalls komplett berarbeitet (die neue
 ST-Guide-Dokumentation war mit ein Ausl”ser dafr ;-)). Man sollte nach
@@ -991,13 +718,10 @@ Zu meiner šberraschung war Arno damit schnell einverstanden, und mit Thing
 ver”ffentlicht wurde. Auch an dieser Stelle nochmal ein herzliches 
 Dankesch”n an Arno fr Thing selbst und sein Vertrauen.
 
-@if @:SWARE
 Inzwischen hat sich Arno v”llig von Thing zurckgezogen und mir sogar die 
 "Registrierungshoheit" bertragen (@{* link %arno}). Allerdings betrachte ich Thing 
 weiterhin als Arnos Programm, bei dem ich lediglich ein paar Erweiterungen 
 hinzugefgt und einige Fehler entfernt habe.
-
-@endif
 
 @line 10 55 0 0 7
 
@@ -1020,12 +744,7 @@ Gleich zum Ausprobieren:  @{"ST-Guide in den Atari Info Pages" link aip.hyp/ST-
 Eine wesentliche Idee bei der Entwicklung von Thing war vor Allem die
 leichte Bedienbarkeit und die Untersttzung aller wichtigen Standards.
 
-@if @:NAES
-Nachfolgend ein šberblick der M”glichkeiten von Thing (von denen einige 
-unter N.AES keine Rolle spielen):
-@else
 Nachfolgend ein šberblick der M”glichkeiten von Thing:
-@endif
 
  ù Kontextsensitive Hilfe mit ST-Guide: Man erh„lt fast immer eine
 @box 31 6 1
@@ -1096,6 +815,34 @@ Nachfolgend ein šberblick der M”glichkeiten von Thing:
 
  ù 'Objektgruppen' fr die Zusammenfassung von Programmen, Dateien und
    Ordnern in eigenen Fenstern.
+
+@{U}Von Dirk Klemmt:@{u}
+
+Mittlerweile schreiben wir das Jahr 2012. Die aktive Entwicklung von Thing
+wurde schon vor Ÿber einer Dekade eingestellt. Vor etwa zwei Jahren trat
+Mathias Wittau an Thomas Binder heran und fragte, ob er nicht Thing und
+seinen Quellcode als Open Source der verbliebenen Atari Community "vermachen"
+kšnnte. Zur Zeit wŸrde an einem neuen Atari Clone - der Firebee - gearbeitet
+werden und man Thing dort sehr gerne als Desktop mit ausliefern mšchte. Thing
+scheint der einzige verbliebene fortschrittliche Desktop zu sein, da die
+Quellcodes zu Jinee! bei einem Festplattencrash verloren gingen.
+
+Thomas hatte nichts dagegen, aber ihm war wichtig, da§ Arno Welzel als
+ursprŸnglicher Autor sowie ich, da ich neben dem 3D-Look noch viele weitere
+Teile beigesteuert habe, ebenfalls damit einverstanden sind.
+
+Nach so langer Zeit, war es allerdings eine gro§e Herausforderung Thing so
+zu bearbeiten, da§ man es unter einer Open Source Lizenz veršffentlichen
+kann. Die Ataris von Thomas verstaub(t)en bei ihm im Keller und auch ich
+habe sie schon seit langer Zeit nicht mehr. In meinen letzten aktiven
+Atari-Jahren arbeitete ich schon unter Magic Mac und war froh, da§ ASH eine
+Version fŸr OS X verkaufte, die zumindest einigerma§en funktioniert.
+
+Ich hatte noch einen kompletten Snapshot des Quellcodes einer Betaversion
+von 1.29. Dieser war zwar Šlter als die Quellcodes von Thomas, aber er hatte
+keine Mšglichkeit mehr auf seine neueren zuzugreifen. Ihr wi§t ja im Keller
+gibt es Monster, denen man immer und immer wieder neue oder vielmehr alte
+Dinge in den Rachen werfen mu§, sonst kommen sie nach oben...
 
 @endnode
 
@@ -1330,8 +1077,6 @@ terungen untersttzt:
 @box 61 3 1
     eines Fensters an oder den 'Backgrop-Button' von MagiC (  ).
 
-@if @:NAES
-@else
   @{U}Hot Closer@{0}
     Unter MagiC gibt es bei Verzeichnissen einen sogenannten 'Hot Closer'.
     Das bedeutet, da man in Unterverzeichnissen mit gedrckter Maustaste
@@ -1344,7 +1089,6 @@ terungen untersttzt:
     Wer dieses Verhalten der Fenster unter MagiC nicht wnscht, kann den 
     'Hot Closer' in den Fenstervoreinstellungen abschalten.
 
-@endif
 @endnode
 
 
@@ -1371,26 +1115,11 @@ jeder anderen Applikation, und Thing selbst, w„hrend der gesamtem Aus-
 fhrung eines Programms im Console-Fenster gesperrt ist. Auerdem laufen
 die gestarteten Programme natrlich nicht parallel zu Thing!
 
-@if @:NAES
-Um TOS/TTP-Programme parallel zu laufenden GEM-Applikationen auszufhren, 
-ist daher im Lieferumfang von N.AES das Programm tw100 enthalten, das 
-automatisch benutzt wird, wenn ein Programm nicht im Console-Fenster von 
-Thing laufen kann bzw. soll.
-@else
-@if @:MING
-Um TOS/TTP-Programme parallel zu laufenden GEM-Applikationen auszufhren, 
-gibt es daher sowohl bei MagiC als auch beim Milan MultiOS entsprechende 
-Tools (VT52, MINIWIN), die automatisch vom Betriebssystem benutzt werden, 
-wenn ein TOS/TTP-Programm nicht im Console-Fenster von Thing gestartet 
-wird. Unter Single-TOS & MiNT kann auch TOSWIN verwendet werden.
-@else
 Um TOS/TTP-Programme parallel zu laufenden GEM-Applikationen auszufhren, 
 gibt es daher sowohl bei MagiC als auch bei MultiTOS entsprechende Tools 
 (VT52, MINIWIN), die automatisch vom Betriebssystem benutzt werden, wenn 
 ein TOS/TTP-Programm nicht im Console-Fenster von Thing gestartet wird. 
 Unter Single-TOS & MiNT kann auch TOSWIN verwendet werden.
-@endif
-@endif
 
 
 @{U}Terminalgr”e@{0}
@@ -1418,8 +1147,6 @@ da man TOS2GEM berhaupt nicht einsetzt; der Puffer wird immer angefordert!
 
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@else
 @node TOSWIN "Thing und TOSWIN unter MiNT"
 @toc Einfhrung
 @autorefoff
@@ -1450,7 +1177,6 @@ die Zahl der Benutzer mit MiNT, Single-TOS und TOSWIN wohl eher gering
 sein drfte.
 
 @endnode
-@endif
 
 ## ------------------------------------------------------------------------
 
@@ -1572,63 +1298,6 @@ Als Beispiel mal wieder ein Bildchen, wie sowas ausehen kann:
 
 ## ------------------------------------------------------------------------
 
-@if @:SWARE
-@node Registrierung
-@prev Registrierung
-@next Registrierung
-@toc %I
-@autorefoff
-Registrierung                                                         Thing
-@line 1 75 0 0 7
-@autorefon
-
-Um sich als Benutzer registrieren lassen m”chten, sind folgende Schritte
-n”tig:
-
-1. Sie schicken mir das ausgefllte Registrierungsformular (REGISTER.TXT) 
-   per EMail oder Sackpost zu. Die Angabe des Namens und der Adresse sind 
-   auf jeden Fall notwendig. Alle anderen Angaben sind freiwillig -- helfen 
-   mir aber bei der Weiterentwicklung von Thing bei eventuell auftretenden 
-   Problemen.
-
-2. Sie berweisen mir @{B}DM 30,00@{b} oder schicken den Betrag in bar oder
-   per Scheck.
-
-3. Nachdem Registrierungsformular @{I}und@{i} Geld bei mir angekommen sind,
-   erhalten Sie umgehend ihren pers”nlichen Schlssel. @{B}Dieser Schlssel
-   darf nicht weitergegeben werden! Wenn Thing im Rahmen eines Computer-
-   Verkaufs weitergegeben wird, mu die Datei THING.KEY vorher
-   gel”scht werden!@{b} Der neue Benutzer mu sich ggf. bei mir melden,
-   damit ein neuer Schlssel erzeugt wird.
-
-4. Rufen Sie nun im Dialog 'šber Thing' den Info-Dialog mit dem Button
-@box 4 6 1
-    Info  auf und geben Sie den Benutzernamen und Schlssel ein.
-
-@box 19 14 1
-5. Mit dem Button  Registrieren  wird Ihre Registrierung geprft und
-   bei Erfolg in der Datei THING.KEY im Startverzeichnis von Thing
-   gespeichert.
-
-@box 1 75 13
-
-@image icwarn.img 2
-      Es ist wichtig, das Geld an mich, Thomas Binder, zu berweisen, 
-      und nicht mehr an Arno Welzel. Dies ist umso wichtiger, als Arno 
-      anscheinend jeglichen Support eingestellt hat und versehentlich 
-      noch an ihn gerichtete Registrierungen komplett ignoriert -- das 
-      Geld beh„lt er aber.
-
-      Da ich inzwischen nicht mehr einsehe, in solchen F„llen dafr 
-      gerade zu stehen (zumal das laut Arno sowieso nicht stimmt), 
-      weise ich an dieser Stelle deutlich darauf hin, da ich in 
-      Zukunft bei fehlgeleiteten šberweisungen auf einer erneuten 
-      Bezahlung an mich bestehe.
-
-
-@endnode
-@endif
-
 #@include a3-desk.stg
 ## A3-DESK.STG
 ## Thing-Doku, Desktop
@@ -1637,15 +1306,7 @@ n”tig:
 ## Desktop
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Desktop "Dokumentation zu N.Thing - Desktop"
-@else
-@if @:MING
-@node Desktop "Dokumentation zu Ming - Desktop"
-@else
 @node Desktop "Dokumentation zu Thing - Desktop"
-@endif
-@endif
 @prev Desktop
 @include header.stg
 
@@ -2151,15 +1812,7 @@ Verzeichnis C:\HELP\
 ## Applikationen
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Applikationen "Dokumentation zu N.Thing - Applikationen"
-@else
-@if @:MING
-@node Applikationen "Dokumentation zu Ming - Applikationen"
-@else
 @node Applikationen "Dokumentation zu Thing - Applikationen"
-@endif
-@endif
 @prev Applikationen
 @include header.stg
 
@@ -2492,6 +2145,7 @@ ist dabei nur, da die Miniicons die gleiche Beschriftung aufweisen, wie
 die 'normalen' Icons -- sie mssen nicht unbedingt in der gleichen
 Reihenfolge enthalten sein.
 @endnode
+
 #@include a6-group.stg
 ## ------------------------------------------------------------------------
 ## Gruppen
@@ -2602,15 +2256,7 @@ indem man '™ffnen' zusammen mit  Shift  ausw„hlt.
 ## Menbefehle & Kontextsensitive Hilfen
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Menbefehle "Dokumentation zu N.Thing - Menbefehle"
-@else
-@if @:MING
-@node Menbefehle "Dokumentation zu Ming - Menbefehle"
-@else
 @node Menbefehle "Dokumentation zu Thing - Menbefehle"
-@endif
-@endif
 @prev Menbefehle
 @include header.stg
 
@@ -3554,8 +3200,6 @@ verstanden wird. Klappt das nicht, weil diese Funktion nicht untersttzt
 wird, probiert es Thing nochmals ber XHDI, falls ein entsprechender 
 Treiber (z.B. HDDRIVER, HuSHI) benutzt wird.
 
-@if @:NAES
-@else
 @box 1 75 6
 
 @image icwarn.img 2
@@ -3564,7 +3208,6 @@ Treiber (z.B. HDDRIVER, HuSHI) benutzt wird.
        ausgeworfen werden k”nnen, anwenden l„t. Diese werden dann einfach 
        geparkt, was nicht unbedingt gewnscht ist.
 
-@endif
 @endnode
 
 ## ------------------------------------------------------------------------
@@ -3634,19 +3277,6 @@ Diskette individuell sein; Thing erzeugt daher immer eine von der Uhrzeit
 
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node %mquit "Datei - Ende"
-@toc Menbefehle
-@xref %mautosave "Extra - Automatisch sichern"
-@autorefoff
-Datei - Ende                                                          Thing
-@line 1 75 0 0 7
-@autorefon
-
-Mit dieser Funktion wird Thing beendet -- wer h„tte das gedacht ...
-
-@endnode
-@else
 @node %mquit "Datei - Ende/Ausschalten"
 @toc Menbefehle
 @xref %mautosave "Extra - Automatisch sichern"
@@ -3674,7 +3304,6 @@ das von Thing zu verwendende Shutdown-Programm zeigen lassen:
 #_ENV SDMASTER=C:\GEMSYS\GEMDESK\SHUTDOWN.PRG
 
 @endnode
-@endif
 
 ## ------------------------------------------------------------------------
 
@@ -4394,8 +4023,6 @@ tion festlegen:
   fhrt, die aber auf den eigentlichen Betrieb keinen negativen Einflu 
   haben.
 
-@if @:NAES
-@else
 @{B}Im Single-Modus ausfhren:@{b} Mit dieser Option k”nnen Programme unter
   MagiC im Single-Modus gestartet werden. In diesem Modus k”nnen auch Pro-
   gramme benutzt werden, die fr Bildschirmausgaben keine GEM-Fenster ver-
@@ -4407,7 +4034,6 @@ tion festlegen:
   Diese Option ist nur wirksam, wenn Thing als Shell unter MagiC
   installiert wurde (ber den #_SHL-Eintrag in MAGX.INF).
 
-@endif
 @{B}Bei Bedarf im @{"Console-Fenster" ignore} starten:@{b} Ist diese Option gesetzt,
   k”nnen TTP/TOS-Programme „hnlich wie bei Gemini oder EASE in einem
   Console-Fenster ausgefhrt werden. Dazu mu TOS2GEM installiert sein.
@@ -4459,9 +4085,6 @@ z.B.: TEX_OUTPUTS=G:\TEX\OUTPUTS\
 Thing prft die Eintr„ge @{I}nicht@{0} auf korrekte Syntax! Es liegt daher
 in der eigenen Verantwortung, hier etwas Sinnvolles anzugeben!
 
-@if @:NAES
-@else
-
 @{U}Anmerkung zu MagiC@{0}
 
 Unter MagiC!2 kann ein eigenes Environment leider nur fr TOS/TTP-
@@ -4473,8 +4096,6 @@ funktion noch nicht untersttzt wird.
 Im 'Single-Modus' kann generell kein lokales Environment verwendet
 werden, da Thing vor dem Programmstart beendet werden mu.
 
-@endif
-
 @{U}Anmerkung zu MultiTOS@{0}
 
 Aus technischen Grnden klappt die Weitergabe eines lokalen
@@ -4482,11 +4103,8 @@ Environments nur bei GEM-Applikationen. TOS/TTP-Programme die
 parallel von MINIWIN.APP ausgefhrt werden, erhalten @{I}immer@{0}
 ein globales Environment -- sowohl mit AES 4.0 als auch mit AES 4.1.
 
-@if @:NAES
-@else
 šbrigens: bei MagiC!3 klappt es einwandfrei -- auch wenn die
 gestarteten TOS/TTP-Programme von VT52.PRG ausgefhrt werden ;-)
-
 
 @{U}Anmerkung zu Single-TOS@{0}
 
@@ -4494,7 +4112,6 @@ Unter Single-TOS wird ein lokales Environment nur verwendet, wenn
 Thing nicht ausgelagert wird bzw. wenn TOS/TTP-Programme nicht von
 TOSWIN.ACC (unter MiNT) ausgefhrt werden.
 
-@endif
 @box 1 75 9
 
 @image icwarn.img 2
@@ -4930,8 +4547,6 @@ Programmstart sowie einige externe Programme festgelegt.
 @box 44 8 1
    Shift + Delete  auch alternativ nur mit  Delete  bet„tigt werden.
 
-@if @:NAES
-@else
 @{B}MagiC-Workaround fr Fenster:@{b} Ist diese Option gesetzt, werden Fenster von
   Thing erst nach hinten gestellt, bevor sie geschlossen werden. Damit wird
   vermieden, da z.B. nach dem Aufruf des Thing Font Selector ein anderes
@@ -4941,7 +4556,6 @@ Programmstart sowie einige externe Programme festgelegt.
   leider nicht vermeiden -- das ist definitiv ein Problem von MagiC, das 
   aber mittlerweile behoben zu sein scheint.
 
-@endif
 @{B}Externe Programme - Suchen:@{b} Dieses Programm wird benutzt, wenn die
   Funktion 'Suchen' im 'Datei'-Men aufgerufen wird. Um den Eintrag zu
   l”schen, mu der Dateiname im File Selector leer gelassen werden.
@@ -5103,16 +4717,6 @@ Extra - Aufl”sung wechseln                                            Thing
 @line 1 75 0 0 7
 @autorefon
 
-@if @:NAES
-Hiermit kann die aktuelle Bildschirmaufl”sung ge„ndert werden, wenn in 
-N_AES.CNF die Environmentvariable RSMASTER entsprechend gesetzt ist. Bei 
-der Default-Installation sollte die entsprechende Zeile etwa so aussehen:
-
-export RSMASTER=C:\N_AES\APPS\N_CHRES.PRG
-
-Thing startet bei Auswahl des Menpunktes dann einfach das angegebene 
-Programm.
-@else
 L„uft Thing als Shell unter MagiC, kann hiermit die aktuelle Bildschirm-
 aufl”sung gewechselt werden. Ab MagiC 4 mu dazu das Programm CHGRES.PRG 
 (blicherweise zu finden in C:\GEMSYS\GEMDESK) samt CHGRES.RSC in das 
@@ -5131,7 +4735,6 @@ export RSMASTER=C:\N_AES\APPS\N_CHRES.PRG
 Unter MultiTOS, N.AES usw. wird das angegebene Programm parallel zu Thing 
 gestartet, unter SingleTOS (falls es dort berhaupt ein solches Programm 
 gibt) beendet sich Thing und startet es nach, ohne danach wiederzukehren.
-@endif
 
 @endnode
 
@@ -5496,15 +5099,7 @@ bzw. „ndern.
 ## Dateiformate
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Dateiformate "Dokumentation zu N.Thing - Dateiformate"
-@else
-@if @:MING
-@node Dateiformate "Dokumentation zu Ming - Dateiformate"
-@else
 @node Dateiformate "Dokumentation zu Thing - Dateiformate"
-@endif
-@endif
 @prev Dateiformate
 @include header.stg
 
@@ -6057,15 +5652,7 @@ Bei der nderung von THING.RSC sind allerdings einige Punkte zu beachten:
 ## Protokolle
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Protokolle "Dokumentation zu N.Thing - Protokolle"
-@else
-@if @:MING
-@node Protokolle "Dokumentation zu N.Thing - Protokolle"
-@else
 @node Protokolle "Dokumentation zu Thing - Protokolle"
-@endif
-@endif
 @prev Protokolle
 @include header.stg
 
@@ -7313,15 +6900,7 @@ Folgende Kommandos kennt Thing derzeit:
 ## Environment
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node Environmentvariablen "Dokumentation zu N.Thing - Environmentvariablen"
-@else
-@if @:MING
-@node Environmentvariablen "Dokumentation zu Ming - Environmentvariablen"
-@else
 @node Environmentvariablen "Dokumentation zu Thing - Environmentvariablen"
-@endif
-@endif
 @prev Environmentvariablen
 @include header.stg
 
@@ -7335,10 +6914,7 @@ Folgende Kommandos kennt Thing derzeit:
      ù THINGDIR
      ù @{"LINES, COLUMNS" link LINES}
      ù STGUIDE
-@if @:NAES
-@else
      ù SDMASTER
-@endif
      ù RSMASTER
 
 @endnode
@@ -7458,8 +7034,6 @@ angegeben werden.
 Beispiel: STGUIDE=D:\TOOLS\ST-GUIDE\ST-GUIDE.PRG
 @endnode
 
-@if @:NAES
-@else
 @node SDMASTER "Environmentvariablen - SDMASTER"
 @toc Environmentvariablen
 @autorefoff
@@ -7471,7 +7045,6 @@ Hier kann der absolute Zugriffspfad fr das Programm eingetragen werden,
 das unter MagiC fr den Shutdown verantwortlich ist.
 
 @endnode
-@endif
 
 @node RSMASTER "Environmentvariablen - RSMASTER"
 @toc Environmentvariablen
@@ -7500,18 +7073,22 @@ das fr den Aufl”sungswechsel zust„ndig ist.
 History                                                               Thing
 @line 1 75 0 0 7
 
-@if @:NAES
-Diese History gilt fr die Shareware-Version von Thing, daher sind 
-hier auch Sachen aufgefhrt, die fr N.Thing eigentlich nicht von 
-Bedeutung sind.
-
-@endif
 Da ich des ”fteren an einem Tag mehrere nderungen durchfhre und mich 
 hinterher nicht immer genau erinnern kann, was es alles war, kann es 
 durchaus sein, da in der Liste nicht alles aufgefhrt ist. Die wirklich 
 wichtigen nderungen sind allerdings sicher enthalten ...
 
 (+ neu, - entfallen, ! Bugfix/nderung)
+
+nderungen in Version 1.50
+
++ Thing ist nun Open Source unter der LGPL. Der Quellcode und veršffentlichte
+  Pakete kšnnen im Internet auf http://atariforge.org/gf/project/thing/
+  heruntergeladen werden.
+- Dadurch, da§ Thing nun Open Source ist wurden sŠmtliche Shareware-
+  BeschrŠnkungen entfernt.
+
+nderungen in Version 1.29
 
 nderungen in Version 1.27
 
@@ -8102,15 +7679,7 @@ einzeln aufgefhrt, sondern alles an einem Stck abgelegt)
 ## FAQ
 ## ------------------------------------------------------------------------
 
-@if @:NAES
-@node FAQ "Dokumentation zu N.Thing - H„ufig gestellte Fragen (FAQ)"
-@else
-@if @:MING
-@node FAQ "Dokumentation zu Ming - H„ufig gestellte Fragen (FAQ)"
-@else
 @node FAQ "Dokumentation zu Thing - H„ufig gestellte Fragen (FAQ)"
-@endif
-@endif
 @prev FAQ
 @include header.stg
 
@@ -8972,6 +8541,10 @@ Maus & Tastatur                                                       Thing
 Wichtige Hinweise                                                     Thing
 @line 1 75 0 0 7
 
+Wichtige Hinweise zu Thing 1.50:
+
+ù Das THINGREG.OVL wird nicht mehr benštigt.
+
 Wichtige Hinweise zu Thing 1.27:
 
 ù Thing 1.27 ben”tigt dringend das neue THINGREG.OVL aus dem Archiv. 
@@ -9152,52 +8725,17 @@ Bezugsquellen fr Updates                                             Thing
 @line 1 75 0 0 7
 @autorefon
 
-@if @:NAES
-N.Thing ist ein integraler Bestandteil von N.AES, Updates sind daher nur 
-ber Woller Systeme m”glich.
-
-Es gibt brigens keine Quereinstiegsm”glichkeit zur Shareware-Version von 
-Thing, da der Anteil am Verkaufspreis so gering ist, da ich einen 
-sinnvoll verbilligten Umstieg weder anbieten kann noch will.
-@else
-@if @:MING
-Ming ist ein Bestandteil des Milan Computersystems, Updates sind daher 
-nur ber die Milan Computersysteme GbR m”glich.
-@else
 Wo bekommt man Updates fr Thing 1.27 her?
 Entweder bei der lokalen Mailbox oder bei Obi ... ;-)
 
 Na gut ... hier nun die 'offiziellen' Update-Quellen, die von mir (Thomas 
 Binder) unmittelbar 'versorgt' werden:
 
-  @{U}Sackpost@{u}
-    Gegen Einsendung einer Leerdiskette samt mit 2,20 DM (oder -- je nach 
-    Gr”e -- auch mit 3 DM) frankiertem und adressiertem Rckumschlag. Wer 
-    nur die Diskette schickt, mu davon ausgehen, da ich sie als Spende 
-    betrachte.
-
-    Meine Adresse: Thomas Binder
-                   Johann-Valentin-May-Strae 7
-                   64665 Alsbach-H„hnlein
-                   Deutschland
-
   @{U}EMail@{u}
-    Wer eine EMail-Adresse hat, an die man problemlos auch groe codierte 
-    Binaries schicken kann, kann Thing bei mir per Mail anfordern.
-
     Meine Adressen: gryf@hrzpub.tu-darmstadt.de
                     binder@rbg.informatik.tu-darmstadt.de
 
-    Am besten gleich dazuschreiben, ob ich ein uue oder eine MIME-
-    Attachment (base64) schicken soll.
-
-  @{U}Mailbox@{u}
-    Maus Heidelberg - 0 62 01 / 47 72 75
-
-    Gastdownload ist m”glich, die jeweils aktuelle ”ffentliche Version 
-    von Thing befindet sich im ”ffentlichen Programmteil.
-
-  @{U}FTP@{u}
+  @{U}HTTP@{u}
     ftp.uni-kl.de im Verzeichnis /pub/atari/shell oder /pub/atari/incoming
 
 Unabh„ngig von der Bezugsquelle haben die Archive immer den gleichen Namen:
@@ -9213,8 +8751,6 @@ ThingIcn sollte dort auch zu finden sein, der Name des Archivs lautet:
 Die Mailboxen im Mausnetz sind auch immer eine gute Quelle. Die Nummern
 von Mailboxen, Bezugsquellen weiterer Programm usw. findet man auch in den
 'Atari Info Pages' von Manfred Ssykor.  @{"Das will sehen!" link aip.hyp}
-@endif
-@endif
 
 @endnode
 
