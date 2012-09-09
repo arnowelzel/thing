@@ -21,12 +21,51 @@
  * @license    LGPL
  */
 
-#include <tos.h>
-#include <stdio.h>
+#include "..\include\globdef.h"
 
-void _v_clsvwk(int handle) {
-	char hlp[256];
+#ifdef DEBUG
+#include <stdarg.h>
 
-	sprintf(hlp, "Closing handle %d\r\n", handle);
-	Cconws(hlp);
+/**
+ *
+ *
+ * @param
+ * @param
+ */
+void debugLog(int init, const char *format, ...) {
+	FILE *fh;
+	va_list va;
+	char logfileName[MAX_PLEN];
+
+	sprintf(logfileName, "%s%s", tb.homepath, "thing.log");
+	if ((fh = fopen(logfileName, init ? "w" : "a")) == NULL)
+		return;
+
+	va_start(va, format);
+	vfprintf(fh, format, va);
+	va_end(va);
+	fclose(fh);
 }
+#endif
+
+#ifdef _DEBUG
+/**
+ *
+ *
+ * @param *txt
+ */
+void debugMain(char *debugMsg) {
+	FILE *fh;
+
+	if (glob.debug_level > 0) {
+		fh = fopen(glob.debug_name, "a");
+		if (fh) {
+			fprintf(fh, "%s\n", debugMsg);
+			fclose(fh);
+		} else {
+			sprintf(almsg, "[3][Failed to create file|%s|debug disabled][ OK ]", glob.debug_name);
+			form_alert(1, almsg);
+		}
+	}
+}
+#endif

@@ -30,20 +30,22 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <math.h>
 
 static void wd_ficon(int x, int y, int iw, int ih);
 static void draw_minicicon(ICONIMG *ic, int *pxy, int sel);
 static void winRedraw(struct wininfo *win, int type, RECT *area);
 static void winSlide(struct wininfo *win, int mode, int h, int v, int type);
-#ifdef DIRCH
 static void winUpdate(struct wininfo *win, int type);
-#endif
 
-#define WPATH		1
+#define WPATH	1
 #define WGROUP	2
 
+/**
+ *
+ */
 static void winDrawPicture(WININFO *win, THINGIMG *timg, OBJECT *tree,
 		RECT *area, int offx, int offy, int fcol, int bcol) {
 	MFDB scr_mfdb;
@@ -77,17 +79,18 @@ static void winDrawPicture(WININFO *win, THINGIMG *timg, OBJECT *tree,
 				if (timg->is_mono) {
 					cindx[0] = fcol;
 					cindx[1] = bcol;
-					vrt_cpyfm(tb.vdi_handle, MD_REPLACE, pxy, &timg->picture,
-							&scr_mfdb, cindx);
+					vrt_cpyfm(tb.vdi_handle, MD_REPLACE, pxy, &timg->picture, &scr_mfdb, cindx);
 				} else {
-					vro_cpyfm(tb.vdi_handle, S_ONLY, pxy, &timg->picture,
-							&scr_mfdb);
+					vro_cpyfm(tb.vdi_handle, S_ONLY, pxy, &timg->picture, &scr_mfdb);
 				}
 			}
 		}
 	}
 }
 
+/**
+ *
+ */
 static void winRedraw(struct wininfo *win, int type, RECT *area) {
 	OBJECT *tree;
 	MFDB scr_mfdb, sym_mfdb;
@@ -171,60 +174,11 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 			tree->ob_type = G_BOX;
 		/* Bei Bedarf Hintergrundbild kacheln */
 		if (*conf.dirimg && glob.dir_ok) {
-#if 0
-			int sx, sy;
-
-			hasimg = 1;
-			if (tree)
-			tree->ob_type = G_IBOX;
-			pxy[0] = pxy[1] = 0;
-			pxy[2] = glob.dir_img.picture.fd_w - 1;
-			pxy[3] = glob.dir_img.picture.fd_h - 1;
-#ifdef OFFSET
-			sx = win->work.x - (win->offx % pxy[2]);
-			sy = win->work.y - (win->offy % pxy[3]);
-#else
-			sx = win->work.x - (wpath->offx % pxy[2]);
-			sy = win->work.y - (wpath->offy % pxy[3]);
-#endif
-			for (y = sy; y < (win->work.y + win->work.h); y += pxy[3])
-			{
-				pxy[5] = y;
-				for (x = sx; x < (win->work.x + win->work.w); x += pxy[2])
-				{
-					trect.x = x;
-					trect.y = y;
-					trect.w = glob.dir_img.picture.fd_w;
-					trect.h = glob.dir_img.picture.fd_h;
-					if (rc_intersect(area, &trect))
-					{
-						pxy[4] = x;
-						pxy[6] = x + pxy[2];
-						pxy[7] = y + pxy[3];
-						if (glob.dir_img.is_mono)
-						{
-							cindx[0] = thefcol;
-							cindx[1] = bcol;
-							vrt_cpyfm(tb.vdi_handle, MD_REPLACE, pxy,
-									&glob.dir_img.picture, &scr_mfdb, cindx);
-						}
-						else
-						{
-							vro_cpyfm(tb.vdi_handle, S_ONLY, pxy,
-									&glob.dir_img.picture, &scr_mfdb);
-						}
-					}
-				}
-			}
-#else
 			hasimg = 1;
 #ifdef OFFSET
-			winDrawPicture(win, &glob.dir_img, tree, area, win->offx,
-					win->offy, thefcol, bcol);
+			winDrawPicture(win, &glob.dir_img, tree, area, win->offx, win->offy, thefcol, bcol);
 #else
-			winDrawPicture(win, &glob.dir_img, tree, area, wpath->offx,
-					wpath->offy, thefcol, bcol);
-#endif
+			winDrawPicture(win, &glob.dir_img, tree, area, wpath->offx, wpath->offy, thefcol, bcol);
 #endif
 		}
 	} else {
@@ -372,9 +326,9 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 				}
 
 				if (type == WPATH)
-				class = WPentry->class;
+					class = WPentry->class;
 				else
-				class = WGentry->class;
+					class = WGentry->class;
 
 				/* Miniicons */
 				if (text == 2) {
@@ -398,19 +352,17 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 
 					if (ic->sub_code != 0L) /* Farbicon? */
 						draw_minicicon(ic, pxy, selected);
-					else /* Monochromes Miniicon */
-					{
+					else {
+						/* Monochromes Miniicon */
 						/* Maske */
 						sym_mfdb.fd_addr = ic->siconblk->ib_pmask;
 						mindx[0] = (ic->siconblk->ib_char & 0x0f00) >> 8;
-						vrt_cpyfm(tb.vdi_handle, MD_REPLACE, pxy, &sym_mfdb,
-								&scr_mfdb, mindx);
+						vrt_cpyfm(tb.vdi_handle, MD_REPLACE, pxy, &sym_mfdb, &scr_mfdb, mindx);
 
 						/* Icon */
 						sym_mfdb.fd_addr = ic->siconblk->ib_pdata;
 						cindx[0] = (ic->siconblk->ib_char & 0xf000) >> 12;
-						vrt_cpyfm(tb.vdi_handle, MD_TRANS, pxy, &sym_mfdb,
-								&scr_mfdb, cindx);
+						vrt_cpyfm(tb.vdi_handle, MD_TRANS, pxy, &sym_mfdb, &scr_mfdb, cindx);
 					}
 				} else {
 					/* Sonst die bisherige Darstellung */
@@ -439,11 +391,11 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 									tchar[0] = ' '; /* normale Datei */
 							}
 						} else {
-							/*							tchar[1] = 0;*/
+/*							tchar[1] = 0;*/
 							if (WGentry->aptype)
 								tchar[0] = '.'; /* ausfhrbares Programm */
-							else /* normale Datei */
-							{
+							else {
+								/* normale Datei */
 								if (WGentry->tchar)
 									tchar[0] = WGentry->tchar;
 								else
@@ -471,8 +423,8 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 					y += ty;
 
 					/* Dateiname */
-					if (tos) /* Als '8+3' */
-					{
+					if (tos) {
+						/* Als '8+3' */
 						if (WPentry->fext)
 							*(WPentry->fext) = 0;
 						v_gtext(tb.vdi_handle, x + wpath->iw + clw / 2, y, WPentry->name);
@@ -514,26 +466,16 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 					}
 
 					/* Datum, falls gewnscht */
-					if (wpath->index.show & SHOWDATE && class != EC_DEVICE &&
-					class != EC_PARENT) {
-						sprintf(s,
-								rs_trindex[LANGUAGE][LANGDATE1].ob_spec.free_string,
-								WPentry->date & 0x001f);
+					if (wpath->index.show & SHOWDATE && class != EC_DEVICE && class != EC_PARENT) {
+						sprintf(s, rs_trindex[LANGUAGE][LANGDATE1].ob_spec.free_string, WPentry->date & 0x001f);
 						v_gtext(tb.vdi_handle, x + wpath->pdate1, y, s);
-						sprintf(s,
-								rs_trindex[LANGUAGE][LANGDATE2].ob_spec.free_string,
-								(WPentry->date & 0x01e0) >> 5,
-								1980 + ((WPentry->date & 0xfe00) >> 9));
+						sprintf(s, rs_trindex[LANGUAGE][LANGDATE2].ob_spec.free_string, (WPentry->date & 0x01e0) >> 5, 1980 + ((WPentry->date & 0xfe00) >> 9));
 						v_gtext(tb.vdi_handle, x + wpath->pdate, y, s);
 					}
 
 					/* Uhrzeit, falls gewnscht */
-					if (wpath->index.show & SHOWTIME && class != EC_DEVICE &&
-					class != EC_PARENT) {
-						sprintf(s,
-								rs_trindex[LANGUAGE][LANGTIME1].ob_spec.free_string,
-								(WPentry->time & 0xf800) >> 11,
-								(WPentry->time & 0x07e0) >> 5);
+					if (wpath->index.show & SHOWTIME && class != EC_DEVICE && class != EC_PARENT) {
+						sprintf(s, rs_trindex[LANGUAGE][LANGTIME1].ob_spec.free_string, (WPentry->time & 0xf800) >> 11, (WPentry->time & 0x07e0) >> 5);
 						v_gtext(tb.vdi_handle, x + wpath->ptime, y, s);
 					}
 
@@ -590,9 +532,7 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 									sprintf(hlp, "%s", pwd);
 								else
 									sprintf(hlp, "%d", WPentry->uid);
-								v_gtext(tb.vdi_handle,
-										x + wpath->pmode + 9 * wpath->cw_x
-												+ clw, y, hlp);
+								v_gtext(tb.vdi_handle, x + wpath->pmode + 9 * wpath->cw_x + clw, y, hlp);
 								grp = get_groupname(WPentry->gid);
 								if (grp != NULL)
 									sprintf(hlp, "%s", grp);
@@ -616,8 +556,8 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 			}
 
 			/* N„chste Zeile/Spalte */
-			if (conf.vert && type == WPATH) /* Spaltenweise */
-			{
+			if (conf.vert && type == WPATH) {
+				/* Spaltenweise */
 				iy++;
 				y += clh + 1;
 				if (iy >= wpath->imy) {
@@ -629,8 +569,8 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 			} else {
 				ix++;
 				x += tlen;
-				if (ix >= imx) /* Zeilenumbruch */
-				{
+				if (ix >= imx) {
+					/* Zeilenumbruch */
 					ix = 0;
 					iy++;
 					x = sx;
@@ -804,8 +744,7 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 			hpos = (long)win->offx * 1000L / (long)(width - win->work.w);
 #else
 			if (type == WPATH)
-				hpos = (long) wpath->offx * 1000L
-						/ (long) (width - win->work.w);
+				hpos = (long) wpath->offx * 1000L / (long) (width - win->work.w);
 			else
 				hpos = (long) wgrp->offx * 1000L / (long) (width - win->work.w);
 #endif
@@ -817,11 +756,9 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 			vpos = (long)win->offy * 1000L / (long)(height - win->work.h);
 #else
 			if (type == WPATH)
-				vpos = (long) wpath->offy * 1000L
-						/ (long) (height - win->work.h);
+				vpos = (long) wpath->offy * 1000L / (long) (height - win->work.h);
 			else
-				vpos = (long) wgrp->offy * 1000L
-						/ (long) (height - win->work.h);
+				vpos = (long) wgrp->offy * 1000L / (long) (height - win->work.h);
 #endif
 		} else
 			vpos = 0;
@@ -1055,9 +992,10 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 	} /* switch */
 }
 
-#ifdef DIRCH
-static void winUpdate(struct wininfo *win, int type)
-{
+/**
+ *
+ */
+static void winUpdate(struct wininfo *win, int type) {
 	int w, h, n, autosize;
 	int asx, asy;
 
@@ -1072,8 +1010,7 @@ static void winUpdate(struct wininfo *win, int type)
 	W_PATH *wpath;
 	W_GRP *wgrp;
 
-	if (type == WPATH)
-	{
+	if (type == WPATH) {
 		wpath = (W_PATH *)win->user;
 
 		anzahlEintraege = wpath->e_total;
@@ -1089,9 +1026,7 @@ static void winUpdate(struct wininfo *win, int type)
 		asx = conf.autosizex;
 		asy = conf.autosizey;
 		conf.autosize = conf.autosizex = conf.autosizey = 0;
-	}
-	else
-	{
+	} else {
 		wgrp = (W_GRP *)win->user;
 
 		anzahlEintraege = wgrp->e_num;
@@ -1105,83 +1040,34 @@ static void winUpdate(struct wininfo *win, int type)
 	}
 
 	/* Anpassung des Objektbaums */
-#if 1
-	if (anzahlEintraege > 0) /* Nur wenn Objekte vorhanden sind */
-	{
-		if (!text && tree) /* Bei Icondarstellung */
-		{
+	if (anzahlEintraege > 0) {
+		/* Nur wenn Objekte vorhanden sind */
+		if (!text && tree) {
+			/* Bei Icondarstellung */
 			n = win->work.w / tlen;
 			if (n > anzahlEintraege)
 			n = anzahlEintraege;
-		}
-		else if (text) /* Bei Textdarstellung */
-		{
+		} else if (text) {
+			/* Bei Textdarstellung */
 			n = (win->work.w - 10 + 2 * clw) / tlen;
 		}
 
 		if (!n)
 		n = 1;
 
-		if (n != imx) /* Spaltenzahl ver„ndert ? */
-		{
+		if (n != imx) {
+			/* Spaltenzahl ver„ndert ? */
 			if (type == WPATH)
-			wpath_tree(win); /* Ja - dann neu aufbauen */
+				wpath_tree(win); /* Ja - dann neu aufbauen */
 			else
-			wgrp_tree(win); /* Ja - dann neu aufbauen */
+				wgrp_tree(win); /* Ja - dann neu aufbauen */
 
 			w_draw(win);
 			win_slide(win, S_INIT, 0, 0);
 		}
 	}
-#else
-	if (!text && tree) /* Bei Icondarstellung */
-	{
-		if (anzahlEintraege > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = win->work.w / tlen;
-			if (n > anzahlEintraege)
-			n = anzahlEintraege;
 
-			if (!n)
-			n = 1;
-
-			if (n != imx) /* Spaltenzahl ver„ndert ? */
-			{
-				if (type == WPATH)
-				wpath_tree(win); /* Ja - dann neu aufbauen */
-				else
-				wgrp_tree(win); /* Ja - dann neu aufbauen */
-
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	}
-	else if (text) /* Bei Textdarstellung */
-	{
-		if (anzahlEintraege > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = (win->work.w - 10 + 2 * clw) / tlen;
-
-			if (!n)
-			n = 1;
-
-			if (n != imx) /* Spaltenzahl ver„ndert ? */
-			{
-				if (type == WPATH)
-				wpath_tree(win); /* Ja - dann neu aufbauen */
-				else
-				wgrp_tree(win); /* Ja - dann neu aufbauen */
-
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	}
-#endif
-
-	if (tree)
-	{
+	if (tree) {
 #ifdef OFFSET
 		tree->ob_x = win->work.x - win->offx;
 		tree->ob_y = win->work.y - win->offy;
@@ -1202,8 +1088,7 @@ static void winUpdate(struct wininfo *win, int type)
 		 * Falls Objekte vorhanden sind, Objektbaum ggf. auf
 		 * Fenstergr”že vergr”žern
 		 */
-		if (anzahlEintraege > 0)
-		{
+		if (anzahlEintraege > 0) {
 			w = imx * tlen;
 			if (w < win->work.w)
 			w = win->work.w;
@@ -1211,9 +1096,8 @@ static void winUpdate(struct wininfo *win, int type)
 			h = imy * ih;
 			if (h < win->work.h)
 			h = win->work.h;
-		}
-		else /* Keine Objekte - Baum immer Fenstergr”že */
-		{
+		} else {
+			/* Keine Objekte - Baum immer Fenstergr”že */
 			w = win->work.w;
 			h = win->work.h;
 		}
@@ -1221,14 +1105,12 @@ static void winUpdate(struct wininfo *win, int type)
 		tree->ob_height = h;
 	}
 
-	if (type == WPATH)
-	{
-		conf.autosize=autosize;
+	if (type == WPATH) {
+		conf.autosize = autosize;
 		conf.autosizex = asx;
 		conf.autosizey = asy;
 	}
 }
-#endif
 
 /*-------------------------------------------------------------------------
  w_draw()
@@ -1237,19 +1119,22 @@ static void winUpdate(struct wininfo *win, int type)
  -------------------------------------------------------------------------*/
 void w_draw(WININFO *win) {
 	if (win->state & WSOPEN) {
-		app_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y, win->work.w, win->work.h);
+		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y, win->work.w, win->work.h);
 		/* Slider initialisieren */
-		/*	win_slide(win,S_INIT,0,0); */
+/*		win_slide(win,S_INIT,0,0); */
 	}
 }
 
-/*-------------------------------------------------------------------------
- wd_ficon()
-
- Zeichnen eines Ordner-'Icons' im Textmodus von Verzeichnissen/Gruppen
- -------------------------------------------------------------------------*/
+/**
+ * Zeichnen eines Ordner-'Icons' im Textmodus von Verzeichnissen/Gruppen
+ *
+ * @param x
+ * @param y
+ * @param iw
+ * @param ih
+ */
 static void wd_ficon(int x, int y, int iw, int ih) {
-	int pxy[8];
+	int pxy[6];
 	int x1, x2, x3, x4;
 	int y1, y2;
 
@@ -1317,112 +1202,12 @@ static void wd_ficon(int x, int y, int iw, int ih) {
  Verwaltung der Verzeichnis-Fenster
  -------------------------------------------------------------------------*/
 void pwin_update(struct wininfo *win) {
-#ifdef DIRCH
 	winUpdate(win, WPATH);
-#else
-	W_PATH *wpath;
-	OBJECT *tree;
-	int w, h, n, autosize;
-	int asx, asy;
-
-	wpath = (W_PATH *) win->user;
-	tree = wpath->tree;
-	autosize = conf.autosize;
-	asx = conf.autosizex;
-	asy = conf.autosizey;
-	conf.autosize = conf.autosizex = conf.autosizey = 0;
-
-	/* Anpassung des Objektbaums */
-	if (!wpath->index.text && tree) /* Bei Icondarstellung */
-	{
-		if (wpath->e_total > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = win->work.w / wpath->tlen;
-			if (n > wpath->e_total)
-				n = wpath->e_total;
-			if (!n)
-				n = 1;
-			if (n != wpath->imx) /* Spaltenzahl ver„ndert ? */
-			{
-				wpath_tree(win); /* Ja - dann neu aufbauen */
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	} else if (wpath->index.text) /* Bei Textdarstellung */
-	{
-		if (wpath->e_total > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = (win->work.w - 10 + 2 * wpath->clw) / wpath->tlen;
-			if (!n)
-				n = 1;
-			if (n != wpath->imx) /* Spaltenzahl ver„ndert ? */
-			{
-				wpath_tree(win); /* Ja - dann neu aufbauen */
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	}
-
-	if (tree) {
-#ifdef OFFSET
-		tree->ob_x = win->work.x - win->offx;
-		tree->ob_y = win->work.y - win->offy;
-#else
-		tree->ob_x = win->work.x - wpath->offx;
-		tree->ob_y = win->work.y - wpath->offy;
-#endif
-		/* Falls Objekte vorhanden sind, Objektbaum ggf. auf
-		 Fenstergr”že vergr”žern */
-		if (wpath->e_total > 0) {
-			w = wpath->imx * wpath->tlen;
-			if (w < win->work.w)
-				w = win->work.w;
-			h = wpath->imy * wpath->ih;
-			if (h < win->work.h)
-				h = win->work.h;
-		} else /* Keine Objekte - Baum immer Fenstergr”že */
-		{
-			w = win->work.w;
-			h = win->work.h;
-		}
-		tree->ob_width = w;
-		tree->ob_height = h;
-	}
-
-	conf.autosize = autosize;
-	conf.autosizex = asx;
-	conf.autosizey = asy;
-#endif
 }
 
 void pwin_prepare(struct wininfo *win) {
 	(void) win;
 }
-
-#ifndef DIRCH
-/* was soll das ueberhaupt? wird nirgends benutzt */
-
-typedef struct {
-	long x, y, w, h;
-} LRECT;
-
-static int lrc_intersect(LRECT *p1, LRECT *p2) {
-	long tx, ty, tw, th;
-
-	tw = min(p2->x + p2->w, p1->x + p1->w);
-	th = min(p2->y + p2->h, p1->y + p1->h);
-	tx = max(p2->x, p1->x);
-	ty = max(p2->y, p1->y);
-	p2->x = tx;
-	p2->y = ty;
-	p2->w = tw - tx;
-	p2->h = th - ty;
-
-	return ((tw > tx) && (th > ty));
-}
-#endif
 
 void pwin_redraw(struct wininfo *win, RECT *area) {
 	winRedraw(win, WPATH, area);
@@ -1438,75 +1223,7 @@ void pwin_slide(struct wininfo *win, int mode, int h, int v) {
  Verwaltung der Gruppen-Fenster
  -------------------------------------------------------------------------*/
 void gwin_update(struct wininfo *win) {
-#ifdef DIRCH
 	winUpdate(win, WGROUP);
-#else
-	W_GRP *wgrp;
-	OBJECT *tree;
-	int w, h, n;
-
-	wgrp = (W_GRP *) win->user;
-	tree = wgrp->tree;
-
-	/* Anpassung des Objektbaums */
-	if (!wgrp->text && tree) /* Bei Icondarstellung */
-	{
-		if (wgrp->e_num > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = win->work.w / wgrp->tlen;
-			if (n > wgrp->e_num)
-				n = wgrp->e_num;
-			if (!n)
-				n = 1;
-			if (n != wgrp->imx) /* Spaltenzahl ver„ndert ? */
-			{
-				wgrp_tree(win); /* Ja - dann neu aufbauen */
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	} else if (wgrp->text) /* Bei Textdarstellung */
-	{
-		if (wgrp->e_num > 0) /* Nur wenn Objekte vorhanden sind */
-		{
-			n = (win->work.w - 10 + 2 * wgrp->clw) / wgrp->tlen;
-			if (!n)
-				n = 1;
-			if (n != wgrp->imx) /* Spaltenzahl ver„ndert ? */
-			{
-				wgrp_tree(win); /* Ja - dann neu aufbauen */
-				w_draw(win);
-				win_slide(win, S_INIT, 0, 0);
-			}
-		}
-	}
-
-	if (tree) {
-#ifdef OFFSET
-		tree->ob_x = win->work.x - win->offx;
-		tree->ob_y = win->work.y - win->offy;
-#else
-		tree->ob_x = win->work.x - wgrp->offx;
-		tree->ob_y = win->work.y - wgrp->offy;
-#endif
-		/* Falls Objekte vorhanden sind, Objektbaum ggf. auf
-		 Fenstergr”že vergr”žern */
-		if (wgrp->e_num > 0) {
-			w = wgrp->imx * wgrp->tlen;
-			if (w < win->work.w)
-				w = win->work.w;
-			h = wgrp->imy * wgrp->ih;
-			if (h < win->work.h)
-				h = win->work.h;
-		} else /* Keine Objekte - Baum immer Fenstergr”že */
-		{
-			w = win->work.w;
-			h = win->work.h;
-		}
-		tree->ob_width = w;
-		tree->ob_height = h;
-	}
-#endif
 }
 
 void gwin_prepare(struct wininfo *win) {
@@ -1527,7 +1244,7 @@ void gwin_slide(struct wininfo *win, int mode, int h, int v) {
  Verwaltung des Cursors in Verzeichnissen und Gruppen
  -------------------------------------------------------------------------*/
 
-/*
+/**
  * wf_getfirst
  *
  * Ermittelt das erste sichtbare Objekt in einem Fenster.
@@ -1542,19 +1259,20 @@ void gwin_slide(struct wininfo *win, int mode, int h, int v) {
 int wf_getfirst(WININFO *win) {
 	WG_ENTRY *dummy;
 
-	switch (win->class)
-	{
-		case WCPATH:
-		return((int)wpath_efind(win, -1, 0) - 1);
+	switch (win->class) {
+	case WCPATH:
+		return ((int)wpath_efind(win, -1, 0) - 1);
 
-		case WCGROUP:
-		return((int)wgrp_efind(win, -1, 0, &dummy) - 1);
+	case WCGROUP:
+		return ((int)wgrp_efind(win, -1, 0, &dummy) - 1);
 	}
 
 	return (-1);
 }
 
-/* Cursor einschalten */
+/**
+ * Cursor einschalten
+ */
 void wf_set(WININFO *win) {
 	W_PATH *wpath;
 	W_GRP *wgrp;
@@ -1569,10 +1287,10 @@ void wf_set(WININFO *win) {
 		 * Cursor nur aktivieren, wenn berhaupt Objekte vorhanden sind.
 		 */
 		switch (win->class) {
-			case WCPATH:
+		case WCPATH:
 			wpath = (W_PATH *)win->user;
 			if (!wpath->e_total)
-			return;
+				return;
 
 			/* Focus auf das erste selektierte Objekt */
 			wpath->focus = -1;
@@ -1583,11 +1301,9 @@ void wf_set(WININFO *win) {
 				}
 			}
 
-			/*
-			 * Ggf. versuchen, das erste sichtbare Objekt zu selektieren
-			 */
+			/* Ggf. versuchen, das erste sichtbare Objekt zu selektieren */
 			if (wpath->focus == -1)
-			wpath->focus = wf_getfirst(win);
+				wpath->focus = wf_getfirst(win);
 
 			/* Falls Focus vorhanden, dann ggf. scrollen */
 			if (wpath->focus > -1)
@@ -1598,26 +1314,24 @@ void wf_set(WININFO *win) {
 			}
 			break;
 
-			case WCGROUP:
+		case WCGROUP:
 			wgrp = (W_GRP *)win->user;
 			if (!wgrp->e_num)
 				return;
 
 			/* Focus auf das erste selektierte Objekt */
-			wgrp->focus=-1;
+			wgrp->focus = -1;
 			gitem = wgrp->entry;
 			i = 0;
 			while (gitem && wgrp->focus == -1) {
 				if (gitem->sel)
-				wgrp->focus = i;
+					wgrp->focus = i;
 
 				gitem = gitem->next;
 				i++;
 			}
 
-			/*
-			 * Ggf. versuchen, das erste sichtbare Objekt zu selektieren
-			 */
+			/* Ggf. versuchen, das erste sichtbare Objekt zu selektieren */
 			if (wgrp->focus == -1)
 			wgrp->focus = wf_getfirst(win);
 
@@ -1642,7 +1356,9 @@ void wf_set(WININFO *win) {
 	}
 }
 
-/* Cursor ausschalten */
+/**
+ * Cursor ausschalten
+ */
 void wf_clear(void) {
 	if (glob.fmode) {
 		if (glob.fdraw)
@@ -1652,20 +1368,21 @@ void wf_clear(void) {
 	}
 }
 
-/* Cursor setzen/l”schen */
+/**
+ * Cursor setzen/loeschen
+ */
 void wf_draw(void) {
 	int whandle;
 	WININFO *win;
 	W_PATH *wpath;
 	W_GRP *wgrp;
-#ifdef DIRCH
 	int i, pxy[32], cxy[4];
-#else
-	int i, pxy[32], pnum, cxy[4];
-#endif
 	int ix, iy, iw, ih, tx, ty, tw;
 	RECT area, box;
-	int x, y, w, h;
+	int x, y;
+#if 0
+	int w, h;
+#endif
 	ICONBLK *iblk;
 	int text; /* Textdarstellung */
 	int tlen; /* L„nge eines Eintrags */
@@ -1684,7 +1401,6 @@ void wf_draw(void) {
 	if (win->state & WSICON)
 		return;
 
-#ifdef DIRCH
 	switch (win->class) {
 		case WCPATH:
 			type = WPATH;
@@ -1715,10 +1431,9 @@ void wf_draw(void) {
 			break;
 	} /* switch */
 
-	if (text) /* Darstellung als Text */
-	{
-		if (conf.vert && type == WPATH)
-		{
+	if (text) {
+		/* Darstellung als Text */
+		if (conf.vert && type == WPATH) {
 			tx = i / wpath->imy;
 #ifdef OFFSET
 			ix = tx * tlen + win->work.x + 10 - win->offx;
@@ -1727,9 +1442,7 @@ void wf_draw(void) {
 			ix = tx * tlen + win->work.x + 10 - wpath->offx;
 			iy = (i - tx * imy) * (clh + 1) + win->work.y + 2 - wpath->offy;
 #endif
-		}
-		else
-		{
+		} else {
 			ty = i / imx;
 
 #ifdef OFFSET
@@ -1739,13 +1452,10 @@ void wf_draw(void) {
 			ix = (i - ty * imx) * tlen + win->work.x + 10;
 			iy = ty * (clh + 1) + win->work.y + 2;
 
-			if (type == WPATH)
-			{
+			if (type == WPATH) {
 				ix -= wpath->offx;
 				iy -= wpath->offy;
-			}
-			else
-			{
+			} else {
 				ix -= wgrp->offx;
 				iy -= wgrp->offy;
 			}
@@ -1759,17 +1469,18 @@ void wf_draw(void) {
 		pxy[1] = iy;
 		pxy[2] = pxy[0] + iw - 1;
 		pxy[3] = pxy[1] + ih - 1;
-	}
-	else /* Darstellung als Icons */
-	{
-		objc_offset(tree, i+1, &x, &y);
+	} else {
+		/* Darstellung als Icons */
+		objc_offset(tree, i + 1, &x, &y);
+#if 0
 		w = tree[i+1].ob_width;
 		h = tree[i+1].ob_height;
+#endif
 
 		if (type == WPATH)
-		iblk = &wpath->wicon[i].ciconblk.monoblk;
+			iblk = &wpath->wicon[i].ciconblk.monoblk;
 		else
-		iblk = &wgrp->wicon[i].ciconblk.monoblk;
+			iblk = &wgrp->wicon[i].ciconblk.monoblk;
 
 		ix = iblk->ib_xicon;
 		iw = iblk->ib_wicon;
@@ -1778,17 +1489,20 @@ void wf_draw(void) {
 		tw = iblk->ib_wtext;
 
 		/* Anpassung an Beschriftung */
-		if (tw < iw) /* Text kleiner als Icon */
-		{
+		if (tw < iw) {
+			/* Text kleiner als Icon */
 			x += ix;
+#if 0
 			w = iw;
+#endif
 			tx -= ix;
 			ix = 0;
-		}
-		else /* Text gr”žer oder gleich grož wie Icon */
-		{
+		} else {
+			/* Text gr”žer oder gleich grož wie Icon */
 			x += tx;
+#if 0
 			w = tw;
+#endif
 			ix -= tx;
 			tx = 0;
 		}
@@ -1828,175 +1542,6 @@ void wf_draw(void) {
 		pxy[31] = pxy[1] + 1;
 	}
 
-#else
-	/* Koordinaten berechnen */
-	switch (win->class)
-	{
-		case WCPATH:
-		wpath = (W_PATH *)win->user;
-		i = wpath->focus;
-		if (wpath->index.text) /* Darstellung als Text */
-		{
-			if (conf.vert)
-			{
-				tx = i / wpath->imy;
-#ifdef OFFSET
-				ix = tx * wpath->tlen + win->work.x + 10 - win->offx;
-				iy = (i - tx * wpath->imy) * (wpath->clh+1) + win->work.y + 2 - win->offy;
-#else
-				ix = tx * wpath->tlen + win->work.x + 10 - wpath->offx;
-				iy = (i - tx * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
-#endif
-			}
-			else
-			{
-				ty = i / wpath->imx;
-#ifdef OFFSET
-				ix = (i - ty * wpath->imx) * wpath->tlen + win->work.x + 10 - win->offx;
-				iy = ty * (wpath->clh + 1) + win->work.y + 2 - win->offy;
-#else
-				ix = (i - ty * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
-				iy = ty * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
-#endif
-			}
-
-			iw = wpath->tlen - wpath->clw * 2;
-			ih = wpath->clh;
-
-			pxy[0] = ix;
-			pxy[1] = iy;
-			pxy[2] = ix + iw - 1;
-			pxy[3] = iy + ih - 1;
-
-			pnum = 1;
-		}
-		else /* Darstellung als Icons */
-		{
-			objc_offset(wpath->tree, i+1, &x, &y);
-			w = wpath->tree[i+1].ob_width;
-			h = wpath->tree[i+1].ob_height;
-			iblk = &wpath->wicon[i].ciconblk.monoblk;
-			ix = iblk->ib_xicon;
-			iw = iblk->ib_wicon;
-			tx = iblk->ib_xtext;
-			ty = iblk->ib_ytext;
-			tw = iblk->ib_wtext;
-
-			/* Anpassung an Beschriftung */
-			if (tw < iw) /* Text kleiner als Icon */
-			{
-				x += ix;
-				w = iw;
-				tx -= ix;
-				ix = 0;
-			}
-			else /* Text gr”žer oder gleich grož wie Icon */
-			{
-				x += tx;
-				w = tw;
-				ix -= tx;
-				tx = 0;
-			}
-
-			/* Koordinaten am Schluss berechnen lassen */
-			pnum = 2;
-		}
-		break;
-
-		case WCGROUP:
-		wgrp = (W_GRP *)win->user;
-		i = wgrp->focus;
-		if (wgrp->text) /* Darstellung als Text */
-		{
-			ty = i / wgrp->imx;
-#ifdef OFFSET
-			ix = (i - ty * wgrp->imx) * wgrp->tlen + win->work.x + 10 - win->offx;
-			iy = ty * (wgrp->clh + 1) + win->work.y + 2 - win->offy;
-#else
-			ix = (i - ty * wgrp->imx) * wgrp->tlen + win->work.x + 10 - wgrp->offx;
-			iy = ty * (wgrp->clh + 1) + win->work.y + 2 - wgrp->offy;
-#endif
-
-			iw = wgrp->tlen - wgrp->clw * 2;
-			ih = wgrp->clh;
-
-			pxy[0] = ix;
-			pxy[1] = iy;
-			pxy[2] = ix + iw - 1;
-			pxy[3] = iy + ih - 1;
-			pnum = 1;
-		}
-		else /* Darstellung als Icons */
-		{
-			objc_offset(wgrp->tree, i+1, &x, &y);
-			w = wgrp->tree[i+1].ob_width;
-			h = wgrp->tree[i+1].ob_height;
-			iblk = &wgrp->wicon[i].ciconblk.monoblk;
-			ix = iblk->ib_xicon;
-			iw = iblk->ib_wicon;
-			tx = iblk->ib_xtext;
-			ty = iblk->ib_ytext;
-			tw = iblk->ib_wtext;
-
-			/* Anpassung an Beschriftung */
-			if (tw < iw) /* Text kleiner als Icon */
-			{
-				x += ix;
-				w = iw;
-				tx -= ix;
-				ix = 0;
-			}
-			else /* Text gr”žer oder gleich grož wie Icon */
-			{
-				x += tx;
-				w = tw;
-				ix -= tx;
-				tx = 0;
-			}
-
-			/* Koordinaten am Schluss berechnen lassen */
-			pnum = 2;
-		}
-		break;
-	} /* switch */
-
-	/* Koordinatenberechnung fr Icondarstellung */
-	if (pnum == 2) {
-		pxy[0] = x + tx;
-		pxy[1] = y + ty;
-		pxy[2] = x + ix;
-		pxy[3] = y + ty;
-		pxy[4] = x + ix;
-		pxy[5] = y + ty - 1;
-		pxy[6] = x + ix;
-		pxy[7] = y + 1;
-		pxy[8] = x + ix;
-		pxy[9] = y;
-		pxy[10] = x + ix + iw - 1;
-		pxy[11] = y;
-		pxy[12] = x + ix + iw - 1;
-		pxy[13] = y + 1;
-		pxy[14] = x + ix + iw - 1;
-		pxy[15] = y + ty - 1;
-		pxy[16] = x + ix + iw - 1;
-		pxy[17] = y + ty;
-		pxy[18] = x + tx + tw - 1;
-		pxy[19] = y + ty;
-		pxy[20] = x + tx + tw - 1;
-		pxy[21] = y + ty + 1;
-		pxy[22] = x + tx + tw - 1;
-		pxy[23] = y + ty + 6;
-		pxy[24] = x + tx + tw - 1;
-		pxy[25] = y + ty + 7;
-		pxy[26] = x + tx;
-		pxy[27] = y + ty + 7;
-		pxy[28] = x + tx;
-		pxy[29] = y + ty + 6;
-		pxy[30] = x + tx;
-		pxy[31] = y + ty + 1;
-	}
-#endif
-
 	wind_update (BEG_UPDATE);
 	graf_mouse(M_OFF, NULL);
 
@@ -2007,12 +1552,7 @@ void wf_draw(void) {
 	vsf_perimeter(tb.vdi_handle, 1);
 	vswr_mode(tb.vdi_handle, MD_XOR);
 
-#if 0
-	area.x=tb.desk.x;area.y=tb.desk.y;
-	area.w=tb.desk.w;area.h=tb.desk.h;
-#else
 	area = tb.desk;
-#endif
 
 	/* Ersten Eintrag in der Rechteckliste holen */
 	wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
@@ -2030,11 +1570,7 @@ void wf_draw(void) {
 			cxy[3] = cxy[1] + box.h - 1;
 			vs_clip(tb.vdi_handle, 1, cxy);
 
-#ifdef DIRCH
 			if (text)
-#else
-			if (pnum == 1)
-#endif
 				v_bar(tb.vdi_handle, pxy);
 			else
 				for (i = 0; i < 8; i++) {
@@ -2053,7 +1589,12 @@ void wf_draw(void) {
 	wind_update (END_UPDATE);
 }
 
-/* Cursor-Objekt selektieren */
+/**
+ * Cursor-Objekt selektieren
+ *
+ * @param sel
+ * @param add
+ */
 void wf_sel(int sel, int add) {
 	WININFO *win, *win1;
 	W_PATH *wpath;
@@ -2088,34 +1629,34 @@ void wf_sel(int sel, int add) {
 	icon_select(-1, 0, 0);
 
 	switch (win->class) {
-		case WCPATH:
+	case WCPATH:
 		wpath = (W_PATH *)win->user;
 		if ((!sel && conf.autosel) || sel) {
 			wpath->amask[0] = 0;
 			if (sel)
-			wpath_esel(win, wpath->lptr[wpath->focus], add, 1-wpath->lptr[wpath->focus]->sel, 1);
+				wpath_esel(win, wpath->lptr[wpath->focus], add, 1-wpath->lptr[wpath->focus]->sel, 1);
 			else
-			wpath_esel(win, wpath->lptr[wpath->focus], add, 1, 1);
+				wpath_esel(win, wpath->lptr[wpath->focus], add, 1, 1);
 		}
 
 		wpath_showsel(win, 1);
 		break;
 
-		case WCGROUP:
+	case WCGROUP:
 		wgrp = (W_GRP *)win->user;
 		f = wgrp->focus;
 		gitem = wgrp->entry;
 		for (i = 0; i < f; i++)
-		gitem = gitem->next;
+			gitem = gitem->next;
 
 		/* Žnderung: Bei Gruppen immer selektieren */
 		/*   if((!sel && conf.autosel) || sel)
 		 { */
 
 		if (sel)
-		wgrp_esel(win, gitem, 0, 1-gitem->sel);
+			wgrp_esel(win, gitem, 0, 1-gitem->sel);
 		else
-		wgrp_esel(win, gitem, 0, 1);
+			wgrp_esel(win, gitem, 0, 1);
 		/*   } */
 
 		wgrp_showsel(win, 1);
@@ -2138,90 +1679,113 @@ void wf_move(int dir, int add) {
 
 	win = glob.fwin;
 	switch (win->class) {
-		case WCPATH:
+	case WCPATH:
 		wpath = (W_PATH *)win->user;
 		focus = wpath->focus;
 		max = wpath->e_total - 1;
 
 		if (wpath->index.text)
-		page = win->work.h / (wpath->clh + 1);
+			page = win->work.h / (wpath->clh + 1);
 		else
-		page = win->work.h / (wpath->ih + 8);
+			page = win->work.h / (wpath->ih + 8);
 
 		page--;
 		if (page < 1)
-		page = 1;
+			page = 1;
 
 		if (wpath->index.text && conf.vert) {
-			if(!conf.autosel && add)
-			vmove = page;
+			if (!conf.autosel && add)
+				vmove = page;
 			else
-			vmove = 1;
+				vmove = 1;
 
 			hmove = wpath->imy;
 		} else {
 			if (!conf.autosel && add)
-			vmove = wpath->imx * page;
+				vmove = wpath->imx * page;
 			else
-			vmove = wpath->imx;
+				vmove = wpath->imx;
 
 			hmove = 1;
 		}
 
 		switch (dir) {
-			case 0: focus = 0; break;
-			case 9: focus = max; break;
-			case -1: focus -= hmove; break;
-			case 1: focus += hmove; break;
-			case -2: focus -= vmove; break;
-			case 2: focus += vmove; break;
+		case 0:
+			focus = 0;
+			break;
+		case 9:
+			focus = max;
+			break;
+		case -1:
+			focus -= hmove;
+			break;
+		case 1:
+			focus += hmove;
+			break;
+		case -2:
+			focus -= vmove;
+			break;
+		case 2:
+			focus += vmove;
+			break;
 		}
 
 		/* if(focus<0 || focus>max) focus=focus1; */
 		if (focus < 0)
-		focus = 0;
+			focus = 0;
 		if (focus > max)
-		focus = max;
+			focus = max;
 
 		wpath->focus = focus;
 		break;
 
-		case WCGROUP:
+	case WCGROUP:
 		wgrp = (W_GRP *)win->user;
 		focus = wgrp->focus;
 		max = wgrp->e_num - 1;
 
 		if (wgrp->text)
-		page = win->work.h / (wgrp->clh + 1);
+			page = win->work.h / (wgrp->clh + 1);
 		else
-		page = win->work.h / wgrp->ih;
+			page = win->work.h / wgrp->ih;
 
 		page--;
 		if (page < 1)
-		page = 1;
+			page = 1;
 
 		/* Žnderung: Bei Gruppen wird immer selektiert */
 		if (/* !conf.autosel && */add)
-		vmove = wgrp->imx * page;
+			vmove = wgrp->imx * page;
 		else
-		vmove = wgrp->imx;
+			vmove = wgrp->imx;
 
 		hmove = 1;
 
 		switch (dir) {
-			case 0: focus = 0; break;
-			case 9: focus = max; break;
-			case -1: focus -= hmove; break;
-			case 1: focus += hmove; break;
-			case -2: focus -= vmove; break;
-			case 2: focus += vmove; break;
+		case 0:
+			focus = 0;
+			break;
+		case 9:
+			focus = max;
+			break;
+		case -1:
+			focus -= hmove;
+			break;
+		case 1:
+			focus += hmove;
+			break;
+		case -2:
+			focus -= vmove;
+			break;
+		case 2:
+			focus += vmove;
+			break;
 		}
 
-		/*   if(focus<0 || focus>max) focus=focus1; */
-		if (focus <0 )
-		focus = 0;
+		if (focus < 0)
+			focus = 0;
 		if (focus > max)
-		focus = max;
+			focus = max;
 		wgrp->focus = focus;
 		break;
 	}
@@ -2248,19 +1812,27 @@ void w_full(WININFO *win) {
 	ax = 4;
 	ay = 0;
 	switch (win->class) {
-		case WCGROUP:
-		wgrp=(W_GRP *)win->user;
-		wx=wgrp->tlen;
-		if(wgrp->text) {wy=wgrp->clh+1;ax=0;ay=4;}
-		else wy=wgrp->ih;
-		f=wgrp->e_num;
+	case WCGROUP:
+		wgrp = (W_GRP *)win->user;
+		wx = wgrp->tlen;
+		if (wgrp->text) {
+			wy = wgrp->clh + 1;
+			ax = 0;
+			ay = 4;
+		} else
+			wy = wgrp->ih;
+		f = wgrp->e_num;
 		break;
-		case WCPATH:
-		wpath=(W_PATH *)win->user;
-		wx=wpath->tlen;
-		if(wpath->index.text) {wy=wpath->clh+1;ax=0;ay=4;}
-		else wy=wpath->ih;
-		f=wpath->e_total;
+	case WCPATH:
+		wpath = (W_PATH *)win->user;
+		wx = wpath->tlen;
+		if (wpath->index.text) {
+			wy = wpath->clh + 1;
+			ax = 0;
+			ay = 4;
+		} else
+			wy = wpath->ih;
+		f = wpath->e_total;
 		break;
 	}
 	if (wx < 1)
@@ -2286,6 +1858,7 @@ void w_full(WININFO *win) {
 				maxw = win->curr.x + win->curr.w - minx;
 			if ((win->curr.y + win->curr.h) > (miny + maxh))
 				maxh = win->curr.y + win->curr.h - miny;
+
 			/* Auf Desktop beschr„nken */
 			minx = max(minx, tb.desk.x);
 			miny = max(miny, tb.desk.y);
@@ -2326,12 +1899,12 @@ void w_full(WININFO *win) {
 		imy = 1;
 
 	/* Rechteck berechnen */
-	if (!ax) /* Textmodus */
-	{
+	if (!ax) {
+		/* Textmodus */
 		if (imy >= (int) f)
 			imx = 1; /* Alles passt in eine Spalte */
-		else /* Sonst n”tige bzw. m”gliche Spaltenzahl ermitteln */
-		{
+		else {
+			/* Sonst n”tige bzw. m”gliche Spaltenzahl ermitteln */
 			if (imx > 1) {
 #if 1
 				for (imx = 2; (((wx * (imx + 1)) <= w) && ((imx * imy) < f)); imx++)
@@ -2469,10 +2042,10 @@ void wc_icon(int *pxy, int *x, int *y, int *w, int *h, int ix, int iw, int tx,
 	pxy[9] = *y + *h - 1;
 	pxy[10] = *x + tx;
 	pxy[11] = pxy[9];
-	pxy[12] = *x + tx;
-	pxy[13] = *y + ty;
+	pxy[12] = pxy[10];
+	pxy[13] = pxy[5];
 	pxy[14] = pxy[0];
-	pxy[15] = *y + ty;
+	pxy[15] = pxy[5];
 	pxy[16] = pxy[0];
 	pxy[17] = *y;
 }
@@ -2493,13 +2066,13 @@ void wc_text(int *pxy, int *x, int *y, int *w, int *h) {
 	pxy[0] = *x;
 	pxy[1] = *y;
 	pxy[2] = *x + *w - 1;
-	pxy[3] = *y;
-	pxy[4] = *x + *w - 1;
+	pxy[3] = pxy[1];
+	pxy[4] = pxy[2];
 	pxy[5] = *y + *h - 1;
-	pxy[6] = *x;
-	pxy[7] = *y + *h - 1;
-	pxy[8] = *x;
-	pxy[9] = *y;
+	pxy[6] = pxy[0];
+	pxy[7] = pxy[5];
+	pxy[8] = pxy[0];
+	pxy[9] = pxy[1];
 }
 
 static void draw_minicicon(ICONIMG *ic, int *pxy, int sel) {

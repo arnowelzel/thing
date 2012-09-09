@@ -30,10 +30,9 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
-
-#undef VERY_OLD_CONFIG
 
 /*-------------------------------------------------------------------------
  conf_save()
@@ -41,7 +40,6 @@
 
  Einstellungen laden/sichern
  -------------------------------------------------------------------------*/
-
 int conf_save(int tmp) {
 	FILE *fh;
 	int i, sh, sv, x, y, w, h;
@@ -77,7 +75,7 @@ int conf_save(int tmp) {
 	strcpy(name, glob.cpath);
 	strcat(name, fname);
 #ifdef _DEBUG
-	sprintf(almsg,"CSAV: name.inf=%s",fname);main_debug(almsg);
+	sprintf(almsg, "CSAV: name.inf=%s", fname); debugMain(almsg);
 #endif
 
 	/* Falls nicht temporÑr, dann vorher Backup erzeugen */
@@ -87,23 +85,22 @@ int conf_save(int tmp) {
 		Fdelete(bname);
 		Frename(0, name, bname);
 #ifdef _DEBUG
-		sprintf(almsg,"CSAV: backup.inf=%s",bname);main_debug(almsg);
+		sprintf(almsg, "CSAV: backup.inf=%s", bname); debugMain(almsg);
 #endif
 	}
 
 	fh = fopen(name, "w");
-	if (fh) /* Nur schreiben, wenn Datei erzeugt wurde! */
-	{
+	if (fh) {
+		/* Nur schreiben, wenn Datei erzeugt wurde! */
 #ifdef _DEBUG
-		sprintf(almsg,"CSAV: inf save begin");main_debug(almsg);
+		sprintf(almsg, "CSAV: inf save begin"); debugMain(almsg);
 #endif
 		/* Kurzinfo - wird beim Laden ignoriert */
 		file_header(fh, "Thing general configuration", fname);
 		fprintf(fh, "VERS %d\n", _VERS);
 
 		/* Einstellungen */
-		fprintf(fh,
-				"CONF %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+		fprintf(fh, "CONF %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
 				conf.wdial, conf.bsel, conf.hscr, conf.texit, conf.cdel,
 				conf.ccopy, conf.creplace, conf.scroll, conf.isnap, conf.altcpx,
 				conf.askacc, conf.nowin, conf.autocon, conf.toswait,
@@ -119,8 +116,7 @@ int conf_save(int tmp) {
 		fprintf(fh, "US3D %d\n", tb.use3d);
 		fprintf(fh, "UDEF %d\n", conf.userdef);
 		fprintf(fh, "USBW %d\n", tb.backwin);
-		fprintf(fh, "T2GM %d %d %d %d %d\n", con.buffer, con.color, con.hist,
-				con.buftime, con.flags);
+		fprintf(fh, "T2GM %d %d %d %d %d\n", con.buffer, con.color, con.hist, con.buftime, con.flags);
 		fprintf(fh, "EXFI ");
 		put_text(fh, conf.finder);
 		fprintf(fh, "\n");
@@ -145,8 +141,7 @@ int conf_save(int tmp) {
 		fprintf(fh, "NICE %d\n", conf.nicelines);
 
 		/* Index */
-		fprintf(fh, "IDEX %d %d %d\n", conf.index.text, conf.index.sortby,
-				conf.index.show);
+		fprintf(fh, "IDEX %d %d %d\n", conf.index.text, conf.index.sortby, conf.index.show);
 
 		/* Funktionstasten */
 		for (i = 0; i < 40; i++)
@@ -218,8 +213,7 @@ int conf_save(int tmp) {
 		/* Laufwerksinformationen */
 		p = desk.dicon + 1;
 		for (i = 0; i < MAXDRIVES; i++, p++) {
-			fprintf(fh, "DRIV %d %d %d 0 0 0 0 0 0 0 0\n", i,
-					p->spec.drive->uselabel, p->spec.drive->autoinstall);
+			fprintf(fh, "DRIV %d %d %d 0 0 0 0 0 0 0 0\n", i, p->spec.drive->uselabel, p->spec.drive->autoinstall);
 		}
 
 		/* Verzeichnisfenster */
@@ -239,8 +233,7 @@ int conf_save(int tmp) {
 			ly = (double) (y - tb.desk.y) * 10000L / (double) tb.desk.h;
 			lw = (double) w * 10000L / (double) tb.desk.w;
 			lh = (double) h * 10000L / (double) tb.desk.h;
-			fprintf(fh, "WIXY %d %d %d %d %d\n", i, (int) lx, (int) ly,
-					(int) lw, (int) lh);
+			fprintf(fh, "WIXY %d %d %d %d %d\n", i, (int) lx, (int) ly, (int) lw, (int) lh);
 		}
 
 		/* Console-Fenster */
@@ -259,22 +252,21 @@ int conf_save(int tmp) {
 		ly = (double) (y - tb.desk.y) * 10000L / (double) tb.desk.h;
 		lw = (double) w * 10000L / (double) tb.desk.w;
 		lh = (double) h * 10000L / (double) tb.desk.h;
-		fprintf(fh, "VTXY %d %d %d %d\n", (int) lx, (int) ly, (int) lw,
-				(int) lh);
+		fprintf(fh, "VTXY %d %d %d %d\n", (int) lx, (int) ly, (int) lw, (int) lh);
 
 		/* Offene Fenster */
 		if (tmp || !conf.nowin) {
 			win = tb.win;
 			while (win) {
 				/* Dialogfenster nicht sichern! */
-				if (win->class!=WCDIAL) {
+				if (win->class != WCDIAL) {
 					/* Angaben bei allen Fenstern */
 					wind_get(win->handle, WF_HSLIDE, &sh);
 					wind_get(win->handle, WF_VSLIDE, &sv);
-					fprintf(fh,"WOPN %d %d %d %d ",win->class,win==tb.topwin,sh,sv);
+					fprintf(fh, "WOPN %d %d %d %d ", win->class, win == tb.topwin, sh, sv);
 					/* Weitere Angaben je nach Fenstertyp */
 					switch (win->class) {
-						case WCPATH: /* Verzeichnis */
+					case WCPATH: /* Verzeichnis */
 						strcpy(buf, ((W_PATH *)win->user)->index.wildcard);
 						quote(buf);
 						fprintf(fh, "%s ", buf);
@@ -286,13 +278,13 @@ int conf_save(int tmp) {
 						((W_PATH *)win->user)->num,
 						((W_PATH *)win->user)->index.sortby);
 						break;
-						case WCGROUP: /* Gruppe */
+					case WCGROUP: /* Gruppe */
 						strcpy(buf, ((W_GRP *)win->user)->name);
 						quote(buf);
 						fprintf(fh,". %s 0 \042\042 %d\n", buf,
 						((W_GRP *)win->user)->text);
 						break;
-						case WCCON: /* Console */
+					case WCCON: /* Console */
 						fprintf(fh,". . 0 \042\042\n");
 						break;
 					}
@@ -333,7 +325,7 @@ int conf_save(int tmp) {
 		fclose(fh);
 
 #ifdef _DEBUG
-		sprintf(almsg,"CSAV: inf save done");main_debug(almsg);
+		sprintf(almsg, "CSAV: inf save done"); debugMain(almsg);
 #endif
 
 		/* Aufloesungsabhaengige Informationen sichern - Desktop */
@@ -358,7 +350,7 @@ int conf_save(int tmp) {
 		strcat(name, rname);
 
 #ifdef _DEBUG
-		sprintf(almsg,"CSAV: name.res=%s",rname);main_debug(almsg);
+		sprintf(almsg, "CSAV: name.res=%s", rname); debugMain(almsg);
 #endif
 
 		/* Falls nicht temporaer, dann vorher Backup erzeugen */
@@ -369,7 +361,7 @@ int conf_save(int tmp) {
 			Fdelete(brname);
 			Frename(0, name, brname);
 #ifdef _DEBUG
-			sprintf(almsg,"CSAV: backup.res=%s",brname);main_debug(almsg);
+			sprintf(almsg, "CSAV: backup.res=%s", brname); debugMain(almsg);
 #endif
 		}
 
@@ -378,7 +370,7 @@ int conf_save(int tmp) {
 			ICONDESK *p = desk.dicon + 1;
 
 #ifdef _DEBUG
-			sprintf(almsg,"CSAV: res save begin");main_debug(almsg);
+			sprintf(almsg, "CSAV: res save begin"); debugMain(almsg);
 #endif
 			/* Kurzinfo - wird beim Laden ignoriert */
 			file_header(fh, "Thing display configuration", rname);
@@ -391,68 +383,65 @@ int conf_save(int tmp) {
 			/* Icons auf dem Desktop */
 			for (i = 1; i <= MAXICON; i++, p++) {
 				switch (p->class) {
-					case IDTRASH: /* Papierkorb */
-						fprintf(fh, "OTRS %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						fprintf(fh, "\n");
-						break;
-					case IDCLIP: /* Ablage */
-						fprintf(fh, "OCLP %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						fprintf(fh, "\n");
-						break;
-					case IDDRIVE: /* Laufwerk */
-						fprintf(fh, "ODRV %d %d %d ", p->x, p->y, p->spec.drive->drive);
-						put_text(fh, p->spec.drive->deftitle);
-						fprintf(fh, "\n");
-						break;
-					case IDFREE: /* Unbenutztes Laufwerk ? */
-						if (i <= MAXDRIVES)
-							fprintf(fh, "NDRV %d\n", i-1);
-						break;
-					case IDFILE: /* Datei */
-						fprintf(fh, "OFIL %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						strcpy(buf, p->spec.file->name);
-						quote(buf);
-						fprintf(fh," %s %d\n", buf, p->spec.file->mode);
-						break;
-					case IDFOLDER: /* Ordner */
-						fprintf(fh, "OFLD %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						strcpy(buf, p->spec.folder->path);
-						quote(buf);
-						fprintf(fh," %s\n", buf);
-						break;
-					case IDPRT: /* Drucker */
-						fprintf(fh, "OPRT %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						fprintf(fh, "\n");
-						break;
-					case IDDEVICE: /* Device */
-						fprintf(fh,"ODEV %d %d ", p->x, p->y);
-						put_text(fh, p->title);
-						strcpy(buf, p->spec.device->name);
-						quote(buf);
-						fprintf(fh," %s\n", buf);
-						break;
+				case IDTRASH: /* Papierkorb */
+					fprintf(fh, "OTRS %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					fprintf(fh, "\n");
+					break;
+				case IDCLIP: /* Ablage */
+					fprintf(fh, "OCLP %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					fprintf(fh, "\n");
+					break;
+				case IDDRIVE: /* Laufwerk */
+					fprintf(fh, "ODRV %d %d %d ", p->x, p->y, p->spec.drive->drive);
+					put_text(fh, p->spec.drive->deftitle);
+					fprintf(fh, "\n");
+					break;
+				case IDFREE: /* Unbenutztes Laufwerk ? */
+					if (i <= MAXDRIVES)
+						fprintf(fh, "NDRV %d\n", i-1);
+					break;
+				case IDFILE: /* Datei */
+					fprintf(fh, "OFIL %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					strcpy(buf, p->spec.file->name);
+					quote(buf);
+					fprintf(fh," %s %d\n", buf, p->spec.file->mode);
+					break;
+				case IDFOLDER: /* Ordner */
+					fprintf(fh, "OFLD %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					strcpy(buf, p->spec.folder->path);
+					quote(buf);
+					fprintf(fh," %s\n", buf);
+					break;
+				case IDPRT: /* Drucker */
+					fprintf(fh, "OPRT %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					fprintf(fh, "\n");
+					break;
+				case IDDEVICE: /* Device */
+					fprintf(fh,"ODEV %d %d ", p->x, p->y);
+					put_text(fh, p->title);
+					strcpy(buf, p->spec.device->name);
+					quote(buf);
+					fprintf(fh," %s\n", buf);
+					break;
 				}
 			}
 			/* Desktop-Farbeinstellung */
-			fprintf(fh, "COLR %d %d %d %d\n", conf.font.bcol, conf.font.fcol,
-					conf.dcolor, conf.dpattern);
+			fprintf(fh, "COLR %d %d %d %d\n", conf.font.bcol, conf.font.fcol, conf.dcolor, conf.dpattern);
 			/* Muster fÅr Verzeichnisfenster */
 			fprintf(fh, "BPAT %d\n", conf.bpat);
 			/* Hintergrundbild */
-			fprintf(fh, "DIMG %d %d %d ", conf.imguse, conf.imgcenter,
-					conf.imgpal);
+			fprintf(fh, "DIMG %d %d %d ", conf.imguse, conf.imgcenter, conf.imgpal);
 			strcpy(buf, conf.imgname);
 			quote(buf);
 			fprintf(fh, "%s %d\n", buf, conf.imgtrans);
 			fprintf(fh, "WIMG 0 0 0 0 %s\n", conf.dirimg);
 			/* AbstÑnde fÅr automatisches Plazieren */
-			fprintf(fh, "FRAM %d %d %d %d %d %d\n", tb.fleft, tb.fright,
-					tb.fupper, tb.flower, tb.fhor, tb.fvert);
+			fprintf(fh, "FRAM %d %d %d %d %d %d\n", tb.fleft, tb.fright, tb.fupper, tb.flower, tb.fhor, tb.fvert);
 			/* Das wars ... */
 			fclose(fh);
 
@@ -463,7 +452,7 @@ int conf_save(int tmp) {
 			}
 
 #ifdef _DEBUG
-			sprintf(almsg,"CSAV: all done - no errors");main_debug(almsg);
+			sprintf(almsg, "CSAV: all done - no errors"); debugMain(almsg);
 #endif
 			pfree(name);
 			return 1; /* "Alles ok" melden */
@@ -493,9 +482,6 @@ int conf_load(void) {
 	WINOPEN *wopen, *wopen1;
 	double lx, ly, lw, lh;
 	ACSTATE accstate;
-#ifdef VERY_OLD_CONFIG
-	char ext[8][4];
-#endif
 	char evar[51];
 	int old_format, format;
 	char filelist[61], *mask, *buf;
@@ -520,8 +506,8 @@ int conf_load(void) {
 	strcat(name, FNAME_INT);
 	if (!file_exists(name, 1, 0L))
 		tmp = 1; /* Ja */
-	else /* Nein */
-	{
+	else {
+		/* Nein */
 		strcpy(name, glob.cpath);
 		strcat(name, FNAME_INF);
 		tmp = 0;
@@ -529,7 +515,7 @@ int conf_load(void) {
 	glob.tmp = tmp;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CLOD: name.inf=%s, using backup=%d",name,tmp);main_debug(almsg);
+	sprintf(almsg, "CLOD: name.inf=%s, using backup=%d", name, tmp); debugMain(almsg);
 #endif
 
 	/* Registrierung */
@@ -543,11 +529,11 @@ int conf_load(void) {
 
 	/* Datei îffnen */
 	fh = fopen(name, "r");
-	if (fh) /* Nur lesen, falls Datei geîffnet wurde! */
-	{
+	if (fh) {
+		/* Nur lesen, falls Datei geîffnet wurde! */
 		ok = 1;
 #ifdef _DEBUG
-		sprintf(almsg,"CLOD: inf begin load");main_debug(almsg);
+		sprintf(almsg, "CLOD: inf begin load"); debugMain(almsg);
 #endif
 		while (!feof(fh)) {
 			if (fgets(inbuf, 1024, fh)) {
@@ -558,14 +544,13 @@ int conf_load(void) {
 				/* Kommentare ignorieren */
 				if (inbuf[0] != '#') {
 					id = *(unsigned long *) inbuf;
-					if ((id != 'AENV') && (id != 'AOPT')
-						)
+					if ((id != 'AENV') && (id != 'AOPT'))
 						aptr = 0L;
 					/* Versionskennung */
 					if (id == 'VERS') {
 						sscanf(inbuf5, "%d", &vers);
 #ifdef _DEBUG
-						sprintf(almsg,"CLOD: version found=%d",vers);main_debug(almsg);
+						sprintf(almsg, "CLOD: version found=%d", vers); debugMain(almsg);
 #endif
 					}
 					/* Einstellungen */
@@ -584,65 +569,23 @@ int conf_load(void) {
 								&conf.qread, &conf.autosize, &conf.usedel);
 						conf.autosizex = conf.autosizey = conf.autosize;
 						conf.autoplace = conf.interactive = conf.nohotcloser =
-								conf.autosave = conf.casesort = conf.caseloc =
-										conf.hotkeys = 0;
+						conf.autosave = conf.casesort = conf.caseloc =
+						conf.hotkeys = 0;
 #ifdef _DEBUG
-						sprintf(almsg,"CLOD: conf found");main_debug(almsg);
+						sprintf(almsg, "CLOD: conf found"); debugMain(almsg);
 #endif
 						/* Versionsspezifische Teile auf Defaultwerte setzen */
 						if (vers < 63) {
 							conf.usedel = 1;
 							if (vers < 61) {
 								conf.autosize = 0;
-#ifdef VERY_OLD_CONFIG
-								if(vers<52)
-								{
-									conf.altcpx=0;
-									conf.askacc=1;
-									if(vers<46)
-									{
-										conf.qread=1;
-										if(vers<42)
-										{
-											conf.rdouble=0;
-											if(vers<41)
-											{
-												conf.relwin=1;
-												conf.autosel=1;
-												if(vers<32)
-												{
-													conf.hscr=0;
-													if(vers<31)
-													{
-														conf.vert=0;
-														if(vers<30)
-														{
-															conf.autocomp=1;
-															if(vers<25)
-															{
-#ifdef _DEBUG
-																sprintf(almsg,"CLOD: !! WARNING !! version < 0.25 ???");main_debug(almsg);
-#endif
-																conf.tosmode=0;
-																conf.autoupdate=0;
-																conf.closebox=0;
-																conf.altapp=1;
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-#endif
 							}
 						}
 						/* Dialoge sind immer im Fenster und zentriert */
 						conf.wdial = 1;
 						conf.cdial = 1;
 #ifdef _DEBUG
-						sprintf(almsg,"CLOD: disabling fly dials, enabling center dials");main_debug(almsg);
+						sprintf(almsg, "CLOD: disabling fly dials, enabling center dials"); debugMain(almsg);
 #endif
 					}
 					/* Einstellungen Teil II */
@@ -659,7 +602,7 @@ int conf_load(void) {
 						if (conf.cbuf < 0L)
 							conf.cbuf = 0L;
 #ifdef _DEBUG
-						sprintf(almsg,"CLOD: cbuf found, value=%ld",conf.cbuf);main_debug(almsg);
+						sprintf(almsg, "CLOD: cbuf found, value=%ld", conf.cbuf); debugMain(almsg);
 #endif
 					}
 					/* 3D-Effekte, Userdef erzeugen, MagiC-Workaround */
@@ -671,9 +614,7 @@ int conf_load(void) {
 						sscanf(inbuf5, "%d", &tb.backwin);
 					/* Console-Parameter */
 					if (id == 'T2GM') {
-						sscanf(inbuf5, "%d %d %d %d %d", &con.buffer,
-								&con.color, &con.hist, &con.buftime,
-								&con.flags);
+						sscanf(inbuf5, "%d %d %d %d %d", &con.buffer, &con.color, &con.hist, &con.buftime, &con.flags);
 						if (con.hist < 0)
 							con.hist = 0;
 						if (con.hist > 9999)
@@ -686,20 +627,10 @@ int conf_load(void) {
 							con.color = 2;
 						if (con.color < 0)
 							con.color = 0;
-#ifdef VERY_OLD_CONFIG
-						if(vers<57)
-						{
-							con.flags=0x7;
-							if(vers<52) con.buftime=150;
-						}
-						else
-#endif
-						{
-							if (con.buftime < 20)
-								con.buftime = 20;
-							if (con.buftime > 999)
-								con.buftime = 999;
-						}
+						if (con.buftime < 20)
+							con.buftime = 20;
+						if (con.buftime > 999)
+							con.buftime = 999;
 					}
 					if (id == 'EXFI') {
 						get_text(inbuf, conf.finder, MAX_PLEN);
@@ -721,19 +652,11 @@ int conf_load(void) {
 						for (i = 0; i < 6; i++)
 							get_buf_entry(tx, buf, &tx);
 						strcpy(conf.kb_prog, buf);
-#ifdef VERY_OLD_CONFIG
-						if (vers < 41)
-						conf.kbf_use = 0;
-						else
-#endif
-						{
-							if (vers < 124) {
-								sscanf(tx, "%d", &conf.kbf_use);
-								conf.kb_tosonly = 0;
-							} else
-								sscanf(tx, "%d %d", &conf.kbf_use,
-										&conf.kb_tosonly);
-						}
+						if (vers < 124) {
+							sscanf(tx, "%d", &conf.kbf_use);
+							conf.kb_tosonly = 0;
+						} else
+							sscanf(tx, "%d %d", &conf.kbf_use, &conf.kb_tosonly);
 					}
 					if (id == 'OKBD')
 						sscanf(inbuf5, "%d", &conf.kbd_two);
@@ -836,69 +759,30 @@ int conf_load(void) {
 									&appl.usesel, &appl.euse, &appl.toswait,
 									&appl.dodrag);
 #ifdef _DEBUG
-							sprintf(almsg,"CLOD: appl found, name=%s",appl.name);main_debug(almsg);
+							sprintf(almsg, "CLOD: appl found, name=%s", appl.name); debugMain(almsg);
 #endif
 							if (vers < 100) {
 								appl.dodrag = 0;
 								if (vers < 60) {
 									appl.toswait = conf.toswait;
-#ifdef VERY_OLD_CONFIG
-									if (vers < 57) {
-										appl.euse = 0;
-										if (vers < 32)
-											appl.usesel = 1;
-									}
-#endif
 								}
 							}
 						}
-#ifdef VERY_OLD_CONFIG
-						else /* Einlesen des alten Formats <=0.26 */
-						{
-							appl.toswait=conf.toswait;
 
-							sscanf(tx,"%d %s %s %s %s %s %s %s %s %d %d %d %d %d %d %d",
-									&appl.homepath,
-									ext[0],ext[1],ext[2],ext[3],
-									ext[4],ext[5],ext[6],ext[7],
-									&appl.single,&appl.vaproto,&appl.getpar,&appl.conwin,
-									&appl.shortcut,&appl.autostart,&appl.overlay);
-
-							if(vers<1) /* Oh ... gaanz alt ;-) */
-							{
-								appl.overlay=1;
-								appl.usesel=1;
-							}
-
-							appl.fileopen[0]=0;
-							for(i=0;i<8;i++)
-							{
-								if(ext[i][0] && ext[i][0]!='.')
-								{
-									if(!appl.fileopen[0]) strcpy(appl.fileopen,"*.");
-									else strcat(appl.fileopen,",*.");
-									strcat(appl.fileopen,ext[i]);
-								}
-							}
-							appl.fileview[0]=0;
-							appl.fileprint[0]=0;
-						}
-#endif
 						/* Neue Applikation einrichten, wenn die Angaben plausibel sind */
 						if (appl.name[1] == ':' && strlen(appl.name) >= 3L) {
 #ifdef _DEBUG
-							sprintf(almsg,"CLOD: try to create new appl-object ...");main_debug(almsg);
+							sprintf(almsg, "CLOD: try to create new appl-object ..."); debugMain(almsg);
 #endif
 							aptr = app_add();
 							if (!aptr) {
 #ifdef _DEBUG
-								sprintf(almsg,"CLOD: ... !! WARNING !! app_add() failed!");main_debug(almsg);
+								sprintf(almsg, "CLOD: ... !! WARNING !! app_add() failed!"); debugMain(almsg);
 #endif
-								frm_alert(1, rs_frstr[ALNOMEM], altitle,
-										conf.wdial, 0L);
+								frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 							} else {
 #ifdef _DEBUG
-								sprintf(almsg,"CLOD: ... app_add() ok :-)");main_debug(almsg);
+								sprintf(almsg, "CLOD: ... app_add() ok"); debugMain(almsg);
 #endif
 								/* Informationen Åber die Applikation eintragen */
 								strcpy(aptr->title, appl.title);
@@ -1080,13 +964,6 @@ int conf_load(void) {
 							}
 							if (vers < 72) {
 								wopen->num = -1;
-#ifdef VERY_OLD_CONFIG
-								if(vers<44)
-								{
-									wopen->text=0;
-									if(vers<41) {wopen->rel=0;wopen->relname[0]=0;}
-								}
-#endif
 							}
 						}
 					}
@@ -1125,12 +1002,12 @@ int conf_load(void) {
 		if (tmp) {
 			Fdelete(name);
 #ifdef _DEBUG
-			sprintf(almsg,"CLOD: removing temporary backup, name=%s",name);main_debug(almsg);
+			sprintf(almsg, "CLOD: removing temporary backup, name=%s", name); debugMain(almsg);
 #endif
 		}
 
 #ifdef _DEBUG
-		sprintf(almsg,"CLOD: skipping rest of log");main_debug(almsg);
+		sprintf(almsg, "CLOD: skipping rest of log"); debugMain(almsg);
 #endif
 
 		/* AuflîsungsabhÑngige Informationen lesen */
@@ -1278,9 +1155,7 @@ int conf_load(void) {
 								tx = get_text(inbuf, text, MAX_FLEN - 1);
 								get_buf_entry(tx, dfile.name, &tx);
 								sscanf(tx, "%d", &dfile.mode);
-#ifdef VERY_OLD_CONFIG
-								if(vers<58) dfile.mode=0;
-#endif
+
 								/* Neues Icon fÅr eine Datei einrichten */
 								p = OBUSER;
 								q = desk.dicon + p;
@@ -1430,7 +1305,7 @@ int conf_load(void) {
 		icon_update(0);
 
 #ifdef _DEBUG
-		sprintf(almsg,"CLOD: all done, no errors");main_debug(almsg);
+		sprintf(almsg, "CLOD: all done, no errors"); debugMain(almsg);
 #endif
 	}
 	pfree(text);
@@ -1445,7 +1320,7 @@ int conf_load(void) {
  -------------------------------------------------------------------------*/
 
 int conf_isave(void) {
-	return 1;
+	return (1);
 }
 
 int conf_iload(void) {
@@ -1462,7 +1337,7 @@ int conf_iload(void) {
 	ICONBLK *dummy;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CILO: start icon load");main_debug(almsg);
+	sprintf(almsg, "CILO: start icon load"); debugMain(almsg);
 #endif
 
 	altapp = conf.altapp;
@@ -1474,7 +1349,7 @@ int conf_iload(void) {
 	glob.sheight = 16;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CILO: creating default icons ...");main_debug(almsg);
+	sprintf(almsg, "CILO: creating default icons ..."); debugMain(almsg);
 #endif
 
 	/* Standard-Icons eintragen */
@@ -1527,17 +1402,17 @@ int conf_iload(void) {
 	desk.ic_grp.tcolor = -1;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CILO: ... default icons ok");main_debug(almsg);
+	sprintf(almsg, "CILO: ... default icons ok"); debugMain(almsg);
 #endif
 
 	/* Dateinamen erzeugen */
 	strcpy(name, tb.homepath);
 	strcat(name, FNAME_ICN);
 	fh = fopen(name, "r");
-	if (fh) /* Nur lesen, falls Datei geîffnet wurde ! */
-	{
+	if (fh) {
+		/* Nur lesen, falls Datei geîffnet wurde ! */
 #ifdef _DEBUG
-		sprintf(almsg,"CILO: reading inf, name=%s",name);main_debug(almsg);
+		sprintf(almsg, "CILO: reading inf, name=%s", name); debugMain(almsg);
 #endif
 		/* Buffer reservieren */
 		maxnum = 1000;
@@ -1555,7 +1430,7 @@ int conf_iload(void) {
 		}
 
 #ifdef _DEBUG
-		sprintf(almsg,"CILO: buffers ok, num=%d",maxnum);main_debug(almsg);
+		sprintf(almsg, "CILO: buffers ok, num=%d", maxnum); debugMain(almsg);
 #endif
 
 		ret = 1;
@@ -1654,7 +1529,7 @@ int conf_iload(void) {
 											continue;
 									}
 #ifdef _DEBUG
-													sprintf(almsg,"CILO: adding icon, name=%s, mask=%s",iname,imask);main_debug(almsg);
+									sprintf(almsg, "CILO: adding icon, name=%s, mask=%s", iname, imask); debugMain(almsg);
 #endif
 
 									/* Icon in der Resourcedatei suchen */
@@ -1676,7 +1551,7 @@ int conf_iload(void) {
 		/* Buffer auf tatsÑchlich benîtigte Grîûe zurechtstutzen */
 		if (num < maxnum) {
 #ifdef _DEBUG
-							sprintf(almsg,"CILO: shrinking buffer, old=%d, new=%d",maxnum,num);main_debug(almsg);
+			sprintf(almsg, "CILO: shrinking buffer, old=%d, new=%d", maxnum, num); debugMain(almsg);
 #endif
 			if (num > 0)
 				Mshrink(0, desk.icon, (long) num * sizeof(ICONIMG));
@@ -1694,7 +1569,7 @@ int conf_iload(void) {
 	return ret;
 }
 
-/*
+/**
  * read_sendto
  *
  * Liest die "sendto"-Gruppe im HOME von Thing ein.
@@ -1718,7 +1593,7 @@ void read_sendto(void) {
 	tb.win = win;
 }
 
-/*
+/**
  * free_hotkeys
  *
  * Gibt die EintrÑge fÅr die Schnellstarttasten frei.

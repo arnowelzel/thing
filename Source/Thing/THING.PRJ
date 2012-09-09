@@ -5,13 +5,14 @@ app\Thing.app
 
 .C [ -J -Z -M -P -Y -G ]
 ;.C [ -T ]
-;.C [ -D_DEBUG ]
 .C [ -DDIRCH ]
 ;.C [ -DTB_EXTENSIONS ]
 
 ; optional
-.C [ -D-MEMDEBUG ]		; Memdebug support for debugging memory leaks
-.C [ -D-WITH_NVDI5 ]	; NVDI support for Color Icon Routines
+;.C [ -DDEBUG ]			; general debug functionality
+;.C [ -D_DEBUG ]
+;.C [ -DMEMDEBUG ]		; Memdebug support for debugging memory leaks
+;.C [ -DWITH_NVDI5 ]	; NVDI support for Color Icon Routines
 
 .S [ -Y ]
 .L [ -S=65536 ]
@@ -24,35 +25,35 @@ crt0.o
 ; -------------------------------------------------------------------
 ; source(s) for Thing
 ; -------------------------------------------------------------------
-src\app.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\avserver.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h) [ -T- ]
+src\debug.c
+src\app.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\avserver.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h) [ -T- ]
 src\buildcmd.c (include\types.h)
-src\clip.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\config.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\console.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\desk.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h, ..\thingimg\include\thingimg.h) [ -T- ]
-src\dialog.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\dlmenu.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h, include\jobid.h, ..\xhdi\xhdi.h) [ -T- ]
+src\clip.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\config.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\console.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\desk.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h, ..\thingimg\include\thingimg.h) [ -T- ]
+src\dialog.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\dlmenu.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h, include\jobid.h, ..\xhdi\xhdi.h) [ -T- ]
 src\dragdrop.c (include\dragdrop.h) [ -T- ]
-src\gemdos.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\globals.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\hndlevnt.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h, include\dragdrop.h, include\tcmd.h, include\jobid.h)
-src\kobold.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\main.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h, include\dragdrop.h, include\tcmd.h) [ -T- ]
+src\gemdos.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\globals.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\hndlevnt.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h, include\dragdrop.h, include\tcmd.h, include\jobid.h)
+src\kobold.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\main.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h, include\dragdrop.h, include\tcmd.h) [ -T- ]
 src\mcode.s
-src\menu.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\system.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\tosext.s
-src\tproto.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h, include\tcmd.h)
-src\windesk.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\window.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
-src\wingroup.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thingtxt.h)
+src\menu.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\system.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\tproto.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h, include\tcmd.h)
+src\windesk.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\window.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
+src\wingroup.c (include\globdef.h, include\types.h, src\rsrc\thing_de.h, src\rsrc\thgtxtde.h)
 
 ; version.c depends on all other source files
 src\version.c (include\globdef.h, src\app.c, src\avserver.c, src\clip.c, src\config.c, src\console.c,
     src\desk.c, src\dialog.c, src\dlmenu.c, src\dragdrop.c, src\gemdos.c, src\globals.c,
     src\hndlevnt.c, src\kobold.c, src\main.c, src\menu.c, src\system.c,
-    src\tproto.c, src\windesk.c, src\window.c, src\wingroup.c, src\rsrc\thing.rsc, src\rsrc\thingtxt.rsc,
+    src\tproto.c, src\windesk.c, src\window.c, src\wingroup.c, src\rsrc\thing_de.rsc, src\rsrc\thgtxtde.rsc,
     ..\cicon\drawcicn.c, ..\cicon\new_rsc.c)
 
 ; Color Icon Routines made by Thomas Binder
@@ -74,9 +75,6 @@ dudolib.lib
 
 ; NKCC made by Harald Siegmund
 nkcc_tos.o
-
-;MALLOC.O           ; memory management
-src\vclsvwk.c
 
 ; Device Locking made by Hans-Juergen Richstein
 devlock.lib

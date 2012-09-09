@@ -27,7 +27,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 
 /**
  * Setzt den Pfad fuer die Ablage und richtet ggf. das Verzeichnis ein.
@@ -53,10 +54,8 @@ void clip_init(void) {
 				err_file(rs_frstr[ALCCREATE], (long) ret, path);
 				scrp_read(cp);
 				p = (int) strlen(cp) - 1;
-				if (p > 0) {
-					if (cp[p] != '\\')
-						strcat(cp, "\\");
-				}
+				if ((p > 0) && (cp[p] != '\\'))
+					strcat(cp, "\\");
 			} else
 				scrp_write(cp);
 		} else
@@ -95,7 +94,7 @@ int clip_file(char *name) {
 			/* Kein Speicher mehr, dann raus */
 			if (!bufsize) {
 				frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-				return 0;
+				return (0);
 			}
 		}
 	}
@@ -105,7 +104,7 @@ int clip_file(char *name) {
 	if (infh < 0L) {
 		pfree(buf);
 		err_file(rs_frstr[ALFLOPEN], infh, name);
-		return 0;
+		return (0);
 	}
 
 	/* Clipboardinhalt loeschen und Zieldatei anlegen */
@@ -115,7 +114,7 @@ int clip_file(char *name) {
 		Fclose((int) infh);
 		pfree(buf);
 		err_file(rs_frstr[ALFLCREATE], outfh, outname);
-		return 0;
+		return (0);
 	}
 
 	/* Auf gehts... */
@@ -140,7 +139,7 @@ int clip_file(char *name) {
 					outlen = -39L;
 				err_file(rs_frstr[ALFLWRITE], outlen, outname);
 				Fdelete(outname);
-				return 0;
+				return (0);
 			}
 		} else
 			done = 1;
@@ -151,7 +150,7 @@ int clip_file(char *name) {
 
 	clip_update();
 
-	return ret;
+	return (ret);
 }
 
 /**
@@ -168,10 +167,10 @@ void clip_update(void) {
 			mode = 1;
 			if ((type != 1) && (id != tb.app_id)) {
 				if (strnicmp(name, "msgservr", 8))
-					app_send(id, 80 /* SC_CHANGED */, 0, 0, 0, 0, 0, 0);
+					appl_send(id, 80 /* SC_CHANGED */, 0, 0, 0, 0, 0, 0);
 			}
 		}
 	}
 	strcpy(aesbuf, desk.dicon[OBCLIP].spec.clip->path);
-	app_send(tb.app_id, AV_PATH_UPDATE, PT34, (long) aesbuf, 0, 0, 0, 0);
+	appl_send(tb.app_id, AV_PATH_UPDATE, PT34, (long) aesbuf, 0, 0, 0, 0);
 }

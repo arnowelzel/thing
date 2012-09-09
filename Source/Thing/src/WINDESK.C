@@ -29,7 +29,8 @@
  =========================================================================*/
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include <time.h>
 
@@ -93,9 +94,9 @@ int wpath_obfind(char *full) {
 		} else
 			mybeep();
 
-		return 1;
+		return (1);
 	} else
-		return 0;
+		return (0);
 }
 
 /**-------------------------------------------------------------------------
@@ -184,7 +185,7 @@ int wpath_parent(WININFO *win, int new, int rel) {
 					wpath->rel = 1;
 					wpath_name(win);
 				}
-				return 0;
+				return (0);
 			}
 			/* else wpath_name(win); */
 		}
@@ -192,7 +193,7 @@ int wpath_parent(WININFO *win, int new, int rel) {
 
 	l = (int)strlen(wpath->path);
 	if (l == 3)
-		return 0;
+		return (0);
 	else {
 		strcpy(path,wpath->path);
 		i = l - 2;
@@ -259,7 +260,7 @@ int wpath_parent(WININFO *win, int new, int rel) {
 			ret = wpath_open(path,wpath->index.wildcard, 1, 0L, wpath->index.text, -1, wpath->index.sortby);
 		}
 
-		return ret;
+		return (ret);
 	}
 }
 
@@ -477,14 +478,15 @@ void wpath_tree(WININFO *win) {
 
 		wpath->tlen += namelen;
 
+		/* Groesse: ' 999.999' oder ' 9999 kB'*/
 		if (wpath->index.show & SHOWSIZE) {
-			/* Groesse: ' 999.999' oder ' 9999 kB'*/
 			wpath->tlen += wpath->cw_nine * 7;
 			wpath->psize = wpath->tlen;
 			wpath->tlen += wpath->clw;
 		}
+
+		/* Datum: ' 99-99-9999' */
 		if (wpath->index.show & SHOWDATE) {
-			/* Datum: ' 99-99-9999' */
 			wpath->tlen += wpath->cw_nine * 2;
 			wpath->tlen += wpath->cw_sl;
 			wpath->pdate1 = wpath->tlen;
@@ -493,15 +495,17 @@ void wpath_tree(WININFO *win) {
 			wpath->pdate = wpath->tlen;
 			wpath->tlen += wpath->clw;
 		}
+
+		/* Uhrzeit: ' 99:99' */
 		if (wpath->index.show & SHOWTIME) {
-			/* Uhrzeit: ' 99:99' */
 			wpath->tlen += wpath->cw_nine * 4;
 			wpath->tlen += wpath->cw_p2;
 			wpath->ptime = wpath->tlen;
 			wpath->tlen += wpath->clw;
 		}
+
+		/* Attribute: ' rhsa rwxrwxrwx' */
 		if (wpath->index.show & SHOWATTR) {
-			/* Attribute: ' rhsa rwxrwxrwx' */
 			if (!(wpath->filesys.flags & UNIXATTR)) {
 				/* TOS-FS: rhsa */
 				wpath->pattr = wpath->tlen;
@@ -632,7 +636,7 @@ void wpath_tree(WININFO *win) {
 				tree[n].ob_flags = LASTOB;
 			}
 			if (entry->sel)
-				tree[n].ob_state = SELECTED;
+				setObjectSelected(tree, n);
 			else
 				tree[n].ob_state = NORMAL;
 			if (entry->link == 2)
@@ -717,7 +721,7 @@ int wpath_update(WININFO *win) {
 #endif
 	graf_mouse(BUSYBEE, 0L);
 	wpath = (W_PATH *) win->user;
-	LOG((0, "wpath_update(%s)\n", wpath->path));
+DEBUGLOG((0, "wpath_update(%s)\n", wpath->path));
 	strcpy(full, wpath->path);
 	strcat(full, FNAME_IDX);
 	if (memcmp(&wpath->index, &wpath->cindex, sizeof(INDEX))) {
@@ -733,8 +737,7 @@ int wpath_update(WININFO *win) {
 				*p = 0;
 			id = *(unsigned long *) inbuf;
 			if (id == 'IDEX') {
-				sscanf(&inbuf[5], "%d %d", &wpath->index.text,
-						&wpath->index.sortby);
+				sscanf(&inbuf[5], "%d %d", &wpath->index.text, &wpath->index.sortby);
 			}
 			if (id == 'MASK') {
 				if (get_buf_entry(&inbuf[5], wpath->index.wildcard, NULL)) {
@@ -777,13 +780,13 @@ int wpath_update(WININFO *win) {
 		goto wpath_update1;
 	}
 
-	wpath_update2: ;
-
-	if (getcookie('MgMc', 0L) && getcookie('SCSI', 0L)) {
+wpath_update2:
+	if (getCookie('MgMc', 0L) && getCookie('SCSI', 0L)) {
 		DISKINFO dummy;
 
 		Dfree(&dummy, (wpath->path[0] & ~32) - 'A');
 	}
+
 	/* Art des Dateisystems ermitteln */
 	fsinfo(wpath->path, &wpath->filesys);
 
@@ -806,19 +809,10 @@ int wpath_update(WININFO *win) {
 		strcpy(full, wpath->path);
 		full[(int) strlen(full) - 1] = 0;
 
-LOG((0, "wpath_update: Dopendir(%s, 0)\n", full));
-		/* Registrierung, p[sizeof(SEL_INFO) / sizeof(int)] == 0, wenn alles OK */
-		{
-			int *p = (int *) &desk.sel;
-			dhandle = Dopendir(full, p[sizeof(SEL_INFO) / sizeof(int)]);
-		}
-LOG((0, "Dopendir() returned %ld\n", dhandle));
+		dhandle = Dopendir(wpath->path, 0);
 		if (dhandle == -32L) {
 			/* Kein MiNT-Zugriff moeglich */
-			int *p = (int *) &desk.sel;
-
-			/* Registrierung, siehe oben */
-			usemint = p[sizeof(SEL_INFO) / sizeof(int)];
+			usemint = 0;
 			lret = (long) Fsfirst(full, FA_SUBDIR | FA_HIDDEN | FA_SYSTEM);
 			if (lret != 0L)
 				fs = 1; /* Fehler? */
@@ -832,8 +826,9 @@ LOG((0, "Dopendir() returned %ld\n", dhandle));
 			if ((dhandle & 0xff000000L) == 0xff000000L) {
 				lret = dhandle;
 				fs = 1;
-			} else /* Keine Fehler... */
-			{
+			} else {
+				/* Keine Fehler... */
+
 				/* Attribute ermitteln - da Dopendir() nicht mit DTAs arbeitet */
 				Fxattr(1, wpath->path, &xattr);
 				wpath->fdate = xattr.mdate;
@@ -846,20 +841,10 @@ LOG((0, "Dopendir() returned %ld\n", dhandle));
 		}
 	} else {
 		lret = 0L;
-LOG((0, "wpath_update: Dopendir(%s, 0)\n", wpath->path));
-		/* Registrierung, p[sizeof(SEL_INFO) / sizeof(int)] == 0, wenn alles OK */
-		{
-			int *p = (int *) &desk.sel;
-			dhandle = Dopendir(wpath->path, p[sizeof(SEL_INFO) / sizeof(int)]);
-		}
-
-LOG((0, "Dopendir() returned %ld\n", dhandle));
+		dhandle = Dopendir(wpath->path, 0);
 		/* Kein MiNT-Zugriff moeglich */
 		if (dhandle == -32L) {
-			int *p = (int *) &desk.sel;
-
-			/* Registrierung, siehe oben */
-			usemint = p[sizeof(SEL_INFO) / sizeof(int)];
+			usemint = 0;
 		} else {
 			/* Eventuell Fehler bei Dopendir() aufgetreten? */
 			usemint = 1;
@@ -870,7 +855,7 @@ LOG((0, "Dopendir() returned %ld\n", dhandle));
 		}
 	}
 
-LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
+DEBUGLOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 	/* Fehler aufgetreten? */
 	if (fs) {
 		if (wpath->path[3] && (lret == -34L || lret == -33L || lret == -49L)) {
@@ -917,7 +902,7 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 
 			/* Aktuelles Verzeichnis setzen, damit bei Fxattr() nicht
 			 jedesmal ein kompletter Pfad Uebergeben werde muss */
-			LOG((0, "wpath_update: Setting dir to %s\n", wpath->path));
+DEBUGLOG((0, "wpath_update: Setting dir to %s\n", wpath->path));
 			set_dir(wpath->path);
 
 			/* Dxreaddir() probieren und merken, falls das nicht geht */
@@ -972,7 +957,7 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 			strcpy(entry->name, "..");
 			entry->fext = NULL;
 			entry->mode = 0;
-			entry->class=EC_PARENT;
+			entry->class = EC_PARENT;
 			entry->size = 0L;
 			entry->attr = 0;
 			entry->date = 0;
@@ -1008,16 +993,15 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 			}
 			/* Pruefen, ob der Eintrag verwendet wird */
 			useit = 1;
-			if (dta.d_attrib & FA_SUBDIR && (fname[0] == '.' && fname[1] == 0)
-					|| (fname[0] == '.' && fname[1] == '.' && fname[2] == 0))
+			if (dta.d_attrib & FA_SUBDIR && (fname[0] == '.' && fname[1] == 0) || (fname[0] == '.' && fname[1] == '.' && fname[2] == 0))
 				useit = 0;
 
 			if (!conf.hidden) {
-				if ((dta.d_attrib & FA_HIDDEN)
-						|| (!(wpath->filesys.flags & TOS) && (fname[0] == '.'))) {
+				if ((dta.d_attrib & FA_HIDDEN) || (!(wpath->filesys.flags & TOS) && (fname[0] == '.'))) {
 					useit = 0;
 				}
 			}
+
 			/* Win '95-Eintraege ausfiltern */
 			if (dta.d_attrib & FA_VOLUME)
 				useit = 0;
@@ -1026,64 +1010,23 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 				link = 0;
 				/* Falls ein sym. Link vorliegt, dann Daten ermitteln */
 				if ((fmode & S_IFMT) == S_IFLNK) {
-#if 0
-					/* Unter MagiC - Trick 17 ;-) erstmal Freadlink() probieren */
-					if(tb.sys&SY_MAGX)
-					{
-						if(Freadlink(MAX_PLEN,lbuf,fname)==0L)
-						{
-							/* Ok - jetzt Link prfen */
-							dta.d_attrib=0;
-							llen=(int)strlen(lbuf);
-							if(llen>1)
-							{
-								/* Bei Verzeichnissen einfach Attribut eintragen */
-								if(lbuf[llen-1]=='\\') dta.d_attrib|=FA_SUBDIR;
-								else /* Bei Dateien Daten des Originals holen */
-								{
-									if(Fxattr(0,fname,&xattrl)==0L)
-									{
-										dta.d_attrib=xattrl.attr;
-										dta.d_date=xattrl.mdate;
-										dta.d_time=xattrl.mtime;
-										dta.d_attrib=xattrl.attr;
-										dta.d_length=xattrl.size;
-										fmode=xattrl.mode;
-										if(!(wpath->filesys.flags & UNIXATTR)) fmode&=S_IFMT;
-									}
-									else useit=0;
-								}
-							}
-							link=1;
-						}
-						else
-						{
-							/* Fehler - also "zielloser" Link */
-							link = 2; /* Kennzeichen fuer Link ohne Ziel */
-							fmode = 0;
-						}
-					}
-					else /* MiNT - hier Fxattr() */
-#endif
-					{
-						LOG((0, "wpath_update: Following link %s\n", fname));
-						if (Fxattr(0, fname, &xattrl) == 0L) {
-							/* Alles klar - Attribute des Originals merken */
-							dta.d_attrib = xattrl.attr;
-							dta.d_date = xattrl.mdate;
-							dta.d_time = xattrl.mtime;
-							dta.d_attrib = xattrl.attr;
-							dta.d_length = xattrl.size;
-							fmode = xattrl.mode;
-							if (!(wpath->filesys.flags & UNIXATTR))
-								fmode &= S_IFMT;
-							link = 1;
-						} else {
-							LOG((0, "wpath_update: Link is orphaned\n"));
-							/* Fehler - also "zielloser" Link */
-							link = 2; /* Kennzeichen fuer Link ohne Ziel */
-							fmode = 0;
-						}
+DEBUGLOG((0, "wpath_update: Following link %s\n", fname));
+					if (Fxattr(0, fname, &xattrl) == 0L) {
+						/* Alles klar - Attribute des Originals merken */
+						dta.d_attrib = xattrl.attr;
+						dta.d_date = xattrl.mdate;
+						dta.d_time = xattrl.mtime;
+						dta.d_attrib = xattrl.attr;
+						dta.d_length = xattrl.size;
+						fmode = xattrl.mode;
+						if (!(wpath->filesys.flags & UNIXATTR))
+							fmode &= S_IFMT;
+						link = 1;
+					} else {
+DEBUGLOG((0, "wpath_update: Link is orphaned\n"));
+						/* Fehler - also "zielloser" Link */
+						link = 2; /* Kennzeichen fuer Link ohne Ziel */
+						fmode = 0;
 					}
 				}
 			}
@@ -1117,7 +1060,7 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 
 					/* Directory? */
 					if (dta.d_attrib & FA_SUBDIR) {
-						entry->class=EC_FOLDER;
+						entry->class = EC_FOLDER;
 						entry->size = 0L;
 						entry->attr = 0;
 					} else {
@@ -1130,143 +1073,143 @@ LOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 						entry->size = dta.d_length;
 						entry->attr = dta.d_attrib;
 						if (entry->link != 2)
-						entry->aptype=is_app(ename,fmode);
+							entry->aptype = is_app(ename, fmode);
 						else
-						entry->aptype = 0;
+							entry->aptype = 0;
 					}
 				}
-				entry->date=dta.d_date;
-				entry->time=dta.d_time;
+				entry->date = dta.d_date;
+				entry->time = dta.d_time;
 				entry->uid = uid;
 				entry->gid = gid;
 				entry->adate = adate;
 				entry->atime = atime;
 				entry->cdate = cdate;
 				entry->ctime = ctime;
-				entry->sel=entry->prevsel=0;
-				entry->tchar=0;
+				entry->sel = entry->prevsel = 0;
+				entry->tchar = 0;
 				entry->tcolor = -1;
-				entry->num=num;
-				entry->obnum=num+1;
+				entry->num = num;
+				entry->obnum = num + 1;
 				num++;
 			}
 		}
 
-		get_next:
-		if (!usemint) {
-			lret = (long)Fsnext();
-			if (lret == 0L) {
-				uid = gid = 0;
-				adate = cdate = dta.d_date;
-				atime = ctime = dta.d_time;
+get_next:
+			if (!usemint) {
+				lret = (long)Fsnext();
+				if (lret == 0L) {
+					uid = gid = 0;
+					adate = cdate = dta.d_date;
+					atime = ctime = dta.d_time;
+				}
+			} else {
+				/* Wenn moeglich, Dxreaddir() verwenden */
+				if (usexr)
+					lret = Dxreaddir(MAX_FLEN + 4, dhandle, dbuf, &xattr, &xret);
+				else {
+					/* Sonst Dreaddir()/Fxattr() */
+					lret = Dreaddir(MAX_FLEN + 4, dhandle, dbuf);
+
+					/* Attribute ermitteln - da Dopendir() nicht mit DTAs arbeitet */
+					if (lret == 0L)
+						xret = Fxattr(1, fname, &xattr);
+				}
+				dta.d_date = xattr.mdate;
+				dta.d_time = xattr.mtime;
+				dta.d_attrib = xattr.attr;
+				dta.d_length = xattr.size;
+				fmode = xattr.mode; /* Dateityp maskieren */
+				if (!(wpath->filesys.flags & UNIXATTR))
+					fmode &= S_IFMT;
+				uid = xattr.uid;
+				gid = xattr.gid;
+				adate = xattr.adate;
+				atime = xattr.atime;
+				cdate = xattr.cdate;
+				ctime = xattr.ctime;
 			}
+
+			if (lret) {
+				if (lret == -64L)
+					toolong = 1; /* Merken, dass ein zu langer Eintrag vorhanden ist */
+				else
+					fs = 1; /* Ggf. Fehlerflag setzen */
+			}
+		}
+
+		if (usemint)
+			Dclosedir(dhandle);
+
+DEBUGLOG((0, "Directory read finished, lret: %ld\n", lret));
+		/* Ggf. Fehler melden */
+		if (lret != -33L && lret != -49L && lret != -14L) {
+			err_file(rs_frstr[ALPREAD], lret, wpath->path);
+			wret = 0;
 		} else {
-			/* Wenn moeglich, Dxreaddir() verwenden */
-			if (usexr)
-				lret = Dxreaddir(MAX_FLEN + 4, dhandle, dbuf, &xattr, &xret);
-			else {
-				/* Sonst Dreaddir()/Fxattr() */
-				lret = Dreaddir(MAX_FLEN + 4, dhandle, dbuf);
+			wret = 1;
+			if (toolong) {
+				char folder[31];
 
-				/* Attribute ermitteln - da Dopendir() nicht mit DTAs arbeitet */
-				if (lret == 0L)
-					xret = Fxattr(1, fname, &xattr);
+				strShortener(folder, wpath->path, 30);
+				sprintf(almsg, rs_frstr[ALTOOLONG], folder);
+				frm_alert(1, almsg, altitle, conf.wdial, 0L);
 			}
-			dta.d_date = xattr.mdate;
-			dta.d_time = xattr.mtime;
-			dta.d_attrib = xattr.attr;
-			dta.d_length = xattr.size;
-			fmode = xattr.mode; /* Dateityp maskieren */
-			if (!(wpath->filesys.flags & UNIXATTR))
-				fmode &= S_IFMT;
-			uid = xattr.uid;
-			gid = xattr.gid;
-			adate = xattr.adate;
-			atime = xattr.atime;
-			cdate = xattr.cdate;
-			ctime = xattr.ctime;
-		}
-
-		if (lret) {
-			if (lret == -64L)
-				toolong = 1; /* Merken, dass ein zu langer Eintrag vorhanden ist */
-			else
-				fs = 1; /* Ggf. Fehlerflag setzen */
 		}
 	}
 
-	if (usemint)
-	Dclosedir(dhandle);
-
-LOG((0, "Directory read finished, lret: %ld\n", lret));
-	/* Ggf. Fehler melden */
-	if (lret != -33L && lret != -49L && lret != -14L) {
-		err_file(rs_frstr[ALPREAD], lret, wpath->path);
-		wret = 0;
-	} else {
-		wret = 1;
-		if (toolong) {
-			char folder[31];
-
-			str230(folder, wpath->path);
-			sprintf(almsg, rs_frstr[ALTOOLONG], folder);
-			frm_alert(1,almsg,altitle,conf.wdial,0L);
-		}
+	/* Falls Mediachange aufgetreten war, dann nochmal probieren */
+	if (lret == -14L) {
+		retry++;
+		if (retry < 2)
+			goto wpath_update2;
 	}
-}
 
-/* Falls Mediachange aufgetreten war, dann nochmal probieren */
-if (lret == -14L) {
-	retry++;
-	if (retry < 2)
-		goto wpath_update2;
-}
-
-/* Buffer auf ben”tigte Gr”že zurechtstutzen */
+	/* Buffer auf ben”tigte Gr”že zurechtstutzen */
 wpath_update3:
-if (wpath->e_num<lmax) {
-	if (wpath->e_num == 0) /* Gar keine Eintr„ge? */
-	{
-		Mfree(wpath->list);
-		wpath->list = 0L;
+	if (wpath->e_num<lmax) {
+		if (wpath->e_num == 0) /* Gar keine Eintr„ge? */
+		{
+			Mfree(wpath->list);
+			wpath->list = 0L;
+		}
+		else
+		Mshrink(0, wpath->list, (long)wpath->e_num*sizeof(WP_ENTRY));
 	}
-	else
-	Mshrink(0, wpath->list, (long)wpath->e_num*sizeof(WP_ENTRY));
-}
 
-/* Liste anlegen */
-if (wpath->e_num) {
-	wpath->lptr = pmalloc((size_t)wpath->e_num * sizeof(WP_ENTRY *));
-	if (wpath->lptr == NULL) {
-		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		Mfree(wpath->list);
-		wpath->list = 0L;
-		wret = 0;
-		goto wpath_update1;
+	/* Liste anlegen */
+	if (wpath->e_num) {
+		wpath->lptr = pmalloc((size_t)wpath->e_num * sizeof(WP_ENTRY *));
+		if (wpath->lptr == NULL) {
+			frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+			Mfree(wpath->list);
+			wpath->list = 0L;
+			wret = 0;
+			goto wpath_update1;
+		}
+		for (i = 0; i < wpath->e_num; i++)
+			wpath->lptr[i] = &wpath->list[i];
 	}
-	for (i = 0; i < wpath->e_num; i++)
-		wpath->lptr[i] = &wpath->list[i];
-}
 
 wpath_update1:;
-/* Fensterinhalt aktualisieren */
-	if(usemint)
+	/* Fensterinhalt aktualisieren */
+	if (usemint)
 		clr_drv();
-Fsetdta(odta);
-wpath_iupdate(win, 1);
-wpath_tree(win);
-win_slide(win, S_INIT, 0, 0);
+	Fsetdta(odta);
+	wpath_iupdate(win, 1);
+	wpath_tree(win);
+	win_slide(win, S_INIT, 0, 0);
 
-/* Cursor ausschalten, falls keine Eintr„ge mehr */
-if (!wpath->e_total && win == glob.fwin)
-	wf_clear();
+	/* Cursor ausschalten, falls keine Eintr„ge mehr */
+	if (!wpath->e_total && win == glob.fwin)
+		wf_clear();
 
-graf_mouse(ARROW, 0L);
+	graf_mouse(ARROW, 0L);
 #ifdef TIMER
-timer = clock() - timer;
-fprintf(stderr, "\033H\n\nwpath_update(): %ld \n", (long)timer);
+	timer = clock() - timer;
+	fprintf(stderr, "\033H\n\nwpath_update(): %ld \n", (long)timer);
 #endif
-return wret;
+	return (wret);
 }
 
 /**-------------------------------------------------------------------------
@@ -1543,7 +1486,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 			/* Ja ... */
 			sprintf(almsg, rs_frstr[ALNOPWIN], MAX_PWIN);
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
-			return 0;
+			return (0);
 		}
 	}
 
@@ -1565,7 +1508,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 	if (fret != 0L && fret != -33L && fret != -49L) {
 		graf_mouse(ARROW, 0L);
 		err_file(rs_frstr[ALPREAD], fret, path);
-		return 0;
+		return (0);
 	}
 
 	/* Fenster einrichten */
@@ -1575,7 +1518,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 	if (!win->user) {
 		graf_mouse(ARROW, 0L);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
 
 	win->name[0] = 0;
@@ -1588,12 +1531,10 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 	/* Zusatzelemente - je nach System */
 	if (tb.sys & SY_ICONIFY)
 		win->flags |= SMALLER;
-#ifndef _NAES
 	if (tb.sys & SY_MAGX)
 		win->flags |= BACKDROP;
 	if (!conf.nohotcloser && (tb.sys & SY_MAGX))
 		win->flags |= HOTCLOSEBOX;
-#endif
 
 	win->state = WSDESKSIZE;
 	win->update = pwin_update;
@@ -1607,7 +1548,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 		pfree(win->user);
 		graf_mouse(ARROW, 0L);
 		frm_alert(1, rs_frstr[ALNOWIN], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
 
 	/* Weitere Infos eintragen... */
@@ -1653,7 +1594,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 	else
 		win_open(win, 1 | (conf.autoplace * 0x8000 + conf.interactive * 0x4000));
 	mn_check();
-	return wret;
+	return (wret);
 }
 
 /**-------------------------------------------------------------------------
@@ -1755,7 +1696,7 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 
 	/* Falls ikonifiziert, dann gibt es keine Objekte */
 	if (win->state & WSICON)
-		return 0L;
+		return (0L);
 
 	/* Nur innerhalb des Arbeitsbereichs des Fensters suchen */
 	if ((x == -1) || (x >= win->work.x && x <= win->work.x + win->work.w - 1
@@ -1764,7 +1705,7 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 		tree = wpath->tree;
 
 		if (wpath->e_total == 0)
-			return 0L;
+			return (0L);
 
 		if (wpath->index.text) {
 			/* Eintraege als Text */
@@ -1774,12 +1715,10 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 				if (conf.vert) {
 					tx = i / wpath->imy;
 					px = tx * wpath->tlen + win->work.x + 10 - wpath->offx;
-					py = (i - tx * wpath->imy) * (wpath->clh + 1) + win->work.y
-							+ 2 - wpath->offy;
+					py = (i - tx * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
 				} else {
 					ty = i / wpath->imx;
-					px = (i - ty * wpath->imx) * wpath->tlen + win->work.x + 10
-							- wpath->offx;
+					px = (i - ty * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
 					py = ty * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
 				}
 
@@ -1795,11 +1734,11 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 				if (x >= px && x <= px + iw - 1 && y >= py && y <= py + ih - 1)
 					return item;
 			}
-			return 0L;
+			return (0L);
 		} else {
 			/* Eintraege als Icons */
 			if (!tree)
-				return 0L;
+				return (0L);
 
 			for (i = 1; i <= wpath->e_total; i++) {
 				item = wpath->lptr[i - 1];
@@ -1822,16 +1761,16 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 
 				/* Innerhalb des Textes ? */
 				if (x >= px + tx && x <= px + tx + tw - 1 && y >= py + ty && y <= py + ty + th - 1)
-					return item;
+					return (item);
 
 				/* Innerhalb des Images ? */
 				if (x >= px + ix && x <= px + ix + iw - 1 && y >= py && y <= py + ih)
-					return item;
+					return (item);
 			}
-			return 0L;
+			return (0L);
 		}
 	} else
-		return 0L;
+		return (0L);
 }
 
 /**-------------------------------------------------------------------------
@@ -1861,12 +1800,10 @@ void wpath_esel1(WININFO *win, WP_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 			if (conf.vert) {
 				xg = (n - 1) / wpath->imy;
 				x = xg * wpath->tlen + win->work.x + 10 - wpath->offx;
-				y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.y
-						+ 2 - wpath->offy;
+				y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
 			} else {
 				yg = (n - 1) / wpath->imx;
-				x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.x + 10
-						- wpath->offx;
+				x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
 				y = yg * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
 			}
 
@@ -2648,10 +2585,8 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 									Event.ev_mtlocount = 1500;
 									Event.ev_mthicount = 0;
 									EvntMulti(&Event);
-									if (Event.ev_mwich == MU_TIMER)
-									{
-										if ((popfold = appl_find("POPFOLD ")) >= 0)
-										{
+									if (Event.ev_mwich == MU_TIMER) {
+										if ((popfold = appl_find("POPFOLD ")) >= 0) {
 											static char dest[MAX_PLEN + MAX_FLEN + 2];
 											char aname[MAX_FLEN], apath[MAX_PLEN];
 
@@ -2662,8 +2597,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 											strcpy(dest, wpath2->path);
 											strcat(dest, item->name);
 											strcat(dest, "\\");
-											app_send(popfold, AV_COPYFILE, PT34|PT56, (long)aesbuf,
-											0,(long) dest, 0, 0);
+											appl_send(popfold, AV_COPYFILE, PT34|PT56, (long)aesbuf, 0,(long) dest, 0, 0);
 											drag = first = 1;
 											goto drag_exit;
 										}

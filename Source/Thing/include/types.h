@@ -21,12 +21,24 @@
  * @license    LGPL
  */
 
-/*=========================================================================
- TYPES.H
+/*-------------------------------------------------------------------------
+ * Function prototypes for Thing
+ *-------------------------------------------------------------------------*/
 
- Thing
- Prototypen
- =========================================================================*/
+/*-------------------------------------------------------------------------
+ * 'debug.c'
+ *-------------------------------------------------------------------------*/
+#if 0
+#ifdef DEBUG
+void debugLog(int init, const char *format, ...);
+#define DEBUGLOG(x) debugLog x
+#else
+#define DEBUGLOG(x)
+#endif
+#endif
+#ifdef _DEBUG
+void debugMain(char *debugMsg);
+#endif
 
 /*-------------------------------------------------------------------------
  APP.C
@@ -43,7 +55,6 @@ char *app_argv(char *cmd, char *prog, int unixpaths);
 APPLINFO *app_match(int mode, char *name, int *ok);
 void app_default(APPLINFO *appl);
 APPLINFO *app_isdrag(char *name);
-#define app_send appl_send
 
 /*-------------------------------------------------------------------------
  AVSERVER.C
@@ -238,11 +249,6 @@ void dl_default(void);
 /*-------------------------------------------------------------------------
  GEMDOS.C
  -------------------------------------------------------------------------*/
-void full2comp(char *full, char *path, char *file);
-void comp2full(char *full, char *path, char *file);
-int valid_path(char *path);
-int valid_mask(char *mask, int wild);
-int valid_ext(char *ext);
 int is_app(char *name, unsigned int mode);
 int is_appl(char *path);
 int setdir(char *full);
@@ -278,15 +284,12 @@ HOTKEY *get_hotkey(int key);
 int main_init(void);
 void main_exit(void);
 void main_loop(void);
-void main_debug(char *txt);
 void wind_restore(int desk_redraw);
 void free_wopen(WINOPEN **wopen);
 
 /*-------------------------------------------------------------------------
  MCODE.S
  -------------------------------------------------------------------------*/
-extern void long2int(long lword, int *iword1, int *iword2);
-extern long int2long(int *iword1, int *iword2);
 extern int boot_drv(void);
 
 /*-------------------------------------------------------------------------
@@ -299,7 +302,9 @@ void mn_update(void);
 /*-------------------------------------------------------------------------
  SYSTEM.C
  -------------------------------------------------------------------------*/
+#if 0
 char *get_text(char *str, char *buf, int maxlen);
+#endif
 void put_text(FILE *fh, char *str);
 int chk_drive(int drv);
 int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
@@ -326,8 +331,6 @@ void fsinfo_debug(char *file, int line, char *name, FILESYS *fs);
 #endif
 void clr_drv(void);
 void fsconv(char *name, FILESYS *filesys);
-void str230(char *dest, char *src);
-void str245(char *dest, char *src);
 int setfpop(char *name);
 long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr);
 void fill_xattr(char *dirpath, XATTR *xattr, DTA *the_dta);
@@ -338,15 +341,11 @@ char *get_username(int uid);
 char *get_groupname(int gid);
 void quote(char *fname);
 int has_quotes(char *buf);
-#ifdef DEBUG
-void debug_log(int init, const char *format, ...);
-#define LOG(x) debug_log x
-#else
-#define LOG(x)
-#endif
 int count_char(char *str, char which);
 int drv_ejectable(int drv);
+#if 0
 int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title, int freedret, int freedid, FORMINFO *fi);
+#endif
 
 /*-------------------------------------------------------------------------
  WINDESK.C

@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 
 /* Von Thomas Binder */
 
@@ -337,7 +338,7 @@ int cwin_init(void) {
 	con.buf = pmalloc(bsize * 2L);
 	if (!con.buf) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
 
 	/* Buffer initialisieren */
@@ -354,10 +355,9 @@ int cwin_init(void) {
 		con.win.flags |= LFARROW | RTARROW | HSLIDE;
 	if (tb.sys & SY_ICONIFY)
 		con.win.flags |= SMALLER;
-#ifndef _NAES
 	if (tb.sys & SY_MAGX)
 		con.win.flags |= BACKDROP;
-#endif
+
 	con.win.state = WSDESKSIZE;
 	strcpy(con.win.name, rs_frstr[TXCONTITLE]);
 	con.win.update = cw_update;
@@ -366,7 +366,7 @@ int cwin_init(void) {
 	con.win.slide = cw_slide;
 	con.win.ictree = rs_trindex[ICONCON];
 
-	return 1;
+	return (1);
 }
 
 /*-------------------------------------------------------------------------
@@ -399,11 +399,9 @@ void cwin_attr(void) {
 	/* Attribute setzen */
 	vst_font(con.vdi_handle, con.font.id);
 	if (con.font.size < 0)
-		vst_height(con.vdi_handle, -con.font.size, &dummy, &dummy, &con.cw,
-				&con.ch);
+		vst_height(con.vdi_handle, -con.font.size, &dummy, &dummy, &con.cw, &con.ch);
 	else
-		vst_point(con.vdi_handle, con.font.size, &dummy, &dummy, &con.cw,
-				&con.ch);
+		vst_point(con.vdi_handle, con.font.size, &dummy, &dummy, &con.cw, &con.ch);
 	vst_alignment(con.vdi_handle, 0, 5, &dummy, &dummy);
 
 	/* Maximale Zeilen/Spalten auf dem Desktop ermitteln */
@@ -524,7 +522,7 @@ int cwin_open(void) {
 			win_unicon(&con.win, con.win.save.x, con.win.save.y,
 					con.win.save.w, con.win.save.h);
 		win_top(&con.win);
-		return 1;
+		return (1);
 	}
 
 	/* Buffer vorhanden? */
@@ -532,18 +530,18 @@ int cwin_open(void) {
 		/* Nein - dann nochmal probieren */
 		cwin_init();
 		if (!con.buf)
-			return 0; /* Es hilft alles nichts :( */
+			return (0); /* Es hilft alles nichts :( */
 	}
 
 	/* TOS2GEM vorhanden? */
-	if (!getcookie('T2GM', (long *) &con.tos2gem))
-		return -1;
+	if (!getCookie('T2GM', (long *) &con.tos2gem))
+		return (-1);
 	if (!con.tos2gem)
-		return -1;
+		return (-1);
 
 	/* TOS2GEM reservieren */
 	if (!con.tos2gem->reserve())
-		return 0; /* Bei Fehler raus */
+		return (0); /* Bei Fehler raus */
 
 	/* Eigene Workstation fuer TOS2GEM einrichten */
 	for (i = 0; i < 10; i++)
@@ -552,7 +550,7 @@ int cwin_open(void) {
 	con.vdi_handle = graf_handle(&dummy, &dummy, &dummy, &dummy);
 	_v_opnvwk(work_in, &con.vdi_handle, work_out);
 	if (!con.vdi_handle)
-		return 0;
+		return (0);
 	if (tb.gdos)
 		vst_load_fonts(con.vdi_handle, 0);
 
@@ -572,7 +570,7 @@ int cwin_open(void) {
 		v_clsvwk(con.vdi_handle);
 		if (con.vdi_chandle)
 			v_clsvwk(con.vdi_chandle);
-		return 0;
+		return (0);
 	}
 	win_open(&con.win, 1);
 
@@ -598,7 +596,7 @@ int cwin_open(void) {
 		v_clsvwk(con.vdi_handle);
 		if (con.vdi_chandle)
 			v_clsvwk(con.vdi_chandle);
-		return 0;
+		return (0);
 	}
 	con.tos2gem->switch_output(); /* Ausgabeumleitung abschalten */
 	con.xoff = 0;
@@ -612,9 +610,9 @@ int cwin_open(void) {
 	}
 	win_slide(&con.win, S_INIT, 0, 0);
 	graf_mouse(M_ON, 0L);
-	wind_update( END_UPDATE);
+	wind_update(END_UPDATE);
 
-	return 1;
+	return (1);
 }
 
 /**

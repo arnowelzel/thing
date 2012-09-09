@@ -27,7 +27,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 
 /*-------------------------------------------------------------------------
@@ -48,20 +49,19 @@ static char *kbuf; /* Puffer fuer den Kobold-Job */
  */
 int kbd_newjob(void) {
 #ifdef _DEBUG
-	sprintf(almsg, "KOBD: allocating new job buffer, len=%ld, xalloc=%d", MAX_KBDLEN, tb.sys & SY_XALLOC); main_debug(almsg);
+	sprintf(almsg, "KOBD: allocating new job buffer, len=%ld, xalloc=%d", MAX_KBDLEN, tb.sys & SY_XALLOC); debugMain(almsg);
 #endif
 	if (tb.sys & SY_XALLOC)
 		kbuf = Mxalloc(MAX_KBDLEN, 0x23); /* Global, TT preferred */
 	else
 		kbuf = Malloc(MAX_KBDLEN);
-
 	if (!kbuf) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
 	kbuf[0] = 0;
 
-	return 1;
+	return (1);
 }
 
 /**
@@ -73,16 +73,17 @@ int kbd_addcmd(char *cmd) {
 	long blen, clen;
 
 #ifdef _DEBUG
-	sprintf(almsg, "KOBD: add job command, text=%s", cmd); main_debug(almsg);
+	sprintf(almsg, "KOBD: add job command, text=%s", cmd); debugMain(almsg);
 #endif
 
 	blen = strlen(kbuf);
 	clen = strlen(cmd);
 	if (blen + clen < MAX_KBDLEN) {
 		strcat(kbuf, cmd);
-		return 1;
-	} else
-		return 0;
+		return (1);
+	}
+
+	return (0);
 }
 
 /*-------------------------------------------------------------------------
@@ -100,7 +101,7 @@ void kbd_startjob(void) {
 	int was_there = 0;
 
 #ifdef _DEBUG
-	sprintf(almsg,"KOBD: start job");main_debug(almsg);
+	sprintf(almsg, "KOBD: start job"); debugMain(almsg);
 #endif
 
 	/* Pruefen, ob Kobold bereits aktiv ist */
@@ -151,7 +152,7 @@ void kbd_startjob(void) {
 		ct = conf.texit;
 		aptr->overlay = aptr->single = conf.texit = 0;
 #ifdef _DEBUG
-		sprintf(almsg, "KOBD: kobold not active, multitasking present, now launching"); main_debug(almsg);
+		sprintf(almsg, "KOBD: kobold not active, multitasking present, now launching"); debugMain(almsg);
 #endif
 		app_start(aptr, "KOBOLD_JOB_NO_WINDOW 0", 0L, &rex);
 		aptr->overlay = ao;
@@ -164,7 +165,7 @@ void kbd_startjob(void) {
 
 	if (kid >= 0) {
 #ifdef _DEBUG
-		sprintf(almsg, "KOBD: kobold active, sending job-command"); main_debug(almsg);
+		sprintf(almsg, "KOBD: kobold active, sending job-command"); debugMain(almsg);
 #endif
 		/* Kobold aktiv, dann via Job-Protokoll uebergeben */
 		mn_disable();
@@ -177,7 +178,7 @@ void kbd_startjob(void) {
 		appl_write(kid, 16, aesmsg);
 
 #ifdef _DEBUG
-		sprintf(almsg, "KOBD: now waiting for reply"); main_debug(almsg);
+		sprintf(almsg, "KOBD: now waiting for reply"); debugMain(almsg);
 #endif
 		/* Antwort abwarten */
 		kevent.ev_mflags = MU_MESAG;
@@ -246,7 +247,7 @@ void kbd_startjob(void) {
 					break;
 				case KBD_ANS:
 #ifdef _DEBUG
-					sprintf(almsg, "KOBD: got reply :-)"); main_debug(almsg);
+					sprintf(almsg, "KOBD: got reply :-)"); debugMain(almsg);
 #endif
 					/* Hat Kobold etwas anderes als 'Finish' gemeldet? */
 					if ((reply = kevent.ev_mmgpbuf[3]) != -1) {
@@ -288,13 +289,13 @@ void kbd_startjob(void) {
 	Mfree(kbuf);
 
 #ifdef _DEBUG
-	sprintf(almsg, "KOBD: releasing buffer"); main_debug(almsg);
+	sprintf(almsg, "KOBD: releasing buffer"); debugMain(almsg);
 #endif
 
 	/* 'Patch' - Verzeichnisse aktualisieren */
 #ifdef _DEBUG
-	sprintf(almsg, "KOBD: updating path windows - may not be neccessary!"); main_debug(almsg);
-	sprintf(almsg, "KOBD: explanation: kobold 2.x does not send SH_WDRAW some times!"); main_debug(almsg);
+	sprintf(almsg, "KOBD: updating path windows - may not be neccessary!"); debugMain(almsg);
+	sprintf(almsg, "KOBD: explanation: kobold 2.x does not send SH_WDRAW some times!"); debugMain(almsg);
 #endif
 	if (reply != 3) {
 		for (i = 0; i < MAX_PWIN; i++) {

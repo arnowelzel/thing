@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include <types.h>
 #include <pwd.h>
@@ -71,291 +72,149 @@ void dl_ddrag(ICONDESK *icon, int ks) {
 	fin = rex = 0; /* Flag fuer's automatische Deselektieren */
 	wind_update( END_UPDATE); /* Update freigeben */
 
-	if (desk.sel.desk) /* Objekte auf dem Desktop  */
-	{
+	if (desk.sel.desk) {
+		/* Objekte auf dem Desktop  */
 		ICONDESK *p = desk.dicon + 1;
 
 		switch (icon->class) {
-			case IDDEVICE:
-			i=1;
-			while((i <= MAXICON) && ((p->class == IDFREE) || !p->select)) {
+		case IDDEVICE: /* Zielobjekt Device */
+			i = 1;
+			while ((i <= MAXICON) && ((p->class == IDFREE) || !p->select)) {
 				i++;
 				p++;
 			}
-			fin=dl_devout(p->spec.file->name,icon->spec.device->name);
+			fin = dl_devout(p->spec.file->name, icon->spec.device->name);
 			break;
-			case IDPRT:
-			fin=dl_show(1,0L);
-			rex=1;
+		case IDPRT: /* Zielobjekt Drucker */
+			fin = dl_show(1, 0L);
+			rex = 1;
 			break;
-			case IDFILE:
-#if 1
-			fin = dl_runapp(icon->spec.file->name,
-			is_app(icon->spec.file->name,icon->spec.file->mode),
-			icon->title, &rex);
-#else
-			/* Indirektes Ziel? */
-			if(!is_app(icon->spec.file->name,icon->spec.file->mode))
-			{
-				aptr=app_isdrag(icon->spec.file->name);
-				if(aptr)
-				{
-					/* Zieldatei zusammen mit Objekten Åbergeben */
-					strcpy(glob.cmd,icon->spec.file->name);strcat(glob.cmd," ");
-					i=(int)strlen(glob.cmd);
-#ifdef ARNO_ORIGINAL
-					cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CLEN-i);
-#else
-					cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CMDLEN-i);
-#endif
-					if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-					else
-					{
-						sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-						frm_alert(1,almsg,altitle,conf.wdial,0L);
-					}
-				}
-			}
-			else
-			{
-				/* Als Applikation angemeldet ? */
-				aptr=app_find(icon->spec.file->name);
-				/* Nein */
-				if(!aptr)
-				{
-					strcpy(app.name,icon->spec.file->name);
-					app_default(&app);
-					strcpy(app.title,icon->title);
-					aptr=&app;
-				}
-				/* Alle selektierten Objekte als Kommandozeile Åbergeben */
-				cont=sel2buf(glob.cmd,aname,apath,MAX_CMDLEN);
-				/* Applikation starten */
-				if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-				else
-				{
-					sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-					frm_alert(1,almsg,altitle,conf.wdial,0L);
-				}
-			}
-#endif
+		case IDFILE: /* Zielobjekt Datei */
+			fin = dl_runapp(icon->spec.file->name, is_app(icon->spec.file->name, icon->spec.file->mode), icon->title, &rex);
 			break;
-			case IDDRIVE: /* Zielobjekt Laufwerk */
-				dname[0] = icon->spec.drive->drive + 'A';
-				dname[1] = ':';
-				dname[2] = '\\';
-				dname[3] = 0;
-				fin = dl_copy(dname, ks, 0L);
-				break;
-			case IDTRASH: /* Zielobjekt Papierkorb */
-				dl_delete(0L);
-				break;
-			case IDCLIP: /* Objekt in die Ablage */
-				for (i = 1; i <= MAXICON; i++, p++)
-					if (p->class == IDFILE && p->select) {
-						graf_mouse(BUSYBEE, 0L);
-						fin = clip_file(p->spec.file->name);
-						graf_mouse(ARROW, 0L);
-					}
-				break;
-			case IDFOLDER: /* Objekt in Ordner kopieren */
-				strcpy(name, icon->spec.folder->path);
-				fin = dl_copy(name, ks, 0L);
-				break;
+		case IDDRIVE: /* Zielobjekt Laufwerk */
+			dname[0] = icon->spec.drive->drive + 'A';
+			dname[1] = ':';
+			dname[2] = '\\';
+			dname[3] = 0;
+			fin = dl_copy(dname, ks, 0L);
+			break;
+		case IDTRASH: /* Zielobjekt Papierkorb */
+			dl_delete(0L);
+			break;
+		case IDCLIP: /* Objekt in die Ablage */
+			for (i = 1; i <= MAXICON; i++, p++)
+				if (p->class == IDFILE && p->select) {
+					graf_mouse(BUSYBEE, 0L);
+					fin = clip_file(p->spec.file->name);
+					graf_mouse(ARROW, 0L);
+				}
+			break;
+		case IDFOLDER: /* Objekt in Ordner kopieren */
+			strcpy(name, icon->spec.folder->path);
+			fin = dl_copy(name, ks, 0L);
+			break;
 		}
 		if (fin)
 			icon_select(-1, 0, 0);
-	}
-	else /* Objekte in einem Fenster ? */
-	{
-		if(desk.sel.win) {
+	} else {
+		/* Objekte in einem Fenster ? */
+		if (desk.sel.win) {
 			switch(desk.sel.win->class) {
-				case WCPATH:
-					wpath = (W_PATH *)desk.sel.win->user;
-					switch(icon->class) {
-					case IDDEVICE:
-						for (j = 0; j < wpath->e_total; j++) {
-							item = wpath->lptr[j];
-							if (item->sel)
-								break;
-						}
-	
-						strcpy(name, wpath->path);
-						strcat(name, item->name);
-	
-						fin = dl_devout(name, icon->spec.device->name);
-						break;
-					case IDPRT:
-						fin = dl_show(1, 0L);
-						rex = 1;
-						break;
-					case IDFILE:
-#if 1
-						fin = dl_runapp(icon->spec.file->name, is_app(icon->spec.file->name,icon->spec.file->mode), icon->title, &rex);
-#else
-					/* Indirektes Ziel? */
-					if(!is_app(icon->spec.file->name,icon->spec.file->mode))
-					{
-						aptr=app_isdrag(icon->spec.file->name);
-						if(aptr)
-						{
-							/* Zieldatei zusammen mit Objekten Åbergeben */
-							strcpy(glob.cmd,icon->spec.file->name);strcat(glob.cmd," ");
-							i=(int)strlen(glob.cmd);
-#ifdef ARNO_ORIGINAL
-							cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CLEN-i);
-#else
-							cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CMDLEN-i);
-#endif
-							if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-							else
-							{
-								sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-								frm_alert(1,almsg,altitle,conf.wdial,0L);
-							}
-						}
+			case WCPATH:
+				wpath = (W_PATH *)desk.sel.win->user;
+				switch(icon->class) {
+				case IDDEVICE: /* Zielobjekt Device */
+					for (j = 0; j < wpath->e_total; j++) {
+						item = wpath->lptr[j];
+						if (item->sel)
+							break;
 					}
-					else
-					{
-						/* Als Applikation angemeldet ? */
-						aptr=app_find(icon->spec.file->name);
-						/* Nein */
-						if(!aptr)
-						{
-							strcpy(app.name,icon->spec.file->name);
-							app_default(&app);
-							strcpy(app.title,icon->title);
-							aptr=&app;
-						}
-						/* Alle selektierten Objekte als Kommandozeile Åbergeben */
-						cont=sel2buf(glob.cmd,aname,apath,MAX_CMDLEN);
-						/* Applikation starten */
-						if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-						else
-						{
-							sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-							frm_alert(1,almsg,altitle,conf.wdial,0L);
-						}
-					}
-#endif
-						break;
-					case IDDRIVE: /* Zielobjekt Laufwerk */
-						dname[0] = icon->spec.drive->drive + 'A';
-						dname[1] = ':';
-						dname[2] = '\\';
-						dname[3] = 0;
-						fin = dl_copy(dname, ks, 0L);
-						break;
-					case IDTRASH: /* Zielobjekt Papierkorb */
-						fin = dl_delete(0L);
-						break;
-					case IDCLIP: /* Objekt in die Ablage */
-					for(j=0;j<wpath->e_total;j++) {
-						item=wpath->lptr[j];
-						if(item->class==EC_FILE && item->sel) {
-							graf_mouse(BUSYBEE,0L);
-							strcpy(name,wpath->path);strcat(name,item->name);
-							fin=clip_file(name);
-							graf_mouse(ARROW,0L);
+					strcpy(name, wpath->path);
+					strcat(name, item->name);
+
+					fin = dl_devout(name, icon->spec.device->name);
+					break;
+				case IDPRT:  /* Zielobjekt Drucker */
+					fin = dl_show(1, 0L);
+					rex = 1;
+					break;
+				case IDFILE: /* Zielobjekt Datei */
+					fin = dl_runapp(icon->spec.file->name, is_app(icon->spec.file->name, icon->spec.file->mode), icon->title, &rex);
+					break;
+				case IDDRIVE: /* Zielobjekt Laufwerk */
+					dname[0] = icon->spec.drive->drive + 'A';
+					dname[1] = ':';
+					dname[2] = '\\';
+					dname[3] = 0;
+					fin = dl_copy(dname, ks, 0L);
+					break;
+				case IDTRASH: /* Zielobjekt Papierkorb */
+					fin = dl_delete(0L);
+					break;
+				case IDCLIP: /* Objekt in die Ablage */
+					for (j = 0; j < wpath->e_total; j++) {
+						item = wpath->lptr[j];
+						if (item->class == EC_FILE && item->sel) {
+							graf_mouse(BUSYBEE, 0L);
+							strcpy(name, wpath->path);
+							strcat(name, item->name);
+							fin = clip_file(name);
+							graf_mouse(ARROW, 0L);
 						}
 					}
 					break;
-					case IDFOLDER: /* Objekt in Ordner kopieren */
-					strcpy(name,icon->spec.folder->path);
-					fin=dl_copy(name,ks,0L);
+				case IDFOLDER: /* Objekt in Ordner kopieren */
+					strcpy(name, icon->spec.folder->path);
+					fin = dl_copy(name, ks, 0L);
 					break;
 				}
-				if(fin && !rex) {
-					wpath->amask[0]=0;
-					wpath_esel(desk.sel.win,0L,0,0,1);
+				if (fin && !rex) {
+					wpath->amask[0] = 0;
+					wpath_esel(desk.sel.win, 0L, 0, 0, 1);
 				}
 				break;
-				case WCGROUP:
-				wgrp=(W_GRP *)desk.sel.win->user;
-				gitem=wgrp->entry;while(!gitem->sel) gitem=gitem->next;
-				wgrp_eabs(wgrp,gitem,name);
-				switch(icon->class) {
-					case IDDEVICE:
-					if(gitem->class==EC_FILE)
-						fin=dl_devout(name,icon->spec.device->name);
+
+			case WCGROUP:
+				wgrp = (W_GRP *)desk.sel.win->user;
+				gitem = wgrp->entry;
+				while (!gitem->sel)
+					gitem = gitem->next;
+				wgrp_eabs(wgrp, gitem, name);
+				switch (icon->class) {
+				case IDDEVICE:
+					if (gitem->class == EC_FILE)
+						fin = dl_devout(name, icon->spec.device->name);
 					break;
-					case IDPRT:
-					if(gitem->class==EC_FILE) {
-						fin=dl_show(1,name);
-						rex=1;
+				case IDPRT:
+					if (gitem->class == EC_FILE) {
+						fin = dl_show(1, name);
+						rex = 1;
 					}
 					break;
-					case IDFILE:
-#if 1
-					fin = dl_runapp(icon->spec.file->name,
-							is_app(icon->spec.file->name,icon->spec.file->mode),
-							icon->title, &rex);
-#else
-					/* Indirektes Ziel? */
-					if(!is_app(icon->spec.file->name,icon->spec.file->mode))
-					{
-						aptr=app_isdrag(icon->spec.file->name);
-						if(aptr)
-						{
-							/* Zieldatei zusammen mit Objekten Åbergeben */
-							strcpy(glob.cmd,icon->spec.file->name);strcat(glob.cmd," ");
-							i=(int)strlen(glob.cmd);
-#ifdef ARNO_ORIGINAL
-							cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CLEN-i);
-#else
-							cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CMDLEN-i);
-#endif
-							if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-							else
-							{
-								sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-								frm_alert(1,almsg,altitle,conf.wdial,0L);
-							}
-						}
-					}
-					else
-					{
-						/* Als Applikation angemeldet ? */
-						aptr=app_find(icon->spec.file->name);
-						/* Nein */
-						if(!aptr)
-						{
-							strcpy(app.name,icon->spec.file->name);
-							app_default(&app);
-							strcpy(app.title,icon->title);
-							aptr=&app;
-						}
-						/* Alle selektierten Objekte als Kommandozeile Åbergeben */
-						cont=sel2buf(glob.cmd,aname,apath,MAX_CMDLEN);
-						/* Applikation starten */
-						if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-						else
-						{
-							sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-							frm_alert(1,almsg,altitle,conf.wdial,0L);
-						}
-						strcpy(glob.cmd,name);
-					}
-#endif
+				case IDFILE:
+					fin = dl_runapp(icon->spec.file->name, is_app(icon->spec.file->name, icon->spec.file->mode), icon->title, &rex);
 					break;
-					case IDDRIVE:
-					dname[0]=icon->spec.drive->drive+'A';
-					dname[1]=':';dname[2]='\\';dname[3]=0;
-					fin=dl_copy(dname,ks,0L);
+				case IDDRIVE:
+					dname[0] = icon->spec.drive->drive + 'A';
+					dname[1] = ':';
+					dname[2] = '\\';
+					dname[3] = 0;
+					fin = dl_copy(dname, ks, 0L);
 					break;
-					case IDTRASH:
+				case IDTRASH:
 					dl_delete(0L);
 					break;
-					case IDCLIP:
-					if(gitem->class==EC_FILE)
-						fin=clip_file(name);
+				case IDCLIP:
+					if (gitem->class == EC_FILE)
+						fin = clip_file(name);
 					break;
-					case IDFOLDER:
-					fin=dl_copy(icon->spec.folder->path,ks,name);
+				case IDFOLDER:
+					fin = dl_copy(icon->spec.folder->path, ks, name);
 					break;
 				}
-				if(fin && !rex)
-					wgrp_esel(desk.sel.win,0L,0,0);
+				if (fin && !rex)
+					wgrp_esel(desk.sel.win, 0L, 0, 0);
 				break;
 			}
 		}
@@ -393,7 +252,7 @@ void dl_wdrag_d(FORMINFO *fi, int obj, char *name, int ks) {
 		/* Funktionstasten */
 		if (fi == &fi_cfunc) {
 			p = rs_trindex[CFUNC][obj].ob_spec.tedinfo->te_ptext;
-			if (rs_trindex[CFUNC][CFSTOOL].ob_state & SELECTED) {
+			if (isObjectSelected(rs_trindex[CFUNC], CFSTOOL)) {
 				full2comp(full, fpath, fname);
 				if (!strchr(p, '|')) {
 					strcpy(p, fname);
@@ -544,12 +403,12 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 	wind_update( END_UPDATE); /* Update freigeben */
 
 	switch (win->class) {
-		case WCDIAL: /* Dialogfenster */
-		fi=(FORMINFO *)win->user;
+	case WCDIAL: /* Dialogfenster */
+		fi = (FORMINFO *)win->user;
 
 		/* Auf bestimmte Dialoge und deren Eingabefelder begrenzen:
 		 Funktionstasten - ein Objekt */
-		obj=-1;
+		obj = -1;
 		if ((fi == &fi_cfunc || fi == &fi_mask || fi == &fi_dappinfo) && desk.sel.numobs == 1) {
 			obj = objc_find(fi->tree, ROOT, MAX_DEPTH, mx, my);
 			if (obj != -1) {
@@ -560,39 +419,39 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 			}
 		}
 		break;
-		case WCPATH: /* Verzeichnis */
-		wpath=(W_PATH *)win->user;
+	case WCPATH: /* Verzeichnis */
+		wpath = (W_PATH *)win->user;
 		break;
-		case WCGROUP: /* Gruppenfenster */
-		fin=1;
-		wgrp=(W_GRP *)win->user;
+	case WCGROUP: /* Gruppenfenster */
+		fin = 1;
+		wgrp = (W_GRP *)win->user;
 		break;
 	}
 
-	if (desk.sel.desk) /* Objekte auf dem Desktop  */
-	{
+	if (desk.sel.desk) {
+		/* Objekte auf dem Desktop  */
 		ICONDESK *q = desk.dicon + 1;
 
 		switch (win->class) {
-			case WCDIAL: /* Dialog */
-			cont=sel2buf(name, aname, apath, MAX_PLEN);
+		case WCDIAL: /* Dialog */
+			cont = sel2buf(name, aname, apath, MAX_PLEN);
 			if (cont)
 				dl_wdrag_d(fi, obj, name, ks);
 			break;
-			case WCPATH: /* Verzeichnisfenster */
+		case WCPATH: /* Verzeichnisfenster */
 			fin = dl_drag_on_ditem(wpath, item, ks, &rex);
 			break;
-			case WCGROUP: /* Gruppenfenster */
+		case WCGROUP: /* Gruppenfenster */
 			fin = 1;
 			if (!gitem) {
-				cont=1;
+				cont = 1;
 				/* Alle selektierten Objekte in die Gruppe aufnehmen */
-				for(i = 1; i <= MAXICON && cont; i++, q++) {
+				for (i = 1; i <= MAXICON && cont; i++, q++) {
 					if ((q->class != IDFREE) && q->select) {
 						snitem = 0L;
 						p = q->title;
 						switch(q->class) {
-							case IDDRIVE:
+						case IDDRIVE:
 							name[0] = 'A' + q->spec.drive->drive;
 							name[1] = ':';
 							name[2] = '\\';
@@ -600,7 +459,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 							sprintf(full, "%s (%c)", *p ? p : rs_frstr[TXFILESYS], *name);
 							snitem = wgrp_add(wgrp, gprev, EC_FOLDER, full, name, "");
 							break;
-							case IDFILE:
+						case IDFILE:
 							if (!p[0]) {
 								p = strrchr(q->spec.file->name, '\\');
 								if (!p)
@@ -611,7 +470,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 							}
 							snitem = wgrp_add(wgrp, gprev, EC_FILE, p, q->spec.file->name, "");
 							break;
-							case IDFOLDER:
+						case IDFOLDER:
 							if (!p[0]) {
 								p = q->spec.folder->path;
 								j = (int)strlen(p) - 1;
@@ -657,273 +516,228 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 		}
 		if (fin)
 			icon_select(-1, 0, 0);
-	}
-	else /* Objekte in einem Fenster */
-	{
-		if(desk.sel.win) {
-			switch(desk.sel.win->class) {
-				case WCPATH:
-				spath=(W_PATH *)desk.sel.win->user;
+	} else {
+		/* Objekte in einem Fenster */
+		if (desk.sel.win) {
+			switch (desk.sel.win->class) {
+			case WCPATH:
+				spath = (W_PATH *)desk.sel.win->user;
 				switch(win->class) {
-					case WCDIAL: /* Dialog */
-					cont=sel2buf(name,aname,apath,MAX_PLEN);
-					if(cont) dl_wdrag_d(fi,obj,name,ks);
+				case WCDIAL: /* Dialog */
+					cont = sel2buf(name, aname, apath, MAX_PLEN);
+					if (cont)
+						dl_wdrag_d(fi, obj, name, ks);
 					break;
-					case WCPATH: /* Verzeichnisfenster */
+				case WCPATH: /* Verzeichnisfenster */
 					fin = dl_drag_on_ditem(wpath, item, ks, &rex);
 					break;
-					case WCGROUP: /* Gruppenfenster */
-					fin=1;
-					if(!gitem) {
-						cont=1;
+				case WCGROUP: /* Gruppenfenster */
+					fin = 1;
+					if (!gitem) {
+						cont = 1;
 						/* Alle selektierten Objekte in die Gruppe aufnehmen */
-						for(j=0;j<spath->e_total && cont;j++) {
-							sitem=spath->lptr[j];
-							strcpy(name,spath->path);
-							if(sitem->sel) {
-								snitem=0L;
-								strcat(name,sitem->name);
-								strcpy(title,sitem->name);
-								if(sitem->class==EC_FILE) {
+						for (j = 0; j < spath->e_total && cont; j++) {
+							sitem = spath->lptr[j];
+							strcpy(name, spath->path);
+							if (sitem->sel) {
+								snitem = 0L;
+								strcat(name, sitem->name);
+								strcpy(title, sitem->name);
+								if (sitem->class == EC_FILE) {
 									/* Falls vorhanden, dann Applikationstitel verwenden */
-									aptr=app_find(name);
+									aptr = app_find(name);
 									if(aptr)
-										strcpy(title,aptr->title);
-
-									snitem=wgrp_add(wgrp,gprev,EC_FILE,title,name,"");
+										strcpy(title, aptr->title);
+									snitem = wgrp_add(wgrp, gprev, EC_FILE, title, name, "");
 								} else {
 									strcat(name,"\\");
-									snitem=wgrp_add(wgrp,gprev,EC_FOLDER,title,name,"");
+									snitem = wgrp_add(wgrp, gprev, EC_FOLDER, title, name, "");
 								}
 								if (snitem)
-									snitem->sel=1;
+									snitem->sel = 1;
 								else
 									cont=0;
 							}
 							/* Falls es nicht geklappt hat, dann jammern */
-							if(!cont) {
-								fin=0;
-								frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
+							if (!cont) {
+								fin = 0;
+								frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 							}
 						}
 						/* Gruppe aktualisieren */
-						if(snitem)
-							snitem->sel=1;
+						if (snitem)
+							snitem->sel = 1;
 						wgrp_tree(win);
-						win_redraw(win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-						win_slide(win,S_INIT,0,0);
+						win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						win_slide(win, S_INIT, 0, 0);
 						wgrp_change(win);
-						if(snitem)
-							wgrp->focus=snitem->obnum-1;
+						if (snitem)
+							wgrp->focus = snitem->obnum - 1;
 					} else {
 						fin = dl_drag_on_gitem(wgrp, gitem, ks, &rex);
 					}
 					break;
 				}
-				if(fin && !rex) {
-					spath->amask[0]=0;
-					wpath_esel(desk.sel.win,0L,0,0,1);
+				if (fin && !rex) {
+					spath->amask[0] = 0;
+					wpath_esel(desk.sel.win, 0L, 0, 0, 1);
 				}
 				break;
-				case WCGROUP:
-				sgrp=(W_GRP *)desk.sel.win->user;
-				sgitem=sgrp->entry;
-				while(!sgitem->sel)
-					sgitem=sgitem->next;
-				wgrp_eabs(sgrp,sgitem,name);
+			case WCGROUP:
+				sgrp = (W_GRP *)desk.sel.win->user;
+				sgitem = sgrp->entry;
+				while (!sgitem->sel)
+					sgitem = sgitem->next;
+				wgrp_eabs(sgrp, sgitem, name);
 
-				switch(win->class) {
-					case WCDIAL: /* Dialog */
-					dl_wdrag_d(fi,obj,name,ks);
+				switch (win->class) {
+				case WCDIAL: /* Dialog */
+					dl_wdrag_d(fi, obj, name, ks);
 					break;
-					case WCPATH: /* Verzeichnisfenster */
+				case WCPATH: /* Verzeichnisfenster */
 					if(!item) {
-						fin=dl_copy(wpath->path,ks,0L);
+						fin = dl_copy(wpath->path, ks, 0L);
 					} else {
 						switch(item->class) {
-							case EC_FOLDER:
-							case EC_PARENT:
-							strcpy(iname,wpath->path);
-							if(item->class==EC_PARENT) {
-								i=(int)strlen(iname)-2;
-								while(iname[i]!='\\')
+						case EC_FOLDER:
+						case EC_PARENT:
+							strcpy(iname, wpath->path);
+							if (item->class == EC_PARENT) {
+								i = (int)strlen(iname) - 2;
+								while (iname[i] != '\\')
 									i--;
-								iname[i+1]=0;
+								iname[i + 1] = 0;
 							} else {
-								strcat(iname,item->name);
-								strcat(iname,"\\");
+								strcat(iname, item->name);
+								strcat(iname, "\\");
 							}
-							fin=dl_copy(iname,ks,0L);
+							fin = dl_copy(iname, ks, 0L);
 							break;
-							case EC_FILE:
-							strcpy(iname,wpath->path);strcat(iname,item->name);
-#if 1
+						case EC_FILE:
+							strcpy(iname, wpath->path);
+							strcat(iname, item->name);
 							fin = dl_runapp(iname, item->aptype, item->name, &rex);
-#else
-							/* Indirektes Ziel? */
-							if(!item->aptype)
-							{
-								aptr=app_isdrag(iname);
-								if(aptr)
-								{
-									/* Zieldatei zusammen mit Objekten Åbergeben */
-									strcpy(glob.cmd,iname);strcat(glob.cmd," ");
-									i=(int)strlen(glob.cmd);
-#ifdef ARNO_ORIGINAL
-									cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CLEN-i);
-#else
-									cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CMDLEN-i);
-#endif
-									if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-									else
-									{
-										sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-										frm_alert(1,almsg,altitle,conf.wdial,0L);
-									}
-								}
-							}
-							else
-							{
-								/* Als Applikation angemeldet ? */
-								aptr=app_find(iname);
-								/* Nein */
-								if(!aptr)
-								{
-									strcpy(app.name,iname);
-									app_default(&app);
-									strcpy(app.title,item->name);
-									aptr=&app;
-								}
-								cont=sel2buf(glob.cmd,aname,apath,MAX_CMDLEN);
-								if(cont) fin=app_start(aptr,glob.cmd,apath,&rex);
-								else
-								{
-									sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-									frm_alert(1,almsg,altitle,conf.wdial,0L);
-								}
-							}
-#endif
 							break;
 						}
 					}
-					if(fin && !rex)
-						wgrp_esel(desk.sel.win,0L,0,0);
+					if (fin && !rex)
+						wgrp_esel(desk.sel.win, 0L, 0, 0);
 					break;
-					case WCGROUP: /* Gruppenfenster */
-					if(!gitem) {
-						ups=upd=0;
+				case WCGROUP: /* Gruppenfenster */
+					if (!gitem) {
+						ups = upd =0;
 
 						/* Aktuellen Status sichern */
-						sgitem=sgrp->entry;
-						while(sgitem) {
-							sgitem->prevsel=sgitem->sel;
-							sgitem=sgitem->next;
+						sgitem = sgrp->entry;
+						while (sgitem) {
+							sgitem->prevsel = sgitem->sel;
+							sgitem = sgitem->next;
 						}
 
 						/* Alle selektierten Objekte bearbeiten */
-						sgitem=sgrp->entry;
-						while(sgitem) {
-							sgitem=sgrp->entry;
-							while(sgitem) {
+						sgitem = sgrp->entry;
+						while (sgitem) {
+							sgitem = sgrp->entry;
+							while (sgitem) {
 								if(!sgitem->prevsel)
-									sgitem=sgitem->next;
+									sgitem = sgitem->next;
 								else break;
 							}
-							if(sgitem) {
+							if (sgitem) {
 								/* Vermerken, daû Objekt nicht mehr bearbeitet werden muû */
-								sgitem->prevsel=0;
+								sgitem->prevsel = 0;
 
 								/* Umsortierung innerhalb einer Gruppe */
-								if(wgrp==sgrp) {
+								if (wgrp == sgrp) {
 									/* Spezielle FÑlle berÅcksichtigen */
-									if(gprev) {
-										if(gprev->obnum>sgitem->obnum)
-											gprev=gprev->next;
+									if (gprev) {
+										if (gprev->obnum > sgitem->obnum)
+											gprev = gprev->next;
 									}
 
 									/* Nur umsortieren, falls Position sich wirklich Ñndert */
-									if(wgrp->e_num>1 && gprev!=sgitem) {
+									if (wgrp->e_num > 1 && gprev != sgitem) {
 										/* Eintrag aus der Liste ausklinken */
-										sgprev=sgitem->prev;
-										sgnext=sgitem->next;
-										if(sgprev)
-											sgprev->next=sgnext;
+										sgprev = sgitem->prev;
+										sgnext = sgitem->next;
+										if (sgprev)
+											sgprev->next = sgnext;
 										else
-											wgrp->entry=sgnext;
-										if(sgnext)
-											sgnext->prev=sgprev;
+											wgrp->entry = sgnext;
+										if (sgnext)
+											sgnext->prev = sgprev;
 
 										/* Kein Eintrag angegeben, dann an das Ende der Liste
 										 anhÑngen */
-										if(!gprev) {
-											sgnext=wgrp->entry;
-											while(sgnext->next)
-												sgnext=sgnext->next;
-											sgnext->next=sgitem;
-											sgitem->prev=sgnext;
+										if (!gprev) {
+											sgnext = wgrp->entry;
+											while (sgnext->next)
+												sgnext = sgnext->next;
+											sgnext->next = sgitem;
+											sgitem->prev = sgnext;
 										} else {
 											/* Eintrag angegeben - davor einhÑngen */
-											sgprev=gprev->prev;
-											gprev->prev=sgitem;
-											if(sgprev) sgprev->next=sgitem;
-											else wgrp->entry=sgitem;
-											sgitem->prev=sgprev;
+											sgprev = gprev->prev;
+											gprev->prev = sgitem;
+											if (sgprev)
+												sgprev->next = sgitem;
+											else
+												wgrp->entry = sgitem;
+											sgitem->prev = sgprev;
 										}
-										sgitem->next=gprev;
+										sgitem->next = gprev;
 
-										upd=1;
-										wgrp->focus=sgitem->obnum-1;
+										upd = 1;
+										wgrp->focus = sgitem->obnum - 1;
 									}
-								}
-								else /* Verlagern von einer Gruppe in die Andere */
-								{
-									wgrp_eabs(sgrp,sgitem,name);
-									sgnext=wgrp_add(wgrp,gprev,sgitem->class,sgitem->title,name,"");
-									if(!sgnext) {
-										frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
+								} else {
+									/* Verlagern von einer Gruppe in die Andere */
+									wgrp_eabs(sgrp, sgitem, name);
+									sgnext = wgrp_add(wgrp, gprev, sgitem->class, sgitem->title, name, "");
+									if (!sgnext) {
+										frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 									} else {
-										sgnext->sel=1;
-										upd=1;
-										wgrp->focus=sgnext->obnum-1;
+										sgnext->sel = 1;
+										upd = 1;
+										wgrp->focus = sgnext->obnum - 1;
 
 										/* Falls gewÅnscht, dann Quellobjekt entfernen */
-										if(ks&K_CTRL) {
-											wgrp_remove(sgrp,sgitem);
-											if(!sgrp->e_num) {
-												if(glob.fwin==desk.sel.win) {
-													glob.fmode=0;
-													glob.fwin=0L;
+										if (ks & K_CTRL) {
+											wgrp_remove(sgrp, sgitem);
+											if (!sgrp->e_num) {
+												if (glob.fwin == desk.sel.win) {
+													glob.fmode = 0;
+													glob.fwin = 0L;
 												}
 											} else {
-												if(sgrp->focus>=sgrp->e_num)
+												if (sgrp->focus >= sgrp->e_num)
 													sgrp->focus--;
 											}
-										}
-										else /* Andernfalls nur deselektieren */
-										sgitem->sel=0;
-										ups=1;
+										} else /* Andernfalls nur deselektieren */
+											sgitem->sel=0;
+										ups = 1;
 									}
 								}
 							}
 						}
 						/* Gruppen aktualisieren */
-						if(ups) {
+						if (ups) {
 							wgrp_tree(desk.sel.win);
-							win_redraw(desk.sel.win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-							win_slide(desk.sel.win,S_INIT,0,0);
+							win_redraw(desk.sel.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_slide(desk.sel.win, S_INIT, 0, 0);
 							wgrp_change(desk.sel.win);
-							wgrp->focus=0;
+							wgrp->focus = 0;
 						}
-						if(upd) {
+						if (upd) {
 							wgrp_tree(win);
-							win_redraw(win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-							win_slide(win,S_INIT,0,0);
+							win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_slide(win, S_INIT, 0, 0);
 							wgrp_change(win);
 						}
 					} else {
 						fin = dl_drag_on_gitem(wgrp, gitem, ks, &rex);
-						if(fin && !rex)
-							wgrp_esel(desk.sel.win,0L,0,0);
+						if (fin && !rex)
+							wgrp_esel(desk.sel.win, 0L, 0, 0);
 					}
 					break;
 				}
@@ -959,7 +773,7 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 	}
 	path = name + MAX_PLEN;
 
-	wind_update( END_UPDATE); /* Update freigeben */
+	wind_update(END_UPDATE); /* Update freigeben */
 
 	/* Objekte an Accessory melden */
 	dodrag = sel2buf(aesbuf, name, path, MAX_AVLEN);
@@ -968,16 +782,14 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 		if (accwin) {
 			if (avp_check(accwin->id)) {
 				if (!has_quotes(aesbuf) || avp_can_quote(accwin->id)) {
-					app_send(accwin->id, VA_DRAGACCWIND, PT67, accwin->handle,
-							mx, my, (long) aesbuf, 0);
+					appl_send(accwin->id, VA_DRAGACCWIND, PT67, accwin->handle, mx, my, (long) aesbuf, 0);
 				} else {
-					sprintf(almsg, rs_frstr[ALNOQUOTE],
-							avp_get(accwin->id)->name);
+					sprintf(almsg, rs_frstr[ALNOQUOTE], avp_get(accwin->id)->name);
 					frm_alert(1, almsg, altitle, conf.wdial, 0L);
 				}
 			}
-		} else /* Fenster nicht angemeldet */
-		{
+		} else {
+			/* Fenster nicht angemeldet */
 			if (whandle) {
 				/* EigentÅmer ermitteln */
 				owner = -1;
@@ -1006,13 +818,13 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 
 					/* D&D ging nicht, dann VA_START probieren */
 					if (!ok)
-						app_send(owner, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
+						appl_send(owner, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
 				} else
 					frm_alert(1, rs_frstr[ALAVEDRAG], altitle, conf.wdial, 0L);
 			}
 		}
-	} else /* Fehler - zuviele Objekte ... */
-	{
+	} else {
+		/* Fehler - zuviele Objekte ... */
 		frm_alert(1, rs_frstr[ALEACDRAG], altitle, conf.wdial, 0L);
 	}
 	pfree(name);
@@ -1149,13 +961,8 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 	else
 		bar = 0;
 	sprintf(tree[DIBVALUE].ob_spec.free_string, "%d%%", (int) bar);
-#ifdef DIRCH
 	setObjectState(tree, DIAUTOINSTALL, SELECTED, icon->spec.drive->autoinstall);
 	setObjectState(tree, DIUSELABEL, SELECTED, icon->spec.drive->uselabel);
-#else
-	dial_setopt(tree, DIAUTOINSTALL, SELECTED, icon->spec.drive->autoinstall);
-	dial_setopt(tree, DIUSELABEL, SELECTED, icon->spec.drive->uselabel);
-#endif
 
 	graf_mouse(ARROW, 0L);
 	/* Sonstige Vorbereitungen */
@@ -1166,7 +973,7 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 	sprintf(dtitle, dspec, drv);
 	setObjectText(tree, DITITLE, dtitle);
 #else
-	dial_setopt(tree, DINEXT, DISABLED, !donext);
+	setObjectState(tree, DINEXT, DISABLED, !donext);
 	strcpy(tree[DILABEL].ob_spec.tedinfo->te_ptext, icon->spec.drive->deftitle);
 
 	dspec = tree[DITITLE].ob_spec.free_string;
@@ -1210,13 +1017,9 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 		strcpy(icon->spec.drive->deftitle, rs_trindex[DIINFO][DILABEL].ob_spec.tedinfo->te_ptext);
 		strcpy(icon->title, icon->spec.drive->deftitle);
 
-#ifdef DIRCH
 		icon->spec.drive->uselabel = isObjectSelected(tree, DIUSELABEL);
 		icon->spec.drive->autoinstall = isObjectSelected(tree, DIAUTOINSTALL);
-#else
-		icon->spec.drive->uselabel = dial_getopt(tree, DIUSELABEL, SELECTED);
-		icon->spec.drive->autoinstall = dial_getopt(tree, DIAUTOINSTALL, SELECTED);
-#endif
+
 		/* Bei Bedarf Volume Label aendern */
 		if (strcmp(vname, nvname) != 0) {
 			sprintf(dtitle, "%c:\\", icon->spec.drive->drive + 'A');
@@ -1243,7 +1046,7 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 		title_update(icon->spec.drive->drive);
 	}
 
-	return cont;
+	return (cont);
 }
 
 /**-------------------------------------------------------------------------
@@ -1258,13 +1061,9 @@ int dl_dtrashinfo(ICONDESK *icon, int donext) {
 	tree = rs_trindex[TRASHINFO];
 
 	/* Dialog vorbereiten */
-#ifdef DIRCH
 	setObjectState(tree, TINEXT, DISABLED, !donext);
 	setObjectText(tree, TILABEL, icon->title);
-#else
-	dial_setopt(tree, TINEXT, DISABLED, !donext);
-	strcpy(tree[TILABEL].ob_spec.tedinfo->te_ptext, icon->title);
-#endif
+
 	/* Auf gehts ... */
 	frm_start(&fi_trashinfo, conf.wdial, conf.cdial, 1);
 	done = 0;
@@ -1292,14 +1091,10 @@ int dl_dtrashinfo(ICONDESK *icon, int donext) {
 	frm_end(&fi_trashinfo);
 
 	if (fi_trashinfo.exit_obj == TIOK) {
-#ifdef DIRCH
 		strcpy(icon->title, getObjectText(tree, TILABEL));
-#else
-		strcpy(icon->title, tree[TILABEL].ob_spec.tedinfo->te_ptext);
-#endif
 	}
 
-	return cont;
+	return (cont);
 }
 
 /**-------------------------------------------------------------------------
@@ -1319,15 +1114,9 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 	tree = rs_trindex[CLIPINFO];
 
 	/* Dialog vorbereiten */
-#ifdef DIRCH
 	setObjectState(tree, CINEXT, DISABLED, !donext);
 	setObjectText(tree, CILABEL, icon->title);
 	setObjectText(tree, CIPATH, icon->spec.clip->path);
-#else
-	dial_setopt(tree, CINEXT, DISABLED, !donext);
-	strcpy(tree[CILABEL].ob_spec.tedinfo->te_ptext, icon->title);
-	strcpy(tree[CIPATH].ob_spec.tedinfo->te_ptext, icon->spec.clip->path);
-#endif
 
 	/* Auf gehts ... */
 	frm_start(&fi_clipinfo, conf.wdial, conf.cdial, 1);
@@ -1343,40 +1132,12 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 		case CIPATH: /* Pfad suchen */
 			if (!(ret & 0x8000))
 				break;
-#ifdef DIRCH
 			strcpy(path, getObjectText(tree, CIPATH));
-#else
-			strcpy(path, tree[CIPATH].ob_spec.tedinfo->te_ptext);
-#endif
 			if (path[0]) {
 				if (path[(int) strlen(path) - 1] != '\\')
 					strcat(path, "\\");
 			}
-#if 0
-			else
-			{
-				path[0]=(char)Dgetdrv()+65;
-				path[1]=':';
-				Dgetpath(&path[2],0);
-				strcat(path,"\\");
-			}
-			strcat(path,"SCRAP.*");
-			name[0]=0;
-			/* Dateiauswahl durchfÅhren */
-			fselect(path,name,&fret,rs_frstr[TXCLIPSEARCH],0,100);
-			if(fi_clipinfo.state!=FST_WIN) frm_redraw(&fi_clipinfo,ROOT);
-			if(fret==1) /* Dateiauswahl mit "OK" beendet */
-			{
-				/* Laufwerksbezeichnung immer gross */
-				path[0]=nkc_toupper(path[0]);
-				/* Bei Bedarf Schreibweise anpassen */
-				fsinfo(path,&filesys);
-				fsconv(path,&filesys);
-				p=strrchr(path,'\\');if(p) p[1]=0;
-				frm_edstring(&fi_clipinfo,CIPATH,path);
-				frm_redraw(&fi_clipinfo,CIPATH);
-			}
-#else
+
 			if (full_fselect(path, NULL, "SCRAP.*", 1, rs_frstr[TXCLIPSEARCH], 0, 100, &fi_clipinfo)) {
 				p = strrchr(path, '\\');
 				if (p)
@@ -1384,7 +1145,6 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 				frm_edstring(&fi_clipinfo, CIPATH, path);
 				frm_redraw(&fi_clipinfo, CIPATH);
 			}
-#endif
 			break;
 
 		case CICANCEL:
@@ -1395,11 +1155,7 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 		case CIOK:
 			ok = 1;
 
-#ifdef DIRCH
 			strcpy(path, getObjectText(tree, CIPATH));
-#else
-			strcpy(path, tree[CIPATH].ob_spec.tedinfo->te_ptext);
-#endif
 			/* Laufwerksbezeichnung immer gross */
 			path[0] = nkc_toupper(path[0]);
 
@@ -1411,18 +1167,20 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 
 			/* Pfadangabe pruefen */
 			p = path;
-			if (ok)
+			if (ok) {
 				if (p[0]) {
 					if (p[(int) strlen(p) - 1] != '\\')
 						strcat(p, "\\");
 					frm_edstring(&fi_clipinfo, CIPATH, path);
 					frm_redraw(&fi_clipinfo, CIPATH);
 				}
-			if (ok)
-				if (!valid_path(p)) {
+			}
+			if (ok) {
+				if (!isValidPath(p)) {
 					frm_alert(1, rs_frstr[ALILLPATH], altitle, conf.wdial, 0L);
 					ok = 0;
 				}
+			}
 			if (ok) {
 				cont = 2; /* Rueckgabe: Icon geaendert */
 				done = 1;
@@ -1438,13 +1196,8 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 	frm_end(&fi_clipinfo);
 
 	if (fi_clipinfo.exit_obj == CIOK) {
-#ifdef DIRCH
 		strcpy(path, getObjectText(tree, CIPATH));
 		strcpy(icon->title, getObjectText(tree, CILABEL));
-#else
-		strcpy(path, tree[CIPATH].ob_spec.tedinfo->te_ptext);
-		strcpy(icon->title, tree[CILABEL].ob_spec.tedinfo->te_ptext);
-#endif
 		strcpy(icon->spec.clip->path, path);
 		/* Ablage initialisieren */
 		clip_init();
@@ -1471,6 +1224,33 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
  Info ueber Applikation anzeigen/aendern
  -------------------------------------------------------------------------*/
 void dl_dappinfo_mode(int mode) {
+	fi_dappinfo.keyflag = 0;
+
+#ifdef DIRCH
+	switch (mode) {
+		case 0:
+			setActiveCard(dapp->appInfoCard, DAGENERAL, FALSE);
+			fi_dappinfo.edit_obj = DAILABEL;
+			fi_dappinfo.userinfo = rs_frstr[HMAPP0];
+			break;
+		case 1:
+			setActiveCard(dapp->appInfoCard, DAFILES, FALSE);
+			fi_dappinfo.edit_obj = DAIOPEN;
+			fi_dappinfo.userinfo = rs_frstr[HMAPP1];
+			break;
+		case 2:
+			setActiveCard(dapp->appInfoCard, DAOPTIONS, FALSE);
+			fi_dappinfo.edit_obj = DAOMAXMEM;
+			fi_dappinfo.userinfo = rs_frstr[HMAPP2];
+			break;
+		case 3:
+			setActiveCard(dapp->appInfoCard, DAENV, FALSE);
+			fi_dappinfo.keyflag = 1;
+			fi_dappinfo.edit_obj = DAEVAL;
+			fi_dappinfo.userinfo = rs_frstr[HMAPP3];
+			break;
+	}
+#else
 	OBJECT *tree;
 
 	tree = rs_trindex[DAPPINFO];
@@ -1529,6 +1309,7 @@ void dl_dappinfo_mode(int mode) {
 			fi_dappinfo.userinfo = rs_frstr[HMAPP3];
 			break;
 	}
+#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1539,108 +1320,123 @@ void dl_dappinfo_opt(int isap, int isdeflt) {
 	if (!isap && !isdeflt) {
 		/* Kein Programm */
 
-		/* Keine Optionen */
-		appinfo[DAOPTIONS].ob_state |= DISABLED;
-		/* Kein Environment */
-		appinfo[DAENV].ob_state |= DISABLED;
+		/* Karteikarte 'Optionen' deaktivieren */
+		cardDisable(dapp->appInfoCard, DAOPTIONS);
+		/* Karteikarte 'Environment' deaktivieren */
+		cardDisable(dapp->appInfoCard, DAENV);
+
 		/* Kein Drag&Drop auf angem. Dateien */
-		appinfo[DAIINDRAG].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIINDRAG);
 		/* Kein spezifisches Startverzeichnis */
-		appinfo[DAIWINDOW].ob_state |= DISABLED;
-		appinfo[DAIFILE].ob_state |= DISABLED;
-		appinfo[DAIAPPL].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIWINDOW);
+		setObjectDisabled(appinfo, DAIFILE);
+		setObjectDisabled(appinfo, DAIAPPL);
 		/* Keine spezifischen Parameter */
-		appinfo[DAIPARAM].ob_state |= DISABLED;
-		appinfo[DAIPARAM].ob_flags &= ~EDITABLE;
-		appinfo[DAIALWAYS].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIPARAM);
+		setObjectFlags(appinfo, DAIPARAM, EDITABLE, FALSE);
+		setObjectDisabled(appinfo, DAIALWAYS);
 		/* Kein Speicherlimit */
-		appinfo[DAOMAXMEM].ob_state |= DISABLED;
-		appinfo[DAOMAXMEM].ob_flags &= ~EDITABLE;
+		setObjectDisabled(appinfo, DAOMAXMEM);
+		setObjectFlags(appinfo, DAOMAXMEM, EDITABLE, FALSE);
 		/* Kein Warnhinweis */
-		appinfo[DAOALERT].ob_state |= DISABLED;
-		appinfo[DAOALERT].ob_flags &= ~EDITABLE;
+		setObjectDisabled(appinfo, DAOALERT);
+		setObjectFlags(appinfo, DAOALERT, EDITABLE, FALSE);
 		if (dapp->mode == 2)
 			fi_dappinfo.edit_obj = 0;
 	} else {
-		appinfo[DAOPTIONS].ob_state &= ~DISABLED;
-		appinfo[DAENV].ob_state &= ~DISABLED;
-		appinfo[DAIINDRAG].ob_state &= ~DISABLED;
-		appinfo[DAIWINDOW].ob_state &= ~DISABLED;
-		appinfo[DAIFILE].ob_state &= ~DISABLED;
-		appinfo[DAIAPPL].ob_state &= ~DISABLED;
-		appinfo[DAIPARAM].ob_state &= ~DISABLED;
+		/* Karteikarte 'Optionen' aktivieren */
+		cardEnable(dapp->appInfoCard, DAOPTIONS);
+
+		/* Karteikarte 'Environment' aktivieren */
+		cardEnable(dapp->appInfoCard, DAENV);
+
+		unsetObjectDisabled(appinfo, DAIINDRAG);
+		unsetObjectDisabled(appinfo, DAIWINDOW);
+		unsetObjectDisabled(appinfo, DAIFILE);
+		unsetObjectDisabled(appinfo, DAIAPPL);
+		unsetObjectDisabled(appinfo, DAIPARAM);
 		if (dapp->mode == 0)
 			appinfo[DAIPARAM].ob_flags |= EDITABLE;
-		appinfo[DAIALWAYS].ob_state &= ~DISABLED;
-		appinfo[DAOMAXMEM].ob_state &= ~DISABLED;
-		appinfo[DAOALERT].ob_state &= ~DISABLED;
+		unsetObjectDisabled(appinfo, DAIALWAYS);
+		unsetObjectDisabled(appinfo, DAOMAXMEM);
+		unsetObjectDisabled(appinfo, DAOALERT);
 		if (dapp->mode == 2) {
 			appinfo[DAOALERT].ob_flags |= EDITABLE;
 			appinfo[DAOMAXMEM].ob_flags |= EDITABLE;
 		}
 	}
-#if 1
+
 	if (isdeflt) {
 		/* Defaultapplikation? */
 
+		/* Karteikarte 'Dateien' deaktivieren */
+		cardDisable(dapp->appInfoCard, DAFILES);
+		/* Karteikarte 'Environment' deaktivieren */
+		cardDisable(dapp->appInfoCard, DAENV);
+
 		/* Keine Programmdatei */
-		appinfo[DAISEARCH].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAISEARCH);
 		/* Titel nicht aenderbar */
 		appinfo[DAILABEL].ob_flags &= ~EDITABLE;
 		/* Kein Shortcut */
-		appinfo[DAISHORT].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAISHORT);
 		/* Keine aktuelle Auswahl */
-		appinfo[DAIUSESEL].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIUSESEL);
 		/* Keine Parameter */
-		appinfo[DAIPARAM].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIPARAM);
 		appinfo[DAIPARAM].ob_flags &= ~EDITABLE;
-		appinfo[DAIALWAYS].ob_state |= DISABLED;
-		/* Keine Dateien */
-		appinfo[DAFILES].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAIALWAYS);
 		/* Kein Pfadvergleich */
-		appinfo[DAOFULL].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOFULL);
 		/* Kein Autostart */
-		appinfo[DAOAUTO].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOAUTO);
 		/* Keine Parameterabfrage */
-		appinfo[DAOASKPARM].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOASKPARM);
 		/* Kein Auslagern */
-		appinfo[DAOOVERLAY].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOOVERLAY);
 		/* Kein Warten auf Tastendruck */
-		appinfo[DAOWAITKEY].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOWAITKEY);
 		/* Kein Speicherlimit */
-		appinfo[DAOMAXMEM].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOMAXMEM);
 		appinfo[DAOMAXMEM].ob_flags &= ~EDITABLE;
 		/* Kein Warnhinweis */
-		appinfo[DAOALERT].ob_state |= DISABLED;
+		setObjectDisabled(appinfo, DAOALERT);
 		appinfo[DAOALERT].ob_flags &= ~EDITABLE;
 		if (dapp->mode == 2)
 			fi_dappinfo.edit_obj = 0;
-		/* Kein Environment */
-		appinfo[DAENV].ob_state |= DISABLED;
 	} else {
-		appinfo[DAISEARCH].ob_state &= ~DISABLED;
+		/* Karteikarte 'Dateien' aktivieren */
+		cardEnable(dapp->appInfoCard, DAFILES);
+
+		unsetObjectDisabled(appinfo, DAISEARCH);
 		if (dapp->mode == 0)
 			appinfo[DAILABEL].ob_flags |= EDITABLE;
-		appinfo[DAISHORT].ob_state &= ~DISABLED;
-		appinfo[DAIUSESEL].ob_state &= ~DISABLED;
-		appinfo[DAFILES].ob_state &= ~DISABLED;
-		appinfo[DAOFULL].ob_state &= ~DISABLED;
-		appinfo[DAOAUTO].ob_state &= ~DISABLED;
-		appinfo[DAOASKPARM].ob_state &= ~DISABLED;
-		appinfo[DAOOVERLAY].ob_state &= ~DISABLED;
-		appinfo[DAOWAITKEY].ob_state &= ~DISABLED;
+		unsetObjectDisabled(appinfo, DAISHORT);
+		unsetObjectDisabled(appinfo, DAIUSESEL);
+
+		unsetObjectDisabled(appinfo, DAOFULL);
+		unsetObjectDisabled(appinfo, DAOAUTO);
+		unsetObjectDisabled(appinfo, DAOASKPARM);
+		unsetObjectDisabled(appinfo, DAOOVERLAY);
+		unsetObjectDisabled(appinfo, DAOWAITKEY);
 		if (isap) {
-			appinfo[DAIPARAM].ob_state &= ~DISABLED;
+			unsetObjectDisabled(appinfo, DAIPARAM);
 			if (dapp->mode == 0)
 				appinfo[DAIPARAM].ob_flags |= EDITABLE;
-			appinfo[DAIALWAYS].ob_state &= ~DISABLED;
-			appinfo[DAENV].ob_state &= ~DISABLED;
+			unsetObjectDisabled(appinfo, DAIALWAYS);
+
+			/* Karteikarte 'Environment' aktivieren */
+			cardEnable(dapp->appInfoCard, DAENV);
 		}
 	}
-#endif
 }
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Dialog-Init 'Info ueber Applikation'
+ *
+ * @param mode
+ * @param ret
+ */
 int dl_dappinfo(APPLINFO *appl, int del) {
 	int i, j, isap;
 	int obnum[5] = { DAIPARAM, DAIOPEN, DAIVIEW, DAIPRINT, DAEVAL },
@@ -1653,14 +1449,42 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 	if (fi_dappinfo.open) {
 		mybeep();
 		frm_restore(&fi_dappinfo);
-		return 0;
+		return (0);
 	}
 
 	dapp = pmalloc(sizeof(DAPP));
 	if (!dapp) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
+
+#ifdef DIRCH
+	/* Die einzelnen Karteikarten des Dialogs zusammenhaengen. */
+	dapp->appInfoCard = NULL;
+	if (cardAdd(&dapp->appInfoCard, tree, DAGENERAL, DASGENERAL) == USR_OUTOFMEMORY) {
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		pfree(dapp);
+		return (0);
+	}
+	if (cardAdd(&dapp->appInfoCard, tree, DAFILES, DASFILES) == USR_OUTOFMEMORY) {
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		cardRemoveAll(dapp->appInfoCard);
+		pfree(dapp);
+		return (0);
+	}
+	if (cardAdd(&dapp->appInfoCard, tree, DAOPTIONS, DASOPTIONS) == USR_OUTOFMEMORY) {
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		cardRemoveAll(dapp->appInfoCard);
+		pfree(dapp);
+		return (0);
+	}
+	if (cardAdd(&dapp->appInfoCard, tree, DAENV, DASENV) == USR_OUTOFMEMORY) {
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		cardRemoveAll(dapp->appInfoCard);
+		pfree(dapp);
+		return (0);
+	}
+#endif
 
 	for (i = 0; i < 5; i++) {
 		tree[obnum[i]].ob_spec.tedinfo->te_ptext = dapp->ftxt[i];
@@ -1681,9 +1505,12 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 	/* Buffer fuer Environment */
 	dapp->ebuf = pmalloc((long) (MAX_EVAR * 51));
 	if (!dapp->ebuf) {
-		pfree( dapp);
+#ifdef DIRCH
+		cardRemoveAll(dapp->appInfoCard);
+#endif
+		pfree(dapp);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (0);
 	}
 	for (i = 0; i < MAX_EVAR; i++) {
 		dapp->evar[i] = &dapp->ebuf[i * 51];
@@ -1696,10 +1523,9 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 
 	/* Dialog vorbereiten */
 	dapp->appl = appl;
-	dial_setopt(tree, DAIDELETE, DISABLED, (del == 0) || (del == 2) || (appl == &defappl));
+	setObjectState(tree, DAIDELETE, DISABLED, (del == 0) || (del == 2) || (appl == &defappl));
 
-	/* Merken, ob es eine Neu-Anmeldung ist, die bei 'Abbruch' wieder
-	 geloescht wird */
+	/* Merken, ob es eine Neu-Anmeldung ist, die bei 'Abbruch' wieder geloescht wird */
 	if (del == 2)
 		dapp->new = 1;
 	else
@@ -1707,39 +1533,41 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 
 	dapp->mode = 0;
 	dl_dappinfo_mode(dapp->mode);
+#ifndef DIRCH
 	for (i = 0; i < 4; i++)
 		tree[DAGENERAL + i].ob_state &= ~SELECTED;
 	tree[DAGENERAL].ob_state |= SELECTED;
+#endif
 
 	/* Dialog - Allgemein */
 	pop_short.sel = appl->shortcut + 1;
-	dial_setopt(tree, DAIUSESEL, SELECTED, appl->usesel);
+	setObjectState(tree, DAIUSESEL, SELECTED, appl->usesel);
 	strcpy(tree[DAILABEL].ob_spec.tedinfo->te_ptext, appl->title);
 	strcpy(dapp->apname, appl->name);
 	strcpy(dapp->aparam, appl->parm);
-	str245(tree[DAINAME].ob_spec.tedinfo->te_ptext, dapp->apname);
+	strShortener(tree[DAINAME].ob_spec.tedinfo->te_ptext, dapp->apname, 45);
 	strcpy(tree[DAIPARAM].ob_spec.tedinfo->te_ptext, dapp->aparam);
-	dial_setopt(tree, DAIALWAYS, SELECTED, appl->paralways);
-	dial_setopt(tree, DAIAPPL, SELECTED, appl->homepath == 1);
-	dial_setopt(tree, DAIWINDOW, SELECTED, appl->homepath == 2);
-	dial_setopt(tree, DAIFILE, SELECTED, appl->homepath == 0);
+	setObjectState(tree, DAIALWAYS, SELECTED, appl->paralways);
+	setObjectState(tree, DAIAPPL, SELECTED, appl->homepath == 1);
+	setObjectState(tree, DAIWINDOW, SELECTED, appl->homepath == 2);
+	setObjectState(tree, DAIFILE, SELECTED, appl->homepath == 0);
 
 	/* Dialog - Dateien */
 	strcpy(tree[DAIOPEN].ob_spec.tedinfo->te_ptext, appl->fileopen);
 	strcpy(tree[DAIVIEW].ob_spec.tedinfo->te_ptext, appl->fileview);
 	strcpy(tree[DAIPRINT].ob_spec.tedinfo->te_ptext, appl->fileprint);
-	dial_setopt(tree, DAIINDRAG, SELECTED, appl->dodrag);
+	setObjectState(tree, DAIINDRAG, SELECTED, appl->dodrag);
 
 	/* Dialog - Optionen */
-	dial_setopt(tree, DAOFULL, SELECTED, appl->fullcompare);
-	dial_setopt(tree, DAOAUTO, SELECTED, appl->autostart);
-	dial_setopt(tree, DAOASKPARM, SELECTED, appl->getpar);
-	dial_setopt(tree, DAOUNIXPATHS, SELECTED, appl->unixpaths);
-	dial_setopt(tree, DAOVAPROT, SELECTED, appl->vaproto);
-	dial_setopt(tree, DAOOVERLAY, SELECTED, appl->overlay);
-	dial_setopt(tree, DAOSINGLE, SELECTED, appl->single);
-	dial_setopt(tree, DAOCONWIN, SELECTED, appl->conwin);
-	dial_setopt(tree, DAOWAITKEY, SELECTED, appl->toswait);
+	setObjectState(tree, DAOFULL, SELECTED, appl->fullcompare);
+	setObjectState(tree, DAOAUTO, SELECTED, appl->autostart);
+	setObjectState(tree, DAOASKPARM, SELECTED, appl->getpar);
+	setObjectState(tree, DAOUNIXPATHS, SELECTED, appl->unixpaths);
+	setObjectState(tree, DAOVAPROT, SELECTED, appl->vaproto);
+	setObjectState(tree, DAOOVERLAY, SELECTED, appl->overlay);
+	setObjectState(tree, DAOSINGLE, SELECTED, appl->single);
+	setObjectState(tree, DAOCONWIN, SELECTED, appl->conwin);
+	setObjectState(tree, DAOWAITKEY, SELECTED, appl->toswait);
 	if (appl->memlimit)
 		ltoa(appl->memlimit, tree[DAOMAXMEM].ob_spec.tedinfo->te_ptext, 10);
 	else
@@ -1756,13 +1584,15 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 	lst_init(&li_dappinfo, 1, 1, 0, 0);
 	strcpy(tree[DAEVAL].ob_spec.tedinfo->te_ptext, dapp->evar[li_dappinfo.sel]);
 
-	dial_setopt(tree, DAEUSE, SELECTED, appl->euse);
+	setObjectState(tree, DAEUSE, SELECTED, appl->euse);
 
 	/* Im Popup-Menue alle nicht verfuegbaren Shortcuts abschalten */
+	/* zunaechst alle verfuegbar machen */
 	for (i = 2; i < 11; i++) {
-		rs_trindex[POPSHORT][i].ob_state &= ~DISABLED;
-		rs_trindex[POPSHORT][i].ob_flags |= SELECTABLE;
+		setObjectState(rs_trindex[POPSHORT], i, DISABLED, FALSE);
+		setObjectFlags(rs_trindex[POPSHORT], i, SELECTABLE, TRUE);
 	}
+	/* alle belegten nicht waehlbar machen */
 	aptr = desk.appl;
 	while (aptr) {
 		if (aptr != appl) {
@@ -1779,14 +1609,15 @@ int dl_dappinfo(APPLINFO *appl, int del) {
 	dl_dappinfo_opt(isap, appl == &defappl);
 
 	frm_start(&fi_dappinfo, conf.wdial, conf.cdial, 0);
-	return 1;
+	return (1);
 }
 
-/**-------------------------------------------------------------------------
- de_dappinfo()
- 
- Dialog-Exit 'Info Åber Applikation'
- -------------------------------------------------------------------------*/
+/**
+ * Dialog-Exit 'Info ueber Applikation'
+ *
+ * @param mode
+ * @param ret
+ */
 void de_dappinfo(int mode, int ret) {
 	int done, cont, i, /*fret,*/ iret, ok, mode1, isap;
 	int exit_obj;
@@ -1794,12 +1625,9 @@ void de_dappinfo(int mode, int ret) {
 	APPLINFO *appl, *aptr;
 	char *aname;
 	FILESYS filesys;
-#ifdef OLD_SLIDER_HANDLING
-	int mx,my,mb,ks,sx,sy,sd,sel,csel;
-#else
 	int sel, d;
-#endif
 	OBJECT *tree;
+	WORD objectRedrawIdx;
 
 	path = pmalloc(MAX_PLEN * 2L);
 	if (path == NULL) {
@@ -1817,12 +1645,7 @@ void de_dappinfo(int mode, int ret) {
 		exit_obj = fi_dappinfo.exit_obj;
 		sel = li_dappinfo.sel;
 		mode1 = dapp->mode;
-#ifdef OLD_SLIDER_HANDLING
-		graf_mkstate(&mx,&my,&mb,&ks);
-		objc_offset(tree,DAESLIDE,&sx,&sy);
-#else
 		if (!lst_handle(&li_dappinfo, ret, &d)) {
-#endif
 			/* Workaround fuer nicht waehlbare Seiten */
 			if (!(fi_dappinfo.tree[exit_obj].ob_state & DISABLED))
 				switch (exit_obj) {
@@ -1830,35 +1653,10 @@ void de_dappinfo(int mode, int ret) {
 				case DAISEARCH:
 					if (mode == 0) {
 						strcpy(aname, dapp->apname);
-#if 0
-						if(!aname[0])
-						{
-							aname[0]=(char)Dgetdrv()+65;
-							aname[1]=':';
-							Dgetpath(&aname[2],0);
-							strcat(aname,"\\");
-						}
-						full2comp(aname,path,name);
-						strcat(path,"*.*");
-						/* Dateiauswahl durchfÅhren */
-						fselect(path,name,&fret,rs_frstr[TXAPSEARCH],0,200);
-						if(fi_dappinfo.state!=FST_WIN) frm_redraw(&fi_dappinfo,ROOT);
-						/* Dateiauswahl mit "OK" beendet */
-						if(fret==1)
-						{
-							p=strrchr(path,'\\');if(p) p[1]=0;
-							comp2full(aname,path,name);
 
-							/* Laufwerksbezeichnung immer gross */
-							aname[0]=nkc_toupper(aname[0]);
-							/* Bei Bedarf Schreibweise anpassen */
-							fsinfo(aname,&filesys);
-							fsconv(aname,&filesys);
-#else
 						if (full_fselect(aname, NULL, "*.*", 0, rs_frstr[TXAPSEARCH], 0, 200, &fi_dappinfo) == 1) {
-#endif
 							strcpy(dapp->apname, aname);
-							str245(tree[DAINAME].ob_spec.tedinfo->te_ptext, aname);
+							strShortener(tree[DAINAME].ob_spec.tedinfo->te_ptext, aname, 45);
 							frm_redraw(&fi_dappinfo, DAINAME);
 
 							/*
@@ -1882,14 +1680,14 @@ void de_dappinfo(int mode, int ret) {
 							iret = is_appl(aname);
 							switch (iret) {
 							case 3: /* TTP - Parameter abfragen */
-								if (!(tree[DAOASKPARM].ob_state & SELECTED))
-									tree[DAOASKPARM].ob_state |= SELECTED;
+								if (!(isObjectSelected(tree, DAOASKPARM)))
+									setObjectSelected(tree, DAOASKPARM);
 								break;
 							case 1: /* PRG, APP, TOS, ACC - Parameter nicht abfragen */
 							case 2:
 							case 4:
-								if (tree[DAOASKPARM].ob_state & SELECTED)
-									tree[DAOASKPARM].ob_state &= ~SELECTED;
+								if (isObjectSelected(tree, DAOASKPARM))
+									unsetObjectSelected(tree, DAOASKPARM);
 								break;
 							}
 						}
@@ -1903,7 +1701,8 @@ void de_dappinfo(int mode, int ret) {
 						frm_redraw(&fi_dappinfo, ROOT);
 					}
 					break;
-					/* Applikation abmelden */
+
+				/* Applikation abmelden */
 				case DAIDELETE:
 					sprintf(almsg, rs_frstr[ALAPPDEL], appl->title);
 					if (frm_alert(1, almsg, altitle, conf.wdial, 0L) == 1) {
@@ -1916,13 +1715,13 @@ void de_dappinfo(int mode, int ret) {
 					frm_norm(&fi_dappinfo);
 					break;
 
-					/* Abbrechen */
+				/* Abbrechen */
 				case DAICANCEL:
 					cont = 0; /* Rueckgabe: Abbruch */
 					done = DAICANCEL;
 					break;
 
-					/* OK */
+				/* OK */
 				case DAIOK:
 					ok = 1;
 
@@ -1931,7 +1730,7 @@ void de_dappinfo(int mode, int ret) {
 						/* Bei Bedarf Schreibweise anpassen */
 						fsinfo(dapp->apname, &filesys);
 						fsconv(dapp->apname, &filesys);
-						str245(tree[DAINAME].ob_spec.tedinfo->te_ptext, dapp->apname);
+						strShortener(tree[DAINAME].ob_spec.tedinfo->te_ptext, dapp->apname, 45);
 						if (dapp->mode == 0)
 							frm_redraw(&fi_dappinfo, DAINAME);
 						full2comp(dapp->apname, path, name);
@@ -1976,7 +1775,7 @@ void de_dappinfo(int mode, int ret) {
 
 					/* Wenn Alles ok ist, dann raus ... */
 					if (ok) {
-						cont = 2; /* RÅckgabe: Applikation geÑndert */
+						cont = 2; /* Rueckgabe: Applikation geaendert */
 						done = DAIOK;
 					} else {
 						fi_dappinfo.exit_obj = exit_obj;
@@ -1984,21 +1783,25 @@ void de_dappinfo(int mode, int ret) {
 					}
 					break;
 
-					/* Umschalten der Seite */
+				/* Umschalten der Karteikarten */
 				case DAGENERAL:
 					dapp->mode = 0;
+					objectRedrawIdx = DASGENERAL;
 					break;
 				case DAFILES:
 					dapp->mode = 1;
+					objectRedrawIdx = DASFILES;
 					break;
 				case DAOPTIONS:
 					dapp->mode = 2;
+					objectRedrawIdx = DASOPTIONS;
 					break;
 				case DAENV:
 					dapp->mode = 3;
+					objectRedrawIdx = DASENV;
 					break;
 
-					/* Environment */
+				/* Environment */
 				case DAEEDIT:
 				case DAEDELETE:
 					obj_edit(fi_dappinfo.tree, fi_dappinfo.edit_obj, 0, 0, &fi_dappinfo.edit_idx, ED_END, fi_dappinfo.win.handle);
@@ -2035,56 +1838,8 @@ void de_dappinfo(int mode, int ret) {
 					fi_dappinfo.exit_obj = exit_obj;
 					frm_norm(&fi_dappinfo);
 					break;
-#ifdef OLD_SLIDER_HANDLING
-					case DAEUP:
-					if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-					lst_up(&li_dappinfo);
-					if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-					break;
-					case DAEDOWN:
-					if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-					lst_down(&li_dappinfo);
-					if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-					break;
-					case DAEBOX:
-					if(fi_dappinfo.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-					if(my<sy) sd=-li_dappinfo.view;
-					else sd=li_dappinfo.view;
-					do
-					{
-						lst_move(&li_dappinfo,sd);
-						graf_mkstate(&mx,&my,&mb,&ks);
-					}
-					while(mb&1);
-					if(fi_dappinfo.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-					break;
-					case DAESLIDE:
-					if(fi_dappinfo.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-					lst_slide(&li_dappinfo);
-					if(fi_dappinfo.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-					break;
-					case -1:
-					if(fi_dappinfo.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-					lst_key(&li_dappinfo,fi_dappinfo.normkey);
-					if(fi_dappinfo.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-					break;
-					default:
-					if(exit_obj>=DAELIST+1 && exit_obj<=DAELIST+li_dappinfo.view)
-					{
-						csel=exit_obj-DAELIST-1+li_dappinfo.offset;
-						if(li_dappinfo.num && csel<li_dappinfo.num)
-						{
-							if(fi_dappinfo.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-							lst_select(&li_dappinfo,csel);
-							if(fi_dappinfo.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-						}
-					}
-					break;
-#endif
 				}
-#ifndef OLD_SLIDER_HANDLING
 		}
-#endif
 
 		/* Neue Auswahl im Environment uebernehmen */
 		if (sel != li_dappinfo.sel) {
@@ -2109,7 +1864,7 @@ void de_dappinfo(int mode, int ret) {
 			isap = is_appl(dapp->apname);
 			dl_dappinfo_opt(isap, appl == &defappl);
 #endif
-			frm_redraw(&fi_dappinfo, DASUB);
+			frm_redraw(&fi_dappinfo, objectRedrawIdx);
 			mevent.ev_mwich = MU_M1;
 			frm_do(&fi_dappinfo, &mevent);
 		}
@@ -2127,34 +1882,34 @@ void de_dappinfo(int mode, int ret) {
 			strcpy(appl->title, tree[DAILABEL].ob_spec.tedinfo->te_ptext);
 			strcpy(appl->name, dapp->apname);
 			strcpy(appl->parm, dapp->aparam);
-			appl->paralways = dial_getopt(tree, DAIALWAYS, SELECTED);
-			if (tree[DAIAPPL].ob_state & SELECTED)
+			appl->paralways = isObjectSelected(tree, DAIALWAYS);
+			if (isObjectSelected(tree, DAIAPPL))
 				appl->homepath = 1;
-			if (tree[DAIWINDOW].ob_state & SELECTED)
+			if (isObjectSelected(tree, DAIWINDOW))
 				appl->homepath = 2;
-			if (tree[DAIFILE].ob_state & SELECTED)
+			if (isObjectSelected(tree, DAIFILE))
 				appl->homepath = 0;
 			strcpy(appl->fileopen, tree[DAIOPEN].ob_spec.tedinfo->te_ptext);
 			strcpy(appl->fileview, tree[DAIVIEW].ob_spec.tedinfo->te_ptext);
 			strcpy(appl->fileprint, tree[DAIPRINT].ob_spec.tedinfo->te_ptext);
-			appl->dodrag = dial_getopt(tree, DAIINDRAG, SELECTED);
-			appl->getpar = dial_getopt(tree, DAOASKPARM, SELECTED);
-			appl->unixpaths = dial_getopt(tree, DAOUNIXPATHS, SELECTED);
-			appl->vaproto = dial_getopt(tree, DAOVAPROT, SELECTED);
-			appl->single = dial_getopt(tree, DAOSINGLE, SELECTED);
-			appl->conwin = dial_getopt(tree, DAOCONWIN, SELECTED);
-			appl->toswait = dial_getopt(tree, DAOWAITKEY, SELECTED);
-			appl->fullcompare = dial_getopt(tree, DAOFULL, SELECTED);
-			appl->autostart = dial_getopt(tree, DAOAUTO, SELECTED);
-			appl->overlay = dial_getopt(tree, DAOOVERLAY, SELECTED);
-			appl->usesel = dial_getopt(tree, DAIUSESEL, SELECTED);
+			appl->dodrag = isObjectSelected(tree, DAIINDRAG);
+			appl->getpar = isObjectSelected(tree, DAOASKPARM);
+			appl->unixpaths = isObjectSelected(tree, DAOUNIXPATHS);
+			appl->vaproto = isObjectSelected(tree, DAOVAPROT);
+			appl->single = isObjectSelected(tree, DAOSINGLE);
+			appl->conwin = isObjectSelected(tree, DAOCONWIN);
+			appl->toswait = isObjectSelected(tree, DAOWAITKEY);
+			appl->fullcompare = isObjectSelected(tree, DAOFULL);
+			appl->autostart = isObjectSelected(tree, DAOAUTO);
+			appl->overlay = isObjectSelected(tree, DAOOVERLAY);
+			appl->usesel = isObjectSelected(tree, DAIUSESEL);
 			appl->memlimit = atol(tree[DAOMAXMEM].ob_spec.tedinfo->te_ptext);
 			strcpy(appl->alert, tree[DAOALERT].ob_spec.tedinfo->te_ptext);
 			appl->shortcut = pop_short.sel - 1;
 
 			/* Environment */
-			for (i = 0; i < MAX_EVAR; i++) /* Bisherige Eintraege loeschen */
-			{
+			for (i = 0; i < MAX_EVAR; i++) {
+				/* Bisherige Eintraege loeschen */
 				if (appl->evar[i]) {
 					pfree(appl->evar[i]);
 					appl->evar[i] = 0L;
@@ -2176,7 +1931,7 @@ void de_dappinfo(int mode, int ret) {
 			/* Ggf. Fehler melden */
 			if (!ok)
 				frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-			appl->euse = dial_getopt(tree, DAEUSE, SELECTED);
+			appl->euse = isObjectSelected(tree, DAEUSE);
 
 			/* Anpassungen an Dateien als Appl. */
 			if (!isap)
@@ -2212,28 +1967,14 @@ void de_dappinfo(int mode, int ret) {
 		}
 
 		/* Lokale Dialogbuffer freigeben */
+#ifdef DIRCH
+		cardRemoveAll(dapp->appInfoCard);
+#endif
 		pfree(dapp->ebuf);
-		pfree( dapp);
+		pfree(dapp);
 	}
 	pfree(path);
 }
-
-/* Eventuell betroffene Verzeichnisfenster aktualisieren
- l=strlen(icon->spec.folder->path);
- for(i=0;i<MAX_PWIN;i++)
- {
- if(glob.win[i].state&WSOPEN)
- {
- wpath=(W_PATH *)glob.win[i].user;
- if(wpath->rel && !strncmp(wpath->path,icon->spec.folder->path,l))
- {
- strcpy(wpath->relname,icon->title);
- wpath_iupdate(&glob.win[i],0);
- }
- }
- }
- 
- */
 
 /**-------------------------------------------------------------------------
  dl_prtinfo()
@@ -2247,7 +1988,7 @@ int dl_prtinfo(ICONDESK *icon, int donext) {
 	tree = rs_trindex[PRTINFO];
 
 	/* Dialog vorbereiten */
-	dial_setopt(tree, PRNEXT, DISABLED, !donext);
+	setObjectState(tree, PRNEXT, DISABLED, !donext);
 	strcpy(tree[PRLABEL].ob_spec.tedinfo->te_ptext, icon->title);
 
 	/* Auf gehts ... */
@@ -2277,7 +2018,7 @@ int dl_prtinfo(ICONDESK *icon, int donext) {
 	}
 	frm_end(&fi_prtinfo);
 
-	return cont;
+	return (cont);
 }
 
 /**-------------------------------------------------------------------------
@@ -2292,9 +2033,9 @@ int dl_devinfo(ICONDESK *icon, int donext) {
 	tree = rs_trindex[DEVINFO];
 
 	/* Dialog vorbereiten */
-	dial_setopt(tree, DVNEXT, DISABLED, !donext);
+	setObjectState(tree, DVNEXT, DISABLED, !donext);
 	strcpy(tree[DVLABEL].ob_spec.tedinfo->te_ptext, icon->title);
-	str230(tree[DVNAME].ob_spec.free_string, icon->spec.device->name);
+	strShortener(tree[DVNAME].ob_spec.free_string, icon->spec.device->name, 30);
 
 	/* Auf gehts ... */
 	frm_start(&fi_devinfo, conf.wdial, conf.cdial, 1);
@@ -2336,6 +2077,7 @@ int dl_devinfo(ICONDESK *icon, int donext) {
  -------------------------------------------------------------------------*/
 void dl_fileinfo_mode(int mode, int file, int desk) {
 	OBJECT *tree;
+	UNUSED(file);
 
 	tree = rs_trindex[FLINFO];
 
@@ -2365,13 +2107,10 @@ void dl_fileinfo_mode(int mode, int file, int desk) {
 		tree[FLSUB].ob_head = FLSPROG;
 		tree[FLSUB].ob_tail = FLSPROG;
 		tree[FLSPROG].ob_next = FLSUB;
-
-#ifndef _NAES
 		if (tb.sys & SY_MAGX) {
 			tree[FPMAGIC].ob_flags |= EDITABLE;
 			fi_fileinfo.edit_obj = FPMAGIC;
 		}
-#endif
 		break;
 	case 2:
 		tree[FLSUB].ob_head = FLSATTR;
@@ -2475,7 +2214,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 
 	if (item) {
 		desk = 0;
-		if (item->class==EC_FILE)
+		if (item->class == EC_FILE)
 			file = 1;
 		else
 			file = 0;
@@ -2487,12 +2226,12 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 				tree[FILINKDEST].ob_flags &= ~HIDETREE;
 				if (item->link == 2)
 					tree[FILINKDEST].ob_state |= DISABLED;
-				str230(getObjectText(tree, FILINKDEST), newname);
+				strShortener(getObjectText(tree, FILINKDEST), newname, 30);
 			}
 		}
 	} else {
 		desk = 1;
-		if (icon->class==IDFILE) {
+		if (icon->class == IDFILE) {
 			file = 1;
 			strcpy(oldname, icon->spec.file->name);
 		} else {
@@ -2548,7 +2287,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 						if (ph.ph_branch == 0x601a)
 							isp = 1;
 					}
-#ifndef _NAES
+
 					/* MagiC-Speicherlimit ermitteln */
 					if (isp && (tb.sys & SY_MAGX)) {
 						Fseek(-8L, (int) fh, 2);
@@ -2557,29 +2296,26 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 								ism = 1;
 						}
 					}
-#else
-					magic[0] = 0L;
-#endif /* _NAES */
 					Fclose((int) fh);
 				}
 			}
 
 			/* GEMDOS-Flags */
-			dial_setopt(tree, FIFLAGRO, SELECTED, item->attr & FA_READONLY);
-			dial_setopt(tree, FIFLAGH, SELECTED, item->attr & FA_HIDDEN);
-			dial_setopt(tree, FIFLAGS, SELECTED, item->attr & FA_SYSTEM);
-			dial_setopt(tree, FIFLAGA, SELECTED, item->attr & FA_ARCHIVE);
+			setObjectState(tree, FIFLAGRO, SELECTED, item->attr & FA_READONLY);
+			setObjectState(tree, FIFLAGH, SELECTED, item->attr & FA_HIDDEN);
+			setObjectState(tree, FIFLAGS, SELECTED, item->attr & FA_SYSTEM);
+			setObjectState(tree, FIFLAGA, SELECTED, item->attr & FA_ARCHIVE);
 
 			/* Programmflags eintragen falls Datei ein Programm ist */
 			if (isp) {
 				tree[FLPROG].ob_state &= ~DISABLED;
 				tree[FLPROG].ob_flags |= (SELECTABLE | TOUCHEXIT);
 
-				dial_setopt(tree, FPFAST, SELECTED, !!(ph.ph_res2 & 0x1L));
-				dial_setopt(tree, FPLALT, SELECTED, !!(ph.ph_res2 & 0x2L));
-				dial_setopt(tree, FPMALT, SELECTED, !!(ph.ph_res2 & 0x4L));
-				dial_setopt(tree, FPMINMEM, SELECTED, !!(ph.ph_res2 & 0x8L));
-				dial_setopt(tree, FPSHARED, SELECTED, !!(ph.ph_res2 & 0x800L));
+				setObjectState(tree, FPFAST, SELECTED, !!(ph.ph_res2 & 0x1L));
+				setObjectState(tree, FPLALT, SELECTED, !!(ph.ph_res2 & 0x2L));
+				setObjectState(tree, FPMALT, SELECTED, !!(ph.ph_res2 & 0x4L));
+				setObjectState(tree, FPMINMEM, SELECTED, !!(ph.ph_res2 & 0x8L));
+				setObjectState(tree, FPSHARED, SELECTED, !!(ph.ph_res2 & 0x800L));
 				pop_mem.sel = 1 + ((int) (ph.ph_res2 & 0x70L) >> 4);
 
 				if (ism && magic[1] > 0L)
@@ -2628,7 +2364,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			}
 
 			/* Dialog vorbereiten */
-			str230(tree[FIPATH].ob_spec.free_string, path);
+			strShortener(tree[FIPATH].ob_spec.free_string, path, 30);
 			strcpy(oldname, path);
 			strcat(oldname, item->name);
 			strcat(oldname, "\\");
@@ -2643,7 +2379,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 		/* MiNT-Flags */
 		tmode = S_IRUSR;
 		for (i = 0; i < 12; i++) {
-			dial_setopt(tree, FLMODE1 + i, SELECTED, item->mode & tmode);
+			setObjectState(tree, FLMODE1 + i, SELECTED, item->mode & tmode);
 			if (tmode != S_IXOTH)
 				tmode >>= 1;
 			else
@@ -2651,7 +2387,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 		}
 
 		/* Pfad */
-		str230(tree[FIPATH].ob_spec.free_string, path);
+		strShortener(tree[FIPATH].ob_spec.free_string, path, 30);
 
 		/* Datum/Zeit */
 		tree[FIDATETYPE].ob_flags &= ~TOUCHEXIT;
@@ -2662,8 +2398,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			tree[FIDATETYPE].ob_flags |= HIDETREE;
 			dmode = 0;
 		}
-		dl_fileinfo_dmode(tree, dmode, item->atime, item->adate, item->time,
-				item->date, item->ctime, item->cdate);
+		dl_fileinfo_dmode(tree, dmode, item->atime, item->adate, item->time, item->date, item->ctime, item->cdate);
 
 		/*
 		 * Falls Dateisystem nicht case-sensitiv, dann im Dialog nur
@@ -2709,8 +2444,8 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 				tree[FAGID].ob_state |= HIDETREE;
 			}
 		}
-	} else /* Objekt auf dem Desktop */
-	{
+	} else {
+		/* Objekt auf dem Desktop */
 		/* Dialoganpassung */
 		tree[FLOFLAG].ob_flags |= HIDETREE;
 		tree[FLOFOLD].ob_flags |= HIDETREE;
@@ -2722,7 +2457,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 		tree[FILABEL - 1].ob_flags &= ~HIDETREE;
 		strcpy(tree[FILABEL].ob_spec.tedinfo->te_ptext, icon->title);
 
-		str230(tree[FIPATH].ob_spec.free_string, oldname);
+		strShortener(tree[FIPATH].ob_spec.free_string, oldname, 30);
 
 		if (icon->class==IDFILE) {
 			/* Statt 'Pfad: ...' 'Name: ...' */
@@ -2733,9 +2468,9 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 	}
 
 	/* Weitere Vorbereitungen */
-	tree[FLGENERAL].ob_state &= ~SELECTED;
-	tree[FLPROG].ob_state &= ~SELECTED;
-	tree[FLATTR].ob_state &= ~SELECTED;
+	unsetObjectSelected(tree, FLGENERAL);
+	unsetObjectSelected(tree, FLPROG);
+	unsetObjectSelected(tree, FLATTR);
 
 	mode1 = mode;
 	if (((mode == 2) && (tree[FLATTR].ob_state & DISABLED)) || ((mode == 1) && (tree[FLPROG].ob_state & DISABLED))) {
@@ -2758,7 +2493,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 	pop_fkeyfd.sel = setfpop(oldname);
 	fkey = pop_fkeyfd.sel;
 
-	dial_setopt(tree, FINEXT, DISABLED, !donext);
+	setObjectState(tree, FINEXT, DISABLED, !donext);
 
 	/* Auf gehts ... */
 	frm_start(&fi_fileinfo, conf.wdial, conf.cdial, 1);
@@ -2769,107 +2504,107 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 		switch (fi_fileinfo.exit_obj) {
 		int d, mb;
 
-	case FIDATETYPE:
-		do
-			graf_mkstate(&d, &d, &mb, &d);
-		while (mb & 1);
-		if (++dmode == 3)
-			dmode = 0;
-		dl_fileinfo_dmode(tree, dmode, item->atime, item->adate, item->time, item->date, item->ctime, item->cdate);
-		if (mode == 0)
-			frm_redraw(&fi_fileinfo, FLOFILE);
-		break;
-	case FIHOTKEYSEL:
-		key = get_new_hotkey(hk);
-		if (fi_fileinfo.state != FST_WIN)
-			frm_redraw(&fi_fileinfo, ROOT);
-		if (key) {
-			tree[FIHOTKEY].ob_spec.tedinfo->te_ptext[0] = key;
-			frm_redraw(&fi_fileinfo, FIHOTKEY);
-		}
-		frm_norm(&fi_fileinfo);
-		break;
-	case FIHELP:
-		show_help(fi_fileinfo.userinfo);
-		frm_norm(&fi_fileinfo);
-		break;
-	case FICANCEL:
-		cont = 0; /* Rueckgabe: Abbruch */
-		mode = 0;
-		done = 1;
-		break;
-	case FIOK:
-		ok = 1;
-
-		/* Bei Verzeichnisobjekten Dateinamen und ggf. UID/GID pruefen */
-		if (!desk) {
-			char *p = tree[FINAME].ob_spec.tedinfo->te_ptext;
-			if (!*p || !valid_mask(p, 0)) {
-				frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
-				ok = 0;
+		case FIDATETYPE:
+			do
+				graf_mkstate(&d, &d, &mb, &d);
+			while (mb & 1);
+			if (++dmode == 3)
+				dmode = 0;
+			dl_fileinfo_dmode(tree, dmode, item->atime, item->adate, item->time, item->date, item->ctime, item->cdate);
+			if (mode == 0)
+				frm_redraw(&fi_fileinfo, FLOFILE);
+			break;
+		case FIHOTKEYSEL:
+			key = get_new_hotkey(hk);
+			if (fi_fileinfo.state != FST_WIN)
+				frm_redraw(&fi_fileinfo, ROOT);
+			if (key) {
+				tree[FIHOTKEY].ob_spec.tedinfo->te_ptext[0] = key;
+				frm_redraw(&fi_fileinfo, FIHOTKEY);
 			}
-			if (ok && ((filesys->flags & (UNIXATTR | OWNER)) == (UNIXATTR | OWNER))) {
-				char *hlp, *err;
-				unsigned long id;
-				int isok = 1;
+			frm_norm(&fi_fileinfo);
+			break;
+		case FIHELP:
+			show_help(fi_fileinfo.userinfo);
+			frm_norm(&fi_fileinfo);
+			break;
+		case FICANCEL:
+			cont = 0; /* Rueckgabe: Abbruch */
+			mode = 0;
+			done = 1;
+			break;
+		case FIOK:
+			ok = 1;
 
-				hlp = tree[FAUID].ob_spec.tedinfo->te_ptext;
-				if (isdigit(*hlp)) {
-					id = strtoul(hlp, &err, 10);
-					if (*err || (id > 65535UL))
-						isok = 0;
-					newuid = (int) id;
-				} else {
-					pwd = getpwnam(hlp);
-					if (pwd != NULL)
-						newuid = (int) pwd->pw_uid;
-					else
-						isok = 0;
-				}
-				if (!isok) {
-					frm_alert(1, rs_frstr[ALUID], altitle, conf.wdial, 0L);
+			/* Bei Verzeichnisobjekten Dateinamen und ggf. UID/GID pruefen */
+			if (!desk) {
+				char *p = tree[FINAME].ob_spec.tedinfo->te_ptext;
+				if (!*p || !isValidFileMask(p, FALSE)) {
+					frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
 					ok = 0;
-				} else {
-					hlp = tree[FAGID].ob_spec.tedinfo->te_ptext;
+				}
+				if (ok && ((filesys->flags & (UNIXATTR | OWNER)) == (UNIXATTR | OWNER))) {
+					char *hlp, *err;
+					unsigned long id;
+					int isok = 1;
+
+					hlp = tree[FAUID].ob_spec.tedinfo->te_ptext;
 					if (isdigit(*hlp)) {
 						id = strtoul(hlp, &err, 10);
 						if (*err || (id > 65535UL))
 							isok = 0;
-						newgid = (int) id;
+						newuid = (int) id;
 					} else {
-						grp = getgrnam(hlp);
-						if (grp != NULL)
-							newgid = (int) grp->gr_gid;
+						pwd = getpwnam(hlp);
+						if (pwd != NULL)
+							newuid = (int) pwd->pw_uid;
 						else
 							isok = 0;
 					}
 					if (!isok) {
-						frm_alert(1, rs_frstr[ALGID], altitle, conf.wdial, 0L);
+						frm_alert(1, rs_frstr[ALUID], altitle, conf.wdial, 0L);
 						ok = 0;
+					} else {
+						hlp = tree[FAGID].ob_spec.tedinfo->te_ptext;
+						if (isdigit(*hlp)) {
+							id = strtoul(hlp, &err, 10);
+							if (*err || (id > 65535UL))
+								isok = 0;
+							newgid = (int) id;
+						} else {
+							grp = getgrnam(hlp);
+							if (grp != NULL)
+								newgid = (int) grp->gr_gid;
+							else
+								isok = 0;
+						}
+						if (!isok) {
+							frm_alert(1, rs_frstr[ALGID], altitle, conf.wdial, 0L);
+							ok = 0;
+						}
 					}
 				}
 			}
-		}
 
-		if (ok) {
-			cont = 2; /* Rueckgabe: Icon geaendert */
+			if (ok) {
+				cont = 2; /* Rueckgabe: Icon geaendert */
+				done = 1;
+			} else
+				frm_norm(&fi_fileinfo);
+			break;
+		case FINEXT:
+			cont = 1; /* Rueckgabe: Icon uebersprungen */
 			done = 1;
-		} else
-			frm_norm(&fi_fileinfo);
-		break;
-	case FINEXT:
-		cont = 1; /* Rueckgabe: Icon uebersprungen */
-		done = 1;
-		break;
-	case FLGENERAL:
-		mode = 0;
-		break;
-	case FLPROG:
-		mode = 1;
-		break;
-	case FLATTR:
-		mode = 2;
-		break;
+			break;
+		case FLGENERAL:
+			mode = 0;
+			break;
+		case FLPROG:
+			mode = 1;
+			break;
+		case FLATTR:
+			mode = 2;
+			break;
 		}
 
 		if (mode1 != mode) {
@@ -2926,19 +2661,19 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			fsconv(name, filesys);
 
 			attr = item->attr;
-			if (tree[FIFLAGRO].ob_state & SELECTED)
+			if (isObjectSelected(tree, FIFLAGRO))
 				attr |= FA_READONLY;
 			else
 				attr &= ~FA_READONLY;
-			if (tree[FIFLAGH].ob_state & SELECTED)
+			if (isObjectSelected(tree, FIFLAGH))
 				attr |= FA_HIDDEN;
 			else
 				attr &= ~FA_HIDDEN;
-			if (tree[FIFLAGS].ob_state & SELECTED)
+			if (isObjectSelected(tree, FIFLAGS))
 				attr |= FA_SYSTEM;
 			else
 				attr &= ~FA_SYSTEM;
-			if (tree[FIFLAGA].ob_state & SELECTED)
+			if (isObjectSelected(tree, FIFLAGA))
 				attr |= FA_ARCHIVE;
 			else
 				attr &= ~FA_ARCHIVE;
@@ -2946,7 +2681,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			imode = item->mode;
 			tmode = S_IRUSR;
 			for (i = 0; i < 12; i++) {
-				if (tree[FLMODE1 + i].ob_state & SELECTED)
+				if (isObjectSelected(tree, FLMODE1 + i))
 					imode |= tmode;
 				else
 					imode &= ~tmode;
@@ -2959,25 +2694,24 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			/* Programmflags */
 			if (file && isp) {
 				ph.ph_res2 &= ~0x100f;
-				if (tree[FPFAST].ob_state & SELECTED)
+				if (isObjectSelected(tree, FPFAST))
 					ph.ph_res2 |= 0x1L;
-				if (tree[FPLALT].ob_state & SELECTED)
+				if (isObjectSelected(tree, FPLALT))
 					ph.ph_res2 |= 0x2L;
-				if (tree[FPMALT].ob_state & SELECTED)
+				if (isObjectSelected(tree, FPMALT))
 					ph.ph_res2 |= 0x4L;
 
 				ph.ph_res2 &= ~0x70L;
 				ph.ph_res2 |= (long) ((pop_mem.sel - 1) << 4);
 
-				if (tree[FPSHARED].ob_state & SELECTED)
+				if (isObjectSelected(tree, FPSHARED))
 					ph.ph_res2 |= 0x1000L;
-				if (tree[FPMINMEM].ob_state & SELECTED)
+				if (isObjectSelected(tree, FPMINMEM))
 					ph.ph_res2 |= 0x8L;
 
 				/* MagiC-Speicherlimit */
 				magic[0] = 'MAGX';
-				magic[1] = atol(tree[FPMAGIC].ob_spec.tedinfo->te_ptext)
-						* 1024L;
+				magic[1] = atol(tree[FPMAGIC].ob_spec.tedinfo->te_ptext) * 1024L;
 			}
 
 			if (atfirst) /* Falls Datei schreibgeschuetzt, dann erst Attr. */
@@ -2994,7 +2728,6 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 					Fwrite((int) fh, sizeof(PH), &ph);
 
 					/* Bei Bedarf MagiC-Speicherlimit setzen/loeschen */
-#ifndef _NAES
 					if (magic[1] > 0L) /* Limit Ñndern/setzen */
 					{
 						if (ism)
@@ -3009,7 +2742,6 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 							Fwrite((int) fh, 0L, (void *) -1L); /* Achtung: Geht nur mit MagiC! */
 						}
 					}
-#endif /* _NAES */
 
 					/* Ggf. Datum/Zeit wiederherstellen */
 					if (dvalid)
@@ -3051,7 +2783,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			} else {
 				if (atfirst)
 					goto dl_fileinfo3;
-				dl_fileinfo2:
+dl_fileinfo2:
 				/* Dateiattribute setzen */
 				if (filesys->flags & UNIXATTR) {
 					if (imode != item->mode) {
@@ -3090,7 +2822,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 					goto dl_fileinfo1;
 			}
 
-			dl_fileinfo3:
+dl_fileinfo3:
 			/* Neuen Namen eintragen */
 			strcpy(item->name, name);
 
@@ -3153,7 +2885,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 	if (!donext || !cont)
 		mode = dmode = 0;
 	pfree(wname);
-	return cont;
+	return (cont);
 }
 
 /**-------------------------------------------------------------------------
@@ -3191,10 +2923,10 @@ void dl_groupinfo(WININFO *win) {
 	strcpy(title, wgrp->title);
 	parent = tree[GIPARENT].ob_spec.tedinfo->te_ptext;
 	strcpy(parent, wgrp->parent);
-	str245(tree[GIFILE].ob_spec.free_string, wgrp->name);
-	dial_setopt(tree, GIAUTOSAVE, SELECTED, wgrp->autosave);
-	dial_setopt(tree, GIGETATTR, SELECTED, wgrp->getattr);
-	dial_setopt(tree, GIAUTOCLOSE, SELECTED, wgrp->autoclose);
+	strShortener(tree[GIFILE].ob_spec.free_string, wgrp->name, 45);
+	setObjectState(tree, GIAUTOSAVE, SELECTED, wgrp->autosave);
+	setObjectState(tree, GIGETATTR, SELECTED, wgrp->getattr);
+	setObjectState(tree, GIAUTOCLOSE, SELECTED, wgrp->autoclose);
 
 	save = wgrp->autosave;
 
@@ -3212,28 +2944,8 @@ void dl_groupinfo(WININFO *win) {
 				parm = "";
 				if (!get_buf_entry(wgrp->parent, parobj, &parm) || !*parobj)
 					strcpy(parobj, wgrp->name);
-#if 0
-				full2comp(parobj, path, name);
-				strcat(path, "*.*");
-				/* Dateiauswahl durchfÅhren */
-				fselect(path, name, &fret, rs_frstr[TXPARENTSEARCH], 0, 600);
-				if (fi_grpinfo.state != FST_WIN)
-				frm_redraw(&fi_grpinfo, ROOT);
-				/* Dateiauswahl mit "OK" beendet */
-				if(fret == 1)
-				{
-					if ((p = strrchr(path, '\\')) != NULL)
-					p[1] = 0;
-					comp2full(parobj, path, name);
 
-					/* Laufwerksbezeichnung immer gross */
-					*parobj = nkc_toupper(*parobj);
-					/* Bei Bedarf Schreibweise anpassen */
-					fsinfo(parobj, &filesys);
-					fsconv(parobj, &filesys);
-#else
 				if (full_fselect(parobj, NULL, "*.*", 0, rs_frstr[TXPARENTSEARCH], 0, 600, &fi_grpinfo)) {
-#endif
 					quote(parobj);
 					strcat(parobj, parm);
 					strcpy(wgrp->parent, parobj);
@@ -3261,9 +2973,9 @@ void dl_groupinfo(WININFO *win) {
 		if (*parent)
 			*parent = nkc_toupper(*parent);
 		strcpy(wgrp->parent, parent);
-		wgrp->autosave = dial_getopt(tree, GIAUTOSAVE, SELECTED);
-		wgrp->getattr = dial_getopt(tree, GIGETATTR, SELECTED);
-		wgrp->autoclose = dial_getopt(tree, GIAUTOCLOSE, SELECTED);
+		wgrp->autosave = isObjectSelected(tree, GIAUTOSAVE);
+		wgrp->getattr = isObjectSelected(tree, GIGETATTR);
+		wgrp->autoclose = isObjectSelected(tree, GIAUTOCLOSE);
 		wgrp->changed = 1;
 		if (save || wgrp->autosave) {
 			oldwin = tb.topwin;
@@ -3339,8 +3051,8 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 	strcpy(entry, item->name);
 	strcpy(tree[GEPARAM].ob_spec.tedinfo->te_ptext, item->parm);
 
-	dial_setopt(tree, GEPARALWAYS, SELECTED, item->paralways);
-	dial_setopt(tree, GEPARALWAYS, DISABLED, item->class != EC_FILE);
+	setObjectState(tree, GEPARALWAYS, SELECTED, item->paralways);
+	setObjectState(tree, GEPARALWAYS, DISABLED, item->class != EC_FILE);
 
 	frm_start(&fi_gobinfo, conf.wdial, conf.cdial, 1);
 	done = 0;
@@ -3455,14 +3167,15 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 	if (fi_gobinfo.exit_obj == GEOK) {
 		strcpy(item->title, tree[GETITLE].ob_spec.tedinfo->te_ptext);
 		strcpy(item->name, entry);
-		if(item->name[(int)strlen(item->name)-1]!='\\') item->class=EC_FILE;
+		if (item->name[(int)strlen(item->name) - 1] != '\\')
+			item->class = EC_FILE;
 		else item->class=EC_FOLDER;
 		if (item->name[1] == ':') {
 			fsinfo(item->name, &filesys);
 			fsconv(item->name, &filesys);
 		}
 		strcpy(item->parm, tree[GEPARAM].ob_spec.tedinfo->te_ptext);
-		item->paralways = dial_getopt(tree, GEPARALWAYS, SELECTED);
+		item->paralways = isObjectSelected(tree, GEPARALWAYS);
 		wgrp_eupdate(wgrp, item);
 		wgrp_tree(win);
 		win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
@@ -3472,7 +3185,7 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 
 	pfree( digob);
 
-	return cont;
+	return (cont);
 }
 
 /**-------------------------------------------------------------------------
@@ -3512,7 +3225,7 @@ static int dl_copy_file(char *src, char *dst, int *nfiles, int *nfolders,
 	OBJECT *tree;
 	int rlink = 0;
 
-LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
+DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 
 	ldst = pmalloc(MAX_PLEN * 2L);
 	if (ldst == NULL) {
@@ -3523,7 +3236,7 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	tree = rs_trindex[RENAMEFILE];
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFIL: entering dl_copy_file() ...");main_debug(almsg);
+	sprintf(almsg, "CFIL: entering dl_copy_file() ..."); debugMain(almsg);
 #endif
 
 	/* Event-Handling fÅr Fensterdialog/Tastatur */
@@ -3662,20 +3375,20 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	}
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFIL: source     =%s",src);main_debug(almsg);
-	sprintf(almsg,"CFIL: destination=%s",ldst);main_debug(almsg);
+	sprintf(almsg, "CFIL: source     =%s",src); debugMain(almsg);
+	sprintf(almsg, "CFIL: destination=%s",ldst); debugMain(almsg);
 #endif
 
 	/* Dateinamen im Dialog aktualisieren */
 	p = rs_trindex[WAITCOPY][WCSRC].ob_spec.tedinfo->te_ptext;
-	str245(p, src);
+	strShortener(p, src, 45);
 	i = (int) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
-	str245(p, ldst);
+	strShortener(p, ldst, 45);
 	i = (int) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
@@ -3726,7 +3439,7 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 		if (ask == 1) {
 			/* Daten der Quelldatei */
 			full2comp(src, lpath, tree[RFSNAME].ob_spec.free_string);
-			str230(tree[RFSPATH].ob_spec.free_string, lpath);
+			strShortener(tree[RFSPATH].ob_spec.free_string, lpath, 30);
 			prlong11(size, tree[RFSSIZE].ob_spec.free_string);
 			sprintf(tree[RFSDATE].ob_spec.free_string, glob.dateformat, date & 0x001f, (date & 0x01e0) >> 5, 1980 + ((date & 0xfe00) >> 9));
 			sprintf(tree[RFSTIME].ob_spec.free_string, glob.timeformat, (time & 0xf800) >> 11, (time & 0x07e0) >> 5);
@@ -3737,7 +3450,7 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			dedate = xa->mdate;
 
 			full2comp(ldst, lpath, tree[RFDNAME].ob_spec.tedinfo->te_ptext);
-			str230(tree[RFDPATH].ob_spec.free_string, lpath);
+			strShortener(tree[RFDPATH].ob_spec.free_string, lpath, 30);
 			prlong11(desize, tree[RFDSIZE].ob_spec.free_string);
 			sprintf(tree[RFDDATE].ob_spec.free_string, glob.dateformat, dedate & 0x001f, (dedate & 0x01e0) >> 5, 1980 + ((dedate & 0xfe00) >> 9));
 			sprintf(tree[RFDTIME].ob_spec.free_string, glob.timeformat, (detime & 0xf800) >> 11, (detime & 0x07e0) >> 5);
@@ -3763,7 +3476,7 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 				case RFALL:
 				case RFOK:
 					p = tree[RFDNAME].ob_spec.tedinfo->te_ptext;
-					if (!*p || !valid_mask(p, 0)) {
+					if (!*p || !isValidFileMask(p, FALSE)) {
 						frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
 						frm_norm(&fi_cren);
 					} else {
@@ -3776,7 +3489,7 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 						if (!strcmp(src, temp)) {
 							char msg[31];
 
-							str230(msg, src);
+							strShortener(msg, src, 30);
 							sprintf(almsg, rs_frstr[ALSAME], msg);
 							frm_alert(1, almsg, altitle, conf.wdial, 0L);
 							frm_norm(&fi_cren);
@@ -3831,15 +3544,15 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	}
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFIL: confirmation done",src);main_debug(almsg);
-	sprintf(almsg,"CFIL: new source     =%s",src);main_debug(almsg);
-	sprintf(almsg,"CFIL: new destination=%s",ldst);main_debug(almsg);
+	sprintf(almsg,"CFIL: confirmation done", src); debugMain(almsg);
+	sprintf(almsg,"CFIL: new source     =%s", src); debugMain(almsg);
+	sprintf(almsg,"CFIL: new destination=%s", ldst); debugMain(almsg);
 #endif
 
 	if (doit) {
 		/* Ziel aktualisieren - koennte veraendert sein */
 		p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
-		str245(p, ldst);
+		strShortener(p, ldst, 45);
 		i = (int) strlen(p);
 		while (i < 45) {
 			p[i] = ' ';
@@ -4051,9 +3764,9 @@ LOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 		ret = 0L;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFIL: copy/move/del done",src);main_debug(almsg);
-	sprintf(almsg,"CFIL: new source     =%s",src);main_debug(almsg);
-	sprintf(almsg,"CFIL: new destination=%s",ldst);main_debug(almsg);
+	sprintf(almsg,"CFIL: copy/move/del done", src); debugMain(almsg);
+	sprintf(almsg,"CFIL: new source     =%s", src); debugMain(almsg);
+	sprintf(almsg,"CFIL: new destination=%s", ldst); debugMain(almsg);
 #endif
 
 	/* Status-Box aktualisieren */
@@ -4105,7 +3818,7 @@ static int dl_copy_folder(char *src, char *dst, int *nfiles, int *nfolders,
 	short timebuf[4];
 	XATTR xa;
 
-LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
+DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 	tree = rs_trindex[RENAMEFILE];
 	if ((ldst = pmalloc(MAX_PLEN * 3L)) == NULL) {
@@ -4116,7 +3829,7 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	lpath = lsrc + MAX_PLEN;
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFLD: entering dl_copy_folder() ...");main_debug(almsg);
+	sprintf(almsg, "CFLD: entering dl_copy_folder() ..."); debugMain(almsg);
 #endif
 
 	/* Event-Handling fÅr Fensterdialog/Tastatur */
@@ -4215,20 +3928,20 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	}
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFLD: source     =%s",src);main_debug(almsg);
-	sprintf(almsg,"CFLD: destination=%s",ldst);main_debug(almsg);
+	sprintf(almsg, "CFLD: source     =%s", src); debugMain(almsg);
+	sprintf(almsg, "CFLD: destination=%s", ldst); debugMain(almsg);
 #endif
 
 	/* Dateinamen im Dialog aktualisieren */
 	p = rs_trindex[WAITCOPY][WCSRC].ob_spec.tedinfo->te_ptext;
-	str245(p, src);
+	strShortener(p, src, 45);
 	i = (int) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
-	str245(p, ldst);
+	strShortener(p, ldst, 45);
 	i = (int) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
@@ -4277,11 +3990,11 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 		/* Name des Quellordners */
 		full2comp(src, lpath, tree[RFSNAME].ob_spec.free_string);
-		str230(tree[RFSPATH].ob_spec.free_string, lpath);
+		strShortener(tree[RFSPATH].ob_spec.free_string, lpath, 30);
 
 		/* Name des Zielordners */
 		full2comp(ldst, lpath, tree[RFDNAME].ob_spec.tedinfo->te_ptext);
-		str230(tree[RFDPATH].ob_spec.free_string, lpath);
+		strShortener(tree[RFDPATH].ob_spec.free_string, lpath, 30);
 
 		/* Attribute werden nicht angezeigt */
 		tree[RFSATTR].ob_flags |= HIDETREE;
@@ -4308,7 +4021,7 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 			case RFALL:
 			case RFOK:
 				p = tree[RFDNAME].ob_spec.tedinfo->te_ptext;
-				if (!*p || !valid_mask(p, 0)) {
+				if (!*p || !isValidFileMask(p, FALSE)) {
 					frm_alert(1, rs_frstr[ALILLFNAME], altitle, conf.wdial, 0L);
 					frm_norm(&fi_cren);
 				} else
@@ -4320,13 +4033,13 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 				break;
 			}
 		}
-#ifndef _NAES
+
 		if (fi_cren.state == FST_WIN && tb.sys & SY_MAGX) {
 			wind_set(fi_cren.win.handle, WF_BOTTOM, 0, 0, 0, 0);
 			get_twin(&whandle);
 			win_newtop(win_getwinfo(whandle));
 		}
-#endif
+
 		frm_end(&fi_cren);
 		graf_mouse(BUSYBEE, 0L);
 		tree[RFSATTR].ob_flags &= ~HIDETREE;
@@ -4379,16 +4092,16 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	}
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFLD: confirmation done");main_debug(almsg);
-	sprintf(almsg,"CFLD: new source     =%s",src);main_debug(almsg);
-	sprintf(almsg,"CFLD: new destination=%s",ldst);main_debug(almsg);
+	sprintf(almsg, "CFLD: confirmation done"); debugMain(almsg);
+	sprintf(almsg, "CFLD: new source     =%s", src); debugMain(almsg);
+	sprintf(almsg, "CFLD: new destination=%s", ldst); debugMain(almsg);
 #endif
 
 	/* Auf gehts ... Zielordner ggf. erzeugen und alle EintrÑge darin
 	 rekursiv kopieren */
 	if (doit) {
 		p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
-		str245(p, ldst);
+		strShortener(p, ldst, 45);
 		i = (int) strlen(p);
 		while (i < 45) {
 			p[i] = ' ';
@@ -4428,11 +4141,11 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 				cstop = stop = 0;
 		}
 
-		if (!exist && isdir) /* Zielordner ggf. erzeugen */
-		{
+		if (!exist && isdir) {
+			/* Zielordner ggf. erzeugen */
 			ret = (long) Dcreate(ldst);
-			if (ret < 0L) /* Fehler? */
-			{
+			if (ret < 0L) {
+				/* Fehler? */
 				err_file(rs_frstr[ALFLCREATE], ret, ldst);
 				if (!usemint)
 					Fsetdta(odta);
@@ -4475,15 +4188,11 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 			/* Standard-EintrÑge '.' und '..' nicht verwenden */
 			l = (int) strlen(lsrc);
-			if (strcmp(&lsrc[l - 3], "\\..") != 0
-					&& strcmp(&lsrc[l - 2], "\\.") != 0) {
+			if (strcmp(&lsrc[l - 3], "\\..") != 0 && strcmp(&lsrc[l - 2], "\\.") != 0) {
 				if ((!usemint && (xattr.attr & FA_SUBDIR)) || (usemint && (xattr.mode & S_IFMT) == S_IFDIR)) /* Weiterer Ordner */
-				{
 					ret = (long) dl_copy_folder(lsrc, lpath, nfiles, nfolders, total, ready, del, ren, crepl, backup, dlst);
-				} else /* Datei oder Link */
-				{
+				else /* Datei oder Link */
 					ret = (long) dl_copy_file(lsrc, lpath, nfiles, nfolders, total, ready, 0, del, ren, crepl, backup, dlst);
-				}
 			} else
 				ret = 0L;
 
@@ -4594,8 +4303,8 @@ LOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	frm_redraw(&fi_waitcopy, WCSIZE);
 
 #ifdef _DEBUG
-	sprintf(almsg,"CFLD: copy/move/del done");main_debug(almsg);
-	sprintf(almsg,"CFLD: (no names available now)");main_debug(almsg);
+	sprintf(almsg, "CFLD: copy/move/del done"); debugMain(almsg);
+	sprintf(almsg, "CFLD: (no names available now)"); debugMain(almsg);
 #endif
 	pfree(ldst);
 	return (int) ret;
@@ -4650,10 +4359,10 @@ static void dl_copy_conf(int *ok, int *del, int *ren, char *path,
 
 	tree = rs_trindex[COPY];
 
-	dial_setopt(tree, CPMOVE, SELECTED, *del);
-	dial_setopt(tree, CPRENAME, SELECTED, *ren);
-	dial_setopt(tree, CPFOLLOW, SELECTED, *follow);
-	dial_setopt(tree, CPBACKUP, SELECTED, *backup);
+	setObjectState(tree, CPMOVE, SELECTED, *del);
+	setObjectState(tree, CPRENAME, SELECTED, *ren);
+	setObjectState(tree, CPFOLLOW, SELECTED, *follow);
+	setObjectState(tree, CPBACKUP, SELECTED, *backup);
 
 	if (src == -1) {
 		tree[CPSOURCE].ob_flags |= HIDETREE;
@@ -4717,11 +4426,11 @@ static void dl_copy_conf(int *ok, int *del, int *ren, char *path,
 		*ok = 1;
 	else
 		*ok = 0;
-	*del = dial_getopt(tree, CPMOVE, SELECTED);
-	*ren = dial_getopt(tree, CPRENAME, SELECTED);
-	*follow = dial_getopt(tree, CPFOLLOW, SELECTED);
-	*backup = dial_getopt(tree, CPBACKUP, SELECTED);
-	*mode = 2 * !dial_getopt(tree, CPCOPY, SELECTED);
+	*del = isObjectSelected(tree, CPMOVE);
+	*ren = isObjectSelected(tree, CPRENAME);
+	*follow = isObjectSelected(tree, CPFOLLOW);
+	*backup = isObjectSelected(tree, CPBACKUP);
+	*mode = 2 * !isObjectSelected(tree, CPCOPY);
 }
 
 /**
@@ -4810,7 +4519,7 @@ int dl_copy(char *path, int ks, char *buf) {
 	cstop = 0;
 
 #ifdef _DEBUG
-	sprintf(almsg,"COPY: dcopy.init ok");main_debug(almsg);
+	sprintf(almsg, "COPY: dcopy.init ok"); debugMain(almsg);
 #endif
 
 	dcopy->mode = 0;
@@ -4850,14 +4559,14 @@ int dl_copy(char *path, int ks, char *buf) {
 	}
 
 #ifdef _DEBUG
-	sprintf(almsg,"COPY: mode.delete=%d, mode.rename=%d",dcopy->del,dcopy->ren);main_debug(almsg);
+	sprintf(almsg, "COPY: mode.delete=%d, mode.rename=%d", dcopy->del, dcopy->ren); debugMain(almsg);
 #endif
 
 	/* String mit Objektnamen angegeben? */
 	if (buf) {
 		ok = 1;
 #ifdef _DEBUG
-		sprintf(almsg,"COPY: buffer -- START, contents=%s",buf);main_debug(almsg);
+		sprintf(almsg, "COPY: buffer -- START, contents=%s", buf); debugMain(almsg);
 #endif
 		dl_copy_buf: kdrv = -2;
 		go = 1;
@@ -4899,7 +4608,7 @@ int dl_copy(char *path, int ks, char *buf) {
 				pfree( lbuf);
 				lbuf = 0L;
 			}
-			return 0;
+			return (0);
 		}
 
 		/* Auf Kobold pruefen */
@@ -5008,8 +4717,8 @@ int dl_copy(char *path, int ks, char *buf) {
 			dcopy->total = dcopy->ready = dcopy->size + (long) dcopy->nfolders;
 			dcopy->crepl = conf.creplace;
 #ifdef _DEBUG
-			sprintf(almsg,"COPY: no kobold copy, starting normal");main_debug(almsg);
-			sprintf(almsg,"COPY: total=%ld, nfolders=%d",dcopy->total,dcopy->nfolders);main_debug(almsg);
+			sprintf(almsg, "COPY: no kobold copy, starting normal"); debugMain(almsg);
+			sprintf(almsg, "COPY: total=%ld, nfolders=%d", dcopy->total, dcopy->nfolders); debugMain(almsg);
 #endif
 
 			/* Status-Box vorbereiten und ausgeben */
@@ -5050,7 +4759,7 @@ int dl_copy(char *path, int ks, char *buf) {
 				if (dcopy->mode != 2) {
 					if (!isf) {
 #ifdef _DEBUG
-						sprintf(almsg,"COPY: dl_copy_file(), mode=FILE, ipath=%s, path=%s",ipath,path);main_debug(almsg);
+						sprintf(almsg, "COPY: dl_copy_file(), mode=FILE, ipath=%s, path=%s", ipath, path); debugMain(almsg);
 #endif
 						if (dl_copy_file(ipath, path, &dcopy->nfiles,
 								&dcopy->nfolders, dcopy->total, &dcopy->ready,
@@ -5060,7 +4769,7 @@ int dl_copy(char *path, int ks, char *buf) {
 						}
 					} else {
 #ifdef _DEBUG
-						sprintf(almsg,"COPY: dl_copy_file(), mode=PATH, ipath=%s, path=%s",ipath,path);main_debug(almsg);
+						sprintf(almsg, "COPY: dl_copy_file(), mode=PATH, ipath=%s, path=%s", ipath, path); debugMain(almsg);
 #endif
 						if (dl_copy_folder(ipath, path, &dcopy->nfiles,
 								&dcopy->nfolders, dcopy->total, &dcopy->ready,
@@ -5115,7 +4824,7 @@ int dl_copy(char *path, int ks, char *buf) {
 		}
 		mn_update();
 
-		return ok;
+		return (ok);
 	}
 
 	/* Kein Buffer angegeben - dann selber erzeugen */
@@ -5139,7 +4848,7 @@ int dl_copy(char *path, int ks, char *buf) {
 		dcopy = 0L;
 	}
 
-	return ok;
+	return (ok);
 }
 
 /**-------------------------------------------------------------------------
@@ -5158,10 +4867,10 @@ int dl_devout(char *file, char *dev) {
 
 	/* PrÅfen, ob Ausgabe Åber das Device Åberhaupt geht */
 	outfh = Fopen(dev, FO_WRITE);
-	if (outfh < 0L) /* Und ggf. mosern */
-	{
+	if (outfh < 0L) {
+		/* Und ggf. mosern */
 		err_file(rs_frstr[ALNOOUTPUT], outfh, dev);
-		return 0;
+		return (0);
 	}
 
 	/* Nochmal nachfragen und ausgeben */
@@ -5182,7 +4891,7 @@ int dl_devout(char *file, char *dev) {
 				{
 					Fclose((int) outfh);
 					frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-					return 0;
+					return (0);
 				}
 			}
 		}
@@ -5193,7 +4902,7 @@ int dl_devout(char *file, char *dev) {
 			pfree(buf);
 			Fclose((int) outfh);
 			err_file(rs_frstr[ALFLOPEN], infh, file);
-			return 0;
+			return (0);
 		}
 
 		/* Dateiinhalt auf dem Device ausgeben */
@@ -5211,7 +4920,7 @@ int dl_devout(char *file, char *dev) {
 				err_file(rs_frstr[ALFLREAD], inlen, file);
 				if (!copen && cret > 0)
 					cwin_close();
-				return 0;
+				return (0);
 			}
 			if (inlen > 0L) {
 				outlen = Fwrite((int) outfh, inlen, buf);
@@ -5227,7 +4936,7 @@ int dl_devout(char *file, char *dev) {
 					err_file(rs_frstr[ALDEVWRITE], outlen, pd);
 					if (!copen && cret > 0)
 						cwin_close();
-					return 0;
+					return (0);
 				}
 			} else
 				done = 1;
@@ -5240,10 +4949,10 @@ int dl_devout(char *file, char *dev) {
 			cwin_endio();
 		if (!copen && cret > 0)
 			cwin_close();
-		return 1;
+		return (1);
 	} else {
 		Fclose((int) outfh);
-		return 0;
+		return (0);
 	}
 }
 
@@ -5284,7 +4993,7 @@ int dl_waitevent(void) {
 	mevent.ev_mtlocount = tlo;
 	mevent.ev_mthicount = thi;
 
-	return ret;
+	return (ret);
 }
 
 /**
@@ -5423,53 +5132,7 @@ int dl_drag_on_ditem(W_PATH *wpath, WP_ENTRY *item, int ks, int *rex) {
 		{
 			strcpy(iname, wpath->path);
 			strcat(iname, item->name);
-#if 1
 			fin = dl_runapp(iname, item->aptype, item->name, rex);
-#else
-			/* Indirektes Ziel? */
-			if(!item->aptype)
-			{
-				aptr=app_isdrag(iname);
-				if(aptr)
-				{
-					/* Zieldatei zusammen mit Objekten Åbergeben */
-					strcpy(glob.cmd,iname);strcat(glob.cmd," ");
-					i=(int)strlen(glob.cmd);
-					cont=sel2buf(&glob.cmd[i],aname,apath,MAX_CMDLEN-i);
-					if(cont) fin=app_start(aptr,glob.cmd,apath,rex);
-					else
-					{
-						sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-						frm_alert(1,almsg,altitle,conf.wdial,0L);
-					}
-				}
-			}
-			else
-			{
-				/* Als Applikation angemeldet ? */
-				aptr=app_find(iname);
-				/* Nein */
-				if(!aptr)
-				{
-					strcpy(app.name,iname);
-					app_default(&app);
-					strcpy(app.title,item->name);
-					aptr=&app;
-				}
-				/* Alle selektierten Objekte als Kommandozeile Åbergeben */
-#ifdef ARNO_ORIGINAL
-				cont=sel2buf(glob.cmd,aname,apath,MAX_CLEN);
-#else
-				cont=sel2buf(glob.cmd,aname,apath,MAX_CMDLEN);
-#endif
-				if(cont) fin=app_start(aptr,glob.cmd,apath,rex);
-				else
-				{
-					sprintf(almsg,rs_frstr[ALTOOMANY],aptr->title);
-					frm_alert(1,almsg,altitle,conf.wdial,0L);
-				}
-			}
-#endif
 		} else /* Device oder Ordner */
 		{
 			if (item->class==EC_DEVICE) {

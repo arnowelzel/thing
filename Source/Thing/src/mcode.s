@@ -28,8 +28,8 @@
 ; Assembler-Routinen
 ;
 
-	globl	long2int
-	globl	int2long
+;	globl	long2int
+;	globl	int2long
 	globl	boot_drv
 	
 	macro	Supexec name
@@ -47,11 +47,11 @@
 ;Deklaration: extern void long2int(long lword,int *iword1,int *iword2)
 ;--------------------------------------------------------------------------
 
-long2int:
-	move.w	d0,(a1)
-	swap	d0
-	move.w	d0,(a0)
-	rts
+;long2int:
+;	move.w	d0,(a1)
+;	swap	d0
+;	move.w	d0,(a0)
+;	rts
 
 ;--------------------------------------------------------------------------
 ;Umwandlung zweier Integer in ein Langwort
@@ -59,11 +59,11 @@ long2int:
 ;Deklaration: extern long int2long(int *iword1,int *iword 2)
 ;--------------------------------------------------------------------------
 
-int2long:
-	move.w	(a0),d0
-	swap	d0
-	move.w	(a1),d0
-	rts
+;int2long:
+;	move.w	(a0),d0
+;	swap	d0
+;	move.w	(a1),d0
+;	rts
 
 ;--------------------------------------------------------------------------
 ;Boot-Laufwerk ermitteln

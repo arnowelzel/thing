@@ -30,13 +30,20 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include "..\include\dragdrop.h"
 #include "..\include\tcmd.h"
 #include <new_rsc.h>
 #include <math.h>
 #include <pwd.h>
 #include <grp.h>
+
+#define _str(x)		__str(x)
+#define __str(x)	#x
+#define LINOUT	Cconws(_str(__LINE__) "\r\n\n\n");
+#undef LINOUT
+#define LINOUT
 
 #define Salert(x)	gemdos(0x13c, (char *)x);
 
@@ -111,16 +118,16 @@ void cdecl sigFatal(long sig) {
 	char msg[256] = "ARGH! Thing received ";
 
 	switch ((int)sig) {
-		case SIGBUS:
+	case SIGBUS:
 		strcat(msg, "SIGBUS!");
 		break;
-		case SIGILL:
+	case SIGILL:
 		strcat(msg, "SIGILL!");
 		break;
-		case SIGPRIV:
+	case SIGPRIV:
 		strcat(msg, "SIGPRIV!");
 		break;
-		case SIGSEGV:
+	case SIGSEGV:
 		strcat(msg, "SIGSEGV!");
 		break;
 	}
@@ -135,6 +142,8 @@ void cdecl sigFatal(long sig) {
 
 /**
  *
+ *
+ * @param **wopen
  */
 void free_wopen(WINOPEN **wopen) {
 	WINOPEN *help, *list;
@@ -150,6 +159,8 @@ void free_wopen(WINOPEN **wopen) {
 
 /**
  *
+ *
+ * @param desk_redraw
  */
 void wind_restore(int desk_redraw) {
 	WINOPEN *wopen;
@@ -166,24 +177,24 @@ void wind_restore(int desk_redraw) {
 		/* manuelles Platzieren der Fenster temporaer ausschalten */
 		glob.placement = 0;
 		switch (wopen->class) {
-			case WCPATH:
-				wret = wpath_open(wopen->title, wopen->wildcard, wopen->rel, wopen->relname, wopen->text, wopen->num, wopen->sortby);
-				break;
+		case WCPATH:
+			wret = wpath_open(wopen->title, wopen->wildcard, wopen->rel, wopen->relname, wopen->text, wopen->num, wopen->sortby);
+			break;
 
-			case WCGROUP:
-				wret = wgrp_open(wopen->title, 0L, 0L);
-				break;
+		case WCGROUP:
+			wret = wgrp_open(wopen->title, 0L, 0L);
+			break;
 
-			case WCCON:
-				dl_conwin();
-				if (con.win.state & WSOPEN)
-					wret = 1;
-				else
-					wret = 0;
-				break;
-
-			default:
+		case WCCON:
+			dl_conwin();
+			if (con.win.state & WSOPEN)
+				wret = 1;
+			else
 				wret = 0;
+			break;
+
+		default:
+			wret = 0;
 		}
 
 		/* manuelles Platzieren der Fenster wieder einschalten */
@@ -195,7 +206,7 @@ void wind_restore(int desk_redraw) {
 
 			/* Falls Fenster aktiv war, dann merken */
 			if (wopen->istop)
-			twin = tb.topwin;
+				twin = tb.topwin;
 
 			msg_clr();
 		}
@@ -212,16 +223,16 @@ void wind_restore(int desk_redraw) {
 		win_top(twin);
 }
 
-/**-------------------------------------------------------------------------
- main_init()
-
- Programminitialisierung
- -------------------------------------------------------------------------*/
+/**
+ * Programminitialisierung
+ *
+ * @return
+ */
 int main_init(void) {
 	int i, j, l, x, y, w, h, fok, rex;
 	char tbuf[34];
 	char name[MAX_PLEN];
-	char *p, *sp;
+	char *p, *sp, rsrcName[13];
 	WINOPEN *openwin;
 	APPLINFO *aptr;
 	OBJECT *tree;
@@ -266,7 +277,8 @@ int main_init(void) {
 	glob.img_info.version = THINGIMG_VERS;
 	glob.img_info.picture.fd_addr = 0L;
 	/* homepath, confpath, desk_w und desk_h erst spaeter! */
-	con.vdi_handle = con.vdi_chandle = 0;
+	con.vdi_handle = 0;
+	con.vdi_chandle = 0;
 	gdos.fontlist = 0L;
 	gdos.fontname = 0L;
 	gdos.mfontname = 0L;
@@ -285,14 +297,17 @@ int main_init(void) {
 	lbuf = 0L;
 	conf.cdial = 1;
 	conf.wdial = 1;
-	conf.userdef = conf.nicelines = 1;
+	conf.userdef = 1;
+	conf.nicelines = 1;
 
 	glob.initialisation = 0;
 	glob.autoclose = 0;
 	glob.closeall = 0;
 	glob.placement = 1;
 
-	rinfo.dinfo.first = rinfo2.dinfo.first = glob.rinfo.dinfo.first = 0L;
+	rinfo.dinfo.first = 0L;
+	rinfo2.dinfo.first = 0L;
+	glob.rinfo.dinfo.first = 0L;
 
 	/* Toolbox und Speicherverwaltung initialisieren */
 #ifdef USE_PMALLOC
@@ -303,14 +318,13 @@ int main_init(void) {
 #endif
 #endif
 #ifdef MEMDEBUG
-	set_MemdebugOptions(c_On, c_On, c_On, c_Off, c_On, c_Off, c_Off,
-			c_Off, c_Off, "c:\\ming\\memdebug.out", "c:\\ming\\memdebug.err");
+	set_MemdebugOptions(c_On, c_On, c_On, c_Off, c_On, c_Off, c_Off, c_Off, c_Off, "c:\\memdebug.out", "c:\\memdebug.err");
 #endif
 
 	if (!tool_init(FNAME_PRG))
-		return 0;
+		return (0);
 
-LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
+DEBUGLOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	{
 		int handle;
@@ -325,7 +339,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	}
 
 	if (!init_cicon_with_palette(tos256pal))
-		return 0;
+		return (0);
+
 	glob.img_info.homepath = tb.homepath;
 	glob.img_info.desk_w = tb.desk.w;
 	glob.img_info.desk_h = tb.desk.h;
@@ -333,15 +348,17 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	glob.dir_img = glob.img_info;
 	menu_register(-1, "THING   ");
 
+#if 0
 	/* is_wild-Array fuellen */
 	memset(is_wild, 0, 256L);
 	is_wild['*'] = 1;
 	is_wild['?'] = 1;
 	is_wild['['] = 1;
 	is_wild[']'] = 1;
+#endif
 
 	/* NAES-Cookie holen */
-	if (!getcookie('nAES', (long *) &glob.naesinfo))
+	if (!getCookie('nAES', (long *) &glob.naesinfo))
 		glob.naesinfo = 0L;
 
 #ifdef _DEBUG
@@ -349,8 +366,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	glob.debug_level = 1;
 	strcpy(glob.debug_name, tb.homepath);
 	strcat(glob.debug_name, "debug.log");
-	strcpy(name,tb.homepath);
-	strcat(name,"debug.inf");
+	strcpy(name, tb.homepath);
+	strcat(name, "debug.inf");
 	fh = fopen(name, "r");
 	if (fh) {
 		fscanf(fh, "%d", &glob.debug_level);
@@ -358,47 +375,94 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 		if (glob.debug_level == 1)
 			form_alert(1, "[0][Debug active][ OK ]");
 	}
-	LOG((1, "..3\n"));
-	main_debug("-------------------------------------------------");
-	main_debug("THING DEBUG NOW STARTING");
-	main_debug("See DEBUG.INF for configuration");
-	main_debug("-------------------------------------------------");
-	sprintf(almsg, "MAIN: sys.machine=0x%04x",tb.sys); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.appid=%d",tb.app_id); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.apname=%s",tb.apname); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.appath=%s",tb.homepath); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.vdi.planes=%d",tb.planes); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.vdi.resxy=%d/%d",tb.resx,tb.resy); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.vdi.colors=%d",tb.colors); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.aes.fontwh=%d/%d",tb.ch_w,tb.ch_h); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.aes.bigfontsize=%d",tb.fn_size); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.aes.smallfontsize=%d",tb.fs_size); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.aes.screenmanager=%d",tb.scr_id); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.gdos=%d",tb.gdos); main_debug(almsg);
-	sprintf(almsg, "MAIN: sys.gdos.fonts=%d",tb.numfonts); main_debug(almsg);
+DEBUGLOG((1, "..3\n"));
+	debugMain("-------------------------------------------------");
+	debugMain("THING DEBUG NOW STARTING");
+	debugMain("See DEBUG.INF for configuration");
+	debugMain("-------------------------------------------------");
+	sprintf(almsg, "MAIN: sys.machine=0x%04x", tb.sys); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.appid=%d", tb.app_id); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.apname=%s", tb.apname); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.appath=%s", tb.homepath); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.vdi.planes=%d", tb.planes); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.vdi.resxy=%d/%d", tb.resx,tb.resy); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.vdi.colors=%d", tb.colors); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.aes.fontwh=%d/%d", tb.ch_w, tb.ch_h); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.aes.bigfontsize=%d", tb.fn_size); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.aes.smallfontsize=%d", tb.fs_size); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.aes.screenmanager=%d", tb.scr_id); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.gdos=%d",tb.gdos); debugMain(almsg);
+	sprintf(almsg, "MAIN: sys.gdos.fonts=%d", tb.numfonts); debugMain(almsg);
 #endif
+
+	/* THINGDIR und HOME beruecksichtigen */
+	strcpy(glob.cpath, tb.homepath);
+
+	p = getenv("HOME");
+	if (p) {
+		XATTR xattr;
+
+		if (p[1] != ':') {
+			strcpy(glob.cpath, "U:");
+			if ((*p != '\\') && (*p != '/'))
+				strcat(glob.cpath, "\\");
+			strcat(glob.cpath, p);
+		} else
+			strcpy(glob.cpath, p);
+
+		/* '/' in '\\' umwandeln */
+		p = glob.cpath;
+		while ((p = strchr(p, '/')) != NULL)
+			*p = '\\';
+		p = strchr(glob.cpath, 0);
+		if (*(--p) != '\\') {
+			strcat(p, "\\");
+			p++;
+		}
+		strcat(glob.cpath, "defaults\\Thing.cnf");
+		if (file_exists(glob.cpath, 1, &xattr) || ((xattr.mode & S_IFMT) != S_IFDIR)) {
+			*p = 0;
+		}
+	}
+
+	p = getenv("THINGDIR");
+	if (p) {
+		strcpy(tb.homepath, p);
+		strcpy(glob.cpath, p);
+	}
+
+	/* Startverzeichnis mit abschliessendem '\' versehen */
+	l = (int) strlen(tb.homepath) - 1;
+	if ((l > 0) && (tb.homepath[l] != '\\'))
+		strcat(tb.homepath, "\\");
+	l = (int) strlen(glob.cpath) - 1;
+	if ((l > 0) && (glob.cpath[l] != '\\')) {
+		strcat(glob.cpath, "\\");
+	}
+	strcat(glob.cpath, PNAME_CON);
+	strcat(glob.cpath, "\\");
+
+/*	sprintf(glob.cpath, "%s%s\\", glob.cpath, PNAME_CON);*/
 
 	/* Externes THINGIMG.PRG laden */
 
-#ifdef _debug
-	main_debug("MAIN: external image handler missing");
+#ifdef _DEBUG
+	debugMain("MAIN: external image handler missing");
 #endif
 
 	/* Handler fuer Modale Dialoge installieren, Teil 1 */
 	tb.msg_handler = handle_fmsg;
 
-#ifdef _debug
-	main_debug("MAIN: aes message handler active");
+#ifdef _DEBUG
+	debugMain("MAIN: aes message handler active");
 #endif
 
 	/* Workaround fuer MagiC!Mint */
-#ifndef _NAES
 	if ((tb.sys & SY_MAGX) && (tb.sys & SY_MINT))
 		tb.sys &= ~SY_MULTI;
-#endif
 
-#ifdef _debug
-	main_debug("MAIN: MagiC!MiNT patches active");
+#ifdef _DEBUG
+	debugMain("MAIN: MagiC!MiNT patches active");
 #endif
 
 	/* Alice austricksen ;-) */
@@ -406,40 +470,45 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	if (i >= 0)
 		wind_delete(i);
 
-	/* Hauptresources laden */
-	if (!rsc_load("thing.rsc", &rinfo)) {
-		frm_alert(1, "[3][THING.RSC nicht gefunden!|"
-			"THING.RSC not found!][ OK ]", altitle, 1, 0L);
-		return 0;
+	/* Resource laden */
+	sprintf(rsrcName, "%s%s\\thing_%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	if (!rsc_load(rsrcName, &rinfo)) {
+		sprintf(rsrcName, "%s%s\\thing_en.rsc", tb.homepath, PNAME_RSC);
+		if (!rsc_load(rsrcName, &rinfo)) {
+			frm_alert(1, "[3][THING.RSC nicht gefunden!|THING.RSC not found!][ OK ]", altitle, 1, 0L);
+			return (FALSE);
+		}
 	}
 	rs_trindex = rinfo.rs_trindex;
-	if (!rsc_load("thingtxt.rsc", &rinfo2)) {
-		frm_alert(1, "[3][THINGTXT.RSC nicht gefunden!|"
-			"THINGTXT.RSC not found!][ OK ]", altitle, 1, 0L);
-		return 0;
+
+	sprintf(rsrcName, "%s%s\\thgtxt%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	if (!rsc_load(rsrcName, &rinfo2)) {
+		sprintf(rsrcName, "%s%s\\thgtxten.rsc", tb.homepath, PNAME_RSC);
+		if (!rsc_load(rsrcName, &rinfo2)) {
+			frm_alert(1, "[3][THINGTXT.RSC nicht gefunden!|THINGTXT.RSC not found!][ OK ]", altitle, 1, 0L);
+			return (FALSE);
+		}
 	}
 	rs_frstr = rinfo2.rs_frstr;
 
-#ifdef _debug
-	main_debug("MAIN: resources - checking");
+#ifdef _DEBUG
+	debugMain("MAIN: resources - checking");
 #endif
 
 	/* Version ueberpruefen */
 	tree = rs_trindex[LANGUAGE];
 	i = atoi(tree[LANGVER].ob_spec.free_string);
-
 	if (i != _VERS) {
-		frm_alert(1, "[3][Bitte richtige THING.RSC installieren!|"
-			"Please install correct THING.RSC!][ OK ]", altitle, 1, 0L);
-		return 0;
+		frm_alert(1, "[3][Bitte richtige THING.RSC installieren!|Please install correct THING.RSC!][ OK ]", altitle, 1, 0L);
+		return (FALSE);
 	}
 	sscanf(tree[LANGFONT].ob_spec.free_string, "%d %d", &rcw, &rch);
 	glob.langdec = tree[LANGCHAR].ob_spec.free_string[0];
 	glob.dateformat = tree[LANGDATE].ob_spec.free_string;
 	glob.timeformat = tree[LANGTIME].ob_spec.free_string;
 
-#ifdef _debug
-	main_debug("MAIN: resources - ok");
+#ifdef _DEBUG
+	debugMain("MAIN: resources - ok");
 #endif
 
 	tb.use3d = 1; /* 3D-Effekte benutzen */
@@ -448,8 +517,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	/* if(tb.sys&SY_MINT)*//* Anpassungen an MiNT */
 	{
-#ifdef _debug
-		main_debug("MAIN: MiNT signal handlers active");
+#ifdef _DEBUG
+		debugMain("MAIN: MiNT signal handlers active");
 #endif
 		/* MiNT-Domain aktivieren */
 		Pdomain(1);
@@ -460,10 +529,10 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 		Psignal(SIGABRT, (void *) 1L);
 		Psignal(SIGTERM, sigTerm);
 /*
-		 Psignal(SIGBUS,sigFatal);
-		 Psignal(SIGILL,sigFatal);
-		 Psignal(SIGPRIV,sigFatal);
-		 Psignal(SIGSEGV,sigFatal);
+		 Psignal(SIGBUS, sigFatal);
+		 Psignal(SIGILL, sigFatal);
+		 Psignal(SIGPRIV, sigFatal);
+		 Psignal(SIGSEGV, sigFatal);
  */
 		Psignal(SIGQUIT, (void *) 1L);
 		Psignal(SIGHUP, (void *) 1L);
@@ -472,8 +541,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	/* Device-Lock initialisieren */
 	init_device_locking();
 
-#ifdef _debug
-	main_debug("MAIN: device locking active");
+#ifdef _DEBUG
+	debugMain("MAIN: device locking active");
 #endif
 
 	/* Name der Konfigurationsdatei fuer aufloesungsabhaengige Infos */
@@ -556,68 +625,23 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	rs_trindex[ICONCON][1].ob_width = 72;
 	rs_trindex[ICONCON][1].ob_height = 40;
 
-#ifdef OLD_SLIDER_HANDLING
-	/* Slider im Dialog "Applikationen" anpassen */
-	tree = rs_trindex[DEFAPPL];
-	x=tree[DALIST].ob_x + tree[DALIST].ob_width + 1;
-	tree[DAUP].ob_x=x;
-	tree[DABOX].ob_x=x;
-	tree[DADOWN].ob_x=x;
-
-	tree[DABOX].ob_y = tree[DAUP].ob_y + tree[DAUP].ob_height + 1;
-	tree[DABOX].ob_height = tree[DALIST].ob_height -
-	tree[DAUP].ob_height - tree[DADOWN].ob_height-2;
-
-	/* Slider im Dialog fuer Applikationsauswahl anpassen */
-	tree = rs_trindex[SELAPP];
-	x=tree[SALIST].ob_x+tree[SALIST].ob_width+1;
-	tree[SAUP].ob_x=x;
-	tree[SABOX].ob_x=x;
-	tree[SADOWN].ob_x=x;
-
-	tree[SABOX].ob_y=tree[SAUP].ob_y+tree[SAUP].ob_height+1;
-	tree[SABOX].ob_height=tree[SALIST].ob_height-
-	tree[SAUP].ob_height-tree[SADOWN].ob_height-2;
-#else
 	/* Sliderposition in den jeweiligen Dialogen anpassen */
 	lst_prepare(&li_defappl, rs_trindex[DEFAPPL]);
 	lst_prepare(&li_selapp, rs_trindex[SELAPP]);
 	lst_prepare(&li_hotkeys, rs_trindex[HOTKEYS]);
-#endif
 
 	/*
 	 * Im Dialog "Info ueber Applikation" Verweise auf den Programmnamen
 	 * in den Unterseiten einrichten.
 	 */
 	tree = rs_trindex[DAPPINFO];
-	tree[DAINAME2].ob_spec.free_string = tree[DAINAME3].ob_spec.free_string
-			= tree[DAINAME4].ob_spec.free_string
-					= tree[DAINAME].ob_spec.tedinfo->te_ptext;
+	tree[DAINAME2].ob_spec.free_string =
+	tree[DAINAME3].ob_spec.free_string =
+	tree[DAINAME4].ob_spec.free_string =
+	tree[DAINAME].ob_spec.tedinfo->te_ptext;
 
-#ifdef OLD_SLIDER_HANDLING 
-	/* Slider im Dialog "Info ueber Appl.." - Environment anpassen */
-	x=tree[DAELIST].ob_x+tree[DAELIST].ob_width+1;
-	tree[DAEUP].ob_x=tree[DAEBOX].ob_x=
-	tree[DAEDOWN].ob_x=x;
-
-	tree[DAEBOX].ob_y=
-	tree[DAEUP].ob_y+tree[DAEUP].ob_height+1;
-	tree[DAEBOX].ob_height=tree[DAELIST].ob_height-
-	tree[DAEUP].ob_height-tree[DAEDOWN].ob_height-2;
-
-	/* Slider im Dialog fuer Dateimaske anpassen */
-	tree = rs_trindex[MASK];
-	x=tree[MALIST].ob_x+tree[MALIST].ob_width+1;
-	tree[MAUP].ob_x=tree[MABOX].ob_x=
-	tree[MADOWN].ob_x=x;
-	tree[MABOX].ob_y=
-	tree[MAUP].ob_y+tree[MAUP].ob_height+1;
-	tree[MABOX].ob_height=tree[MALIST].ob_height-
-	tree[MAUP].ob_height-tree[MADOWN].ob_height-2;
-#else
 	lst_prepare(&li_dappinfo, tree);
 	lst_prepare(&li_mask, rs_trindex[MASK]);
-#endif
 
 	/* 'Mini-Fenster' in der Voreinstellung */
 	tree = rs_trindex[CONFIG];
@@ -629,7 +653,7 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	rs_trindex[FONT][FOID].ob_width = 9 * tb.fs_cw;
 	rs_trindex[FONT][FOID].ob_height = tb.fs_ch;
 
-	/* Versionsnummer im 'About' eintragen */
+	/* Versionsnummer in 'About' eintragen */
 	tree = rs_trindex[ABOUT];
 	p = tree[ABVER].ob_spec.tedinfo->te_ptext;
 	strcpy(p, version_str(rs_trindex[LANGUAGE][LANGTVER].ob_spec.free_string, _VERS));
@@ -654,89 +678,42 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 			tree[i].ob_y += l;
 	}
 
-	/* Falls kein MiNT, dann keine Minix-Attribute zulassen */
 #if 0
-	if(!(tb.sys&SY_MINT))
-	{
-		rs_trindex[FLINFO][FLATTR].ob_state|=DISABLED;
-		rs_trindex[FLINFO][FLATTR].ob_flags&=~(SELECTABLE|TOUCHEXIT);
+	/* Falls kein MiNT, dann keine Minix-Attribute zulassen */
+	if(!(tb.sys & SY_MINT)) {
+		rs_trindex[FLINFO][FLATTR].ob_state |= DISABLED;
+		rs_trindex[FLINFO][FLATTR].ob_flags& = ~(SELECTABLE | TOUCHEXIT);
 	}
 #endif
+
 	/* Falls kein MagiC, dann keine MagiC-Speicherlimitierung */
 	if (!(tb.sys & SY_MAGX))
-		rs_trindex[FLINFO][FPMAGIC].ob_state |= DISABLED;
+		setObjectDisabled(rs_trindex[FLINFO], FPMAGIC);
 
 	/* Unter MultiTOS einen schoeneren Eintrag im Desk-Menue */
 	if (tb.sys & SY_MTOS)
 		menu_register(tb.app_id, "  Thing Desktop");
 
-	/* THINGDIR und HOME beruecksichtigen */
-	strcpy(glob.cpath, tb.homepath);
-
-	p = getenv("HOME");
-	if (p) {
-		XATTR xattr;
-
-		if (p[1] != ':') {
-			strcpy(glob.cpath, "U:");
-			if ((*p != '\\') && (*p != '/'))
-				strcat(glob.cpath, "\\");
-			strcat(glob.cpath, p);
-		} else
-			strcpy(glob.cpath, p);
-
-		/* '/' in '\\' umwandeln */
-		p = glob.cpath;
-		while ((p = strchr(p, '/')) != NULL)
-			*p = '\\';
-		p = strchr(glob.cpath, 0);
-		if (*(--p) != '\\') {
-			strcat(p, "\\");
-			p++;
-		}
-		strcat(glob.cpath, "defaults\\Thing.cnf");
-		if (file_exists(glob.cpath, 1, &xattr) || ((xattr.mode & S_IFMT) != S_IFDIR)) {
-			*p = 0;
-		}
-	}
-
-	p = getenv("THINGDIR");
-	if (p) {
-		strcpy(tb.homepath, p);
-		strcpy(glob.cpath, p);
-	}
-
-	/* Startverzeichnis mit abschliessendem '\' versehen */
-	l = (int) strlen(tb.homepath) - 1;
-	if (l > 0)
-		if (tb.homepath[l] != '\\')
-			strcat(tb.homepath, "\\");
-	l = (int) strlen(glob.cpath) - 1;
-	if (l > 0)
-		if (glob.cpath[l] != '\\')
-			strcat(glob.cpath, "\\");
-
-#ifdef _debug
-	sprintf(almsg,"MAIN: homepath is now  =%s",tb.homepath);main_debug(almsg);
-	sprintf(almsg,"MAIN: configpath is now=%s",glob.cpath);main_debug(almsg);
+#ifdef _DEBUG
+	sprintf(almsg, "MAIN: homepath is now  =%s", tb.homepath); debugMain(almsg);
+	sprintf(almsg, "MAIN: configpath is now=%s", glob.cpath); debugMain(almsg);
 #endif
 
 	/* Defaults, falls Single-TOS */
-	rs_trindex[MAINMENU][MCHANGEREZ].ob_state |= DISABLED;
-	rs_trindex[DAPPINFO][DAOSINGLE].ob_state |= DISABLED;
-	rs_trindex[DAPPINFO][DAOSINGLE].ob_flags &= ~SELECTABLE;
+	setObjectDisabled(rs_trindex[MAINMENU], MCHANGEREZ);
+	setObjectDisabled(rs_trindex[DAPPINFO], DAOSINGLE);
+	setObjectFlags(rs_trindex[DAPPINFO], DAOSINGLE, SELECTABLE, FALSE);
 
 	/* Wenn $RSMASTER gesetzt, ist Aufloesungswechsel moeglich */
 	tree = rs_trindex[MAINMENU];
 	if (getenv("RSMASTER") != NULL)
-		tree[MCHANGEREZ].ob_state &= ~DISABLED;
+		unsetObjectDisabled(tree, MCHANGEREZ);
 
 	/* Thing laeuft unter MultiTOS - dann geht auf jeden Fall ARGV */
 	if (tb.sys & SY_MTOS)
 		glob.argv = 1;
 
-	/* Thing lauuft unter MagiC */
-#ifndef _NAES
+	/* Thing laeuft unter MagiC */
 	if (tb.sys & SY_MAGX) {
 		/* Wenn Shutdown vorhanden ist, dann geht sicher auch ARGV */
 		if (tb.sys & SY_SHUT)
@@ -745,14 +722,13 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 		/* ... und als Shell */
 		if (tb.sys & SY_MSHELL) {
 			/* Aufloesungswechsel moeglich */
-			tree[MCHANGEREZ].ob_state &= ~DISABLED;
+			unsetObjectDisabled(tree, MCHANGEREZ);
 
 			/* Single-Mode moeglich */
-			rs_trindex[DAPPINFO][DAOSINGLE].ob_state &= ~DISABLED;
-			rs_trindex[DAPPINFO][DAOSINGLE].ob_flags |= SELECTABLE;
+			unsetObjectDisabled(rs_trindex[DAPPINFO], DAOSINGLE);
+			setObjectFlags(rs_trindex[DAPPINFO], DAOSINGLE, SELECTABLE, TRUE);
 
-			/* Falls Thing unter MagiC 2 laeuft, dann Menuepunkt 'Quit'
-			 rausschmeissen */
+			/* Falls Thing unter MagiC 2 laeuft, dann Menuepunkt 'Quit' rausschmeissen */
 			if (!(tb.sys & SY_SHUT)) {
 				tree[MQUIT].ob_state |= DISABLED;
 				tree[MQUIT - 2].ob_next = MTFILE;
@@ -760,40 +736,34 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 				tree[MTFILE].ob_tail = MQUIT - 2;
 				tree[MTFILE].ob_height -= (tb.ch_h * 2);
 			} else {
-				/* Unter MagiC 3 'Ausschalten' statt Quit */
+				/* Unter MagiC 3 'Ausschalten' statt 'Quit' */
 				tree[MQUIT].ob_spec.free_string = rs_frstr[TXMSHUT];
 			}
 		}
-		/* !!! ist zu Åberlegen
-		 else
-		 tree[MCHANGEREZ].ob_state |= DISABLED;
-		 */
 	}
-#endif /* _NAES */
 
+#if 0
 	/* Multitasking allgemein */
 	if (tb.sys & SY_MULTI) {
-#if 0
 		/* Keine Auslagerung von Thing beim Programmstart, wenn nicht MagiC */
-		if (!(tb.sys & SY_MAGX))
-		{
-			rs_trindex[CONFIG][COEXIT].ob_state|=DISABLED;
-			rs_trindex[CONFIG][COEXIT].ob_flags&=~SELECTABLE;
-			rs_trindex[DAPPINFO][DAOOVERLAY].ob_state|=DISABLED;
-			rs_trindex[DAPPINFO][DAOOVERLAY].ob_flags&=~SELECTABLE;
+		if (!(tb.sys & SY_MAGX)) {
+			rs_trindex[CONFIG][COEXIT].ob_state |= DISABLED;
+			rs_trindex[CONFIG][COEXIT].ob_flags &= ~SELECTABLE;
+			rs_trindex[DAPPINFO][DAOOVERLAY].ob_state |= DISABLED;
+			rs_trindex[DAPPINFO][DAOOVERLAY].ob_flags &= ~SELECTABLE;
 		}
-#endif
 	}
+#endif
 
 	/* Falls mehr als zwei Farben, dann Slider im 'Wait'-Dialog
 	 und 'Laufwerks-Info' auf Farbe 2 (Rot) setzen */
 	if (tb.planes > 1) {
-		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.fillpattern = 7;
-		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.interiorcol = 2;
-		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.fillpattern = 7;
-		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.interiorcol = 2;
-		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.fillpattern = 7;
-		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.interiorcol = 2;
+		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.fillpattern = IP_SOLID;
+		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.interiorcol = RED;
+		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.fillpattern = IP_SOLID;
+		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.interiorcol = RED;
+		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.fillpattern = IP_SOLID;
+		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.interiorcol = RED;
 	}
 
 	/* Default-Parameter fuer Kobold */
@@ -805,13 +775,13 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	/* AV-Protokoll initialisieren */
 	if (!av_init())
-		return 0;
+		return (FALSE);
 
 	/* DTA setzen */
 	Fsetdta(&glob.dta);
 
 #ifdef _DEBUG
-	main_debug("MAIN: DTA active");
+	debugMain("MAIN: DTA active");
 #endif
 
 	/* Externe Resourcen fuer die Icons laden */
@@ -819,7 +789,7 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	strcat(name, FNAME_RSC);
 	if (!rsc_load(name, &glob.rinfo)) {
 		frm_alert(1, rs_frstr[ALNORSC], altitle, conf.wdial, 0L);
-		return 0;
+		return (FALSE);
 	} else {
 		rsc_gaddr(R_TREE, 0, &glob.rtree, &glob.rinfo);
 		rs_fix(glob.rtree, rcw, rch);
@@ -913,8 +883,7 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	fi_hotkeys.init = di_hotkeys;
 	fi_hotkeys.exit = de_hotkeys;
 
-	/* Im Dialog "Schriftart" User-Objekt zur Anzeige der Schriftart
-	 einbinden */
+	/* Im Dialog "Schriftart" User-Objekt zur Anzeige der Schriftart einbinden */
 	rs_trindex[FONT][FOSAMPLE].ob_type = G_USERDEF;
 	rs_trindex[FONT][FOSAMPLE].ob_spec.userblk = &usr_fontsample;
 
@@ -937,22 +906,24 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	/* Im Dialog "Formatieren" Standardeinstellungen setzen */
 	tree = rs_trindex[FORMAT];
-	tree[FMDRIVEA].ob_state |= SELECTED;
-	tree[FMDRIVEB].ob_state &= ~SELECTED;
-	tree[FMFORMDD].ob_state |= SELECTED;
-	tree[FMFORMHD].ob_state &= ~SELECTED;
-	strcpy(tree[FMNAME].ob_spec.tedinfo->te_ptext, "");
-	tree[FMQUICK].ob_state &= ~SELECTED;
+	setObjectSelected(tree, FMDRIVEA);
+	unsetObjectSelected(tree, FMDRIVEB);
+	setObjectSelected(tree, FMFORMDD);
+	unsetObjectSelected(tree, FMFORMHD);
+	setObjectText(tree, FMNAME, "");
+	unsetObjectSelected(tree, FMQUICK);
 
 	/* Alle aktuellen Gruppen- und Usernamen ermitteln */
-	glob.usernames = glob.groupnames = last = 0L;
+	glob.usernames =
+	glob.groupnames =
+	last = 0L;
 	setpwent();
 	while ((pwd = getpwent()) != NULL) {
 		if (strlen(pwd->pw_name) <= 8) {
 			new = pmalloc(sizeof(UGNAME));
 			if (new == NULL) {
 				frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-				return (0);
+				return (FALSE);
 			}
 
 			new->next = NULL;
@@ -975,8 +946,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 		if (strlen(grp->gr_name) <= 8) {
 			new = pmalloc(sizeof(UGNAME));
 			if (new == NULL) {
-				frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
-				return(0);
+				frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+				return (0);
 			}
 			new->next = NULL;
 			strcpy(new->name, grp->gr_name);
@@ -992,18 +963,18 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	endgrent();
 
 #ifdef _DEBUG
-	main_debug("MAIN: initializing desktop and color icons...");
+	debugMain("MAIN: initializing desktop and color icons...");
 #endif
 
 	desk.wicon = pmalloc(sizeof(WICON)*(long)(MAXICON + 1));
 	if(!desk.wicon) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (FALSE);
 	}
-	desk.dicon=pmalloc(sizeof(ICONDESK)*(long)(MAXICON + 1));
+	desk.dicon = pmalloc(sizeof(ICONDESK)*(long)(MAXICON + 1));
 	if (!desk.dicon) {
-		frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
-		return 0;
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		return (FALSE);
 	}
 
 	/* Desktop initialisieren */
@@ -1015,8 +986,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	/* Speicher Laufwerksicons reservieren */
 	drive = pmalloc(sizeof(D_DRIVE)*MAXDRIVES);
 	if (!drive) {
-		frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
-		return 0;
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		return (FALSE);
 	}
 
 	/* ... und mit desk... verbinden */
@@ -1044,7 +1015,7 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	q->spec.clip = pmalloc(sizeof(D_CLIP));
 	if (!q->spec.clip) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (FALSE);
 	}
 	/* Aktuellen Clipboard-Pfad abfragen */
 	p = q->spec.clip->path;
@@ -1053,7 +1024,8 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 		/* Eventuell CLIPBRD? */
 		sp = getenv("CLIPBRD");
-		if(sp) sp=getenv("SCRAPDIR"); /* Eventuell SCRAPDIR? */
+		if(sp)
+			sp = getenv("SCRAPDIR"); /* Eventuell SCRAPDIR? */
 
 		/* Nichts dergleichen ... */
 		if(sp) {
@@ -1076,7 +1048,7 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	icon_update(0);
 
 #ifdef _DEBUG
-	main_debug("MAIN: desktop and color icons active");
+	debugMain("MAIN: desktop and color icons active");
 #endif
 
 	/* Standard-Konfiguration */
@@ -1190,37 +1162,28 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 	if (!conf_load())
 		icon_update(0);
 	dl_drives(0, 1, 0);
-#ifdef DIRCH
 	if (tb.use3d == 0)
 		set3dLook(FALSE);
 	else
 		setShortcutLineColor(RED);
-#endif
 
 	/* Userdefs erzeugen */
 	if (conf.userdef) {
 		for (i = 0; i < rinfo.rsc_file->rsh_ntree; i++) {
-#ifdef DIRCH
 			if (i != MAINMENU)
 				setUserdefs(rs_trindex[i], FALSE);
 			else if (conf.nicelines)
 				setUserdefs(rs_trindex[i], TRUE);
-#else
-			if ((i != MAINMENU) || conf.nicelines)
-				rs_user(rs_trindex[i]);
-#endif
 			adjust_text(tb.use3d, getBackgroundColor(), -1);
 		}
 	}
-#ifdef DIRCH 
 	setBackgroundBorder(FALSE);
-#endif
 
 	/* Dialogboxen zentrieren */
-	for(i = 0; i < rinfo.rsc_file->rsh_ntree; i++) {
+	for (i = 0; i < rinfo.rsc_file->rsh_ntree; i++) {
 		/* Desktop-Workaround wg. MultiDialog */
 		if ((i != MAINMENU) && (i != DESKTOP))
-			form_center(rs_trindex[i],&x,&y,&w,&h);
+			form_center(rs_trindex[i], &x, &y, &w, &h);
 	}
 
 	/* Und weitere Initialisierungen */
@@ -1231,148 +1194,150 @@ LOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	/* Bei Alice anmelden */
 	glob.alice = 0L;
-	if (getcookie('ALIC', (long *)&glob.alice)) {
+	if (getCookie('ALIC', (long *)&glob.alice)) {
 		if (glob.alice->magic == 'ALIC')
-				glob.alice->redraw_ap_id = tb.app_id;
+			glob.alice->redraw_ap_id = tb.app_id;
 	}
 
 #ifdef _DEBUG
-		main_debug("MAIN: Alice-Support active");
+	debugMain("MAIN: Alice-Support active");
 #endif
 
-		/* Installierte GDOS-Fonts eintragen */
-		gdos.numfonts=tb.numfonts;
+	/* Installierte GDOS-Fonts eintragen */
+	gdos.numfonts=tb.numfonts;
 
 #ifdef _DEBUG
-		main_debug("MAIN: getting GDOS fonts ...");
+	debugMain("MAIN: getting GDOS fonts ...");
 #endif
 
-		/* Font-Listen initialisieren */
-		gdos.fontlist = pmalloc((long)(34L * gdos.numfonts));
-		gdos.fontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
-		gdos.mfontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
-		gdos.fontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
-		gdos.mfontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
+	/* Font-Listen initialisieren */
+	gdos.fontlist = pmalloc((long)(34L * gdos.numfonts));
+	gdos.fontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
+	gdos.mfontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
+	gdos.fontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
+	gdos.mfontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
+	if (!gdos.fontlist || !gdos.fontname || !gdos.fontid || !gdos.mfontname || !gdos.mfontid) {
+		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+		return (0);
+	}
 
-		if(!gdos.fontlist || !gdos.fontname || !gdos.fontid || !gdos.mfontname || !gdos.mfontid) {
-			frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-			return 0;
-		}
-
-		/* Fonts abfragen */
-		gdos.mnumfonts=0;
-		for (i = 0; i < gdos.numfonts; i++) {
-			gdos.fontname[i] = &gdos.fontlist[i * 34L];
-			gdos.fontid[i * 2L] = vqt_name(tb.vdi_handle, i + 1, gdos.fontname[i]);
-			gdos.fontid[i *2L + 1] = i + 1;
-		}
-		/* Liste nach Namen sortieren */
-		for (i=0;i<gdos.numfonts;i++) {
-			for(j=i;j<gdos.numfonts;j++) {
-				if(stricmp(gdos.fontname[i],gdos.fontname[j])>0) {
-					p=gdos.fontname[i];
-					gdos.fontname[i]=gdos.fontname[j];gdos.fontname[j]=p;
-					l=gdos.fontid[i*2L];
-					gdos.fontid[i*2L]=gdos.fontid[j*2L];gdos.fontid[j*2L]=l;
-					l=gdos.fontid[i*2L+1];
-					gdos.fontid[i*2L+1]=gdos.fontid[j*2L+1];gdos.fontid[j*2L+1]=l;
-				}
+	/* Fonts abfragen */
+	gdos.mnumfonts = 0;
+	for (i = 0; i < gdos.numfonts; i++) {
+		gdos.fontname[i] = &gdos.fontlist[i * 34L];
+		gdos.fontid[i * 2L] = vqt_name(tb.vdi_handle, i + 1, gdos.fontname[i]);
+		gdos.fontid[i *2L + 1] = i + 1;
+	}
+	/* Liste nach Namen sortieren */
+	for (i = 0; i < gdos.numfonts; i++) {
+		for (j = i; j < gdos.numfonts; j++) {
+			if (stricmp(gdos.fontname[i], gdos.fontname[j]) > 0) {
+				p = gdos.fontname[i];
+				gdos.fontname[i] = gdos.fontname[j];
+				gdos.fontname[j] = p;
+				l = gdos.fontid[i * 2L];
+				gdos.fontid[i * 2L] = gdos.fontid[j * 2L];
+				gdos.fontid[j * 2L] = l;
+				l = gdos.fontid[i * 2L + 1];
+				gdos.fontid[i * 2L + 1] = gdos.fontid[j * 2L + 1];
+				gdos.fontid[j * 2L + 1] = l;
 			}
 		}
+	}
 
 #ifdef _DEBUG
-		main_debug("MAIN: GDOS fonts active");
+	debugMain("MAIN: GDOS fonts active");
 #endif
 
-		/* PrÅfen, ob der Font fÅr Verzeichnisse verfÅgbar ist */
-		fok=0;
-		for(i=0;i<gdos.numfonts;i++)
-			if(gdos.fontid[i*2L]==conf.font.id)
-				fok=1;
-		if(!fok) /* Zeichensatz nicht verfÅgbar ... */
-		{
-			conf.font.id=vqt_name(tb.vdi_handle,1,tbuf);
-			if(tb.ch_h==8)
-				conf.font.size=9;
-			else
-				conf.font.size=10;
-			frm_alert(1,rs_frstr[ALNOPFONT],altitle,conf.wdial,0L);
-		}
-
-		/* PrÅfen, ob der Font fÅr das Console-Fenster verfÅgbar ist */
-		fok=0;
-		for(i=0;i<gdos.numfonts;i++) if(gdos.fontid[i*2L]==con.font.id) fok=1;
-		if(!fok) /* Zeichensatz nicht verfÅgbar ... */
-		{
-			con.font.id=vqt_name(tb.vdi_handle,1,tbuf);
-			if(tb.ch_h==8)
-				con.font.size=9;
-			else
-				con.font.size=10;
-			frm_alert(1,rs_frstr[ALNOCFONT],altitle,conf.wdial,0L);
-		}
-
-		/* MenÅ, Desktop, Maus */
-		menu_bar(rs_trindex[MAINMENU],1);
-		if (conf.imguse)
-			glob.img_ok = conf.imguse = desk_iload(&glob.img_info, conf.imgname, conf.imgpal, ALIMGERR);
+	/* PrÅfen, ob der Font fÅr Verzeichnisse verfÅgbar ist */
+	fok = 0;
+	for (i = 0; i < gdos.numfonts; i++) {
+		if (gdos.fontid[i * 2L] == conf.font.id)
+			fok = 1;
+	}
+	if (!fok) {
+		/* Zeichensatz nicht verfÅgbar ... */
+		conf.font.id = vqt_name(tb.vdi_handle, 1, tbuf);
+		if (tb.ch_h == 8)
+			conf.font.size = 9;
 		else
-		glob.img_ok = 0;
-		if (*conf.dirimg)
-			glob.dir_ok = desk_iload(&glob.dir_img, conf.dirimg, 0, ALDIRIMGERR);
-		wind_set(0,WF_NEWDESK,rs_trindex[DESKTOP],ROOT);
-		mn_update();
-		graf_mouse(ARROW,0L);
-		glob.menu=1;
-
-		/* Handler fÅr Modale Dialoge installieren, Teil 2 */
-		tb.modal_on=mn_disable;
-		tb.modal_off=mn_update;
-
-#ifdef _DEBUG
-		main_debug("MAIN: final startup (draw desktop, open windows etc.) ...");
-#endif
-
-		/* Desktop aufbauen, Fenster îffnen */
-		if(tb.sys&SY_MULTI) {
-			glob.initialisation = 1;
-			wind_restore(1);
-			glob.initialisation = 0;
-		} else {
-			openwin=glob.openwin;
-			glob.openwin=0L;
-		}
-
-		/* Autostart-Applikationen anwerfen */
-		rex=0;
-		if(!glob.tmp) {
-			aptr=desk.appl;
-			while(aptr) {
-				if(aptr->autostart)
-					app_start(aptr,"",0L,&rex);
-				aptr=aptr->next;
-			}
-		}
-
-		if(!(tb.sys&SY_MULTI)) {
-			glob.openwin=openwin;
-			glob.initialisation = 1;
-			wind_restore(!rex);
-			glob.initialisation = 0;
-		}
-
-#ifdef _DEBUG
-		main_debug("MAIN: ... final startup done");
-#endif
-
-		return 1; /* Rueckgabe: OK */
+			conf.font.size = 10;
+		frm_alert(1, rs_frstr[ALNOPFONT], altitle, conf.wdial, 0L);
 	}
 
-#define _str(x)		__str(x)
-#define __str(x)	#x
-#define LINOUT	Cconws(_str(__LINE__) "\r\n\n\n");
-#undef LINOUT
-#define LINOUT
+	/* PrÅfen, ob der Font fÅr das Console-Fenster verfÅgbar ist */
+	fok = 0;
+	for (i = 0; i < gdos.numfonts; i++) {
+		if (gdos.fontid[i * 2L] == con.font.id)
+			fok = 1;
+	}
+	if (!fok) {
+		/* Zeichensatz nicht verfÅgbar ... */
+		con.font.id = vqt_name(tb.vdi_handle, 1, tbuf);
+		if (tb.ch_h == 8)
+			con.font.size = 9;
+		else
+			con.font.size = 10;
+		frm_alert(1, rs_frstr[ALNOCFONT], altitle, conf.wdial, 0L);
+	}
+
+	/* MenÅ, Desktop, Maus */
+	menu_bar(rs_trindex[MAINMENU], 1);
+	if (conf.imguse)
+		glob.img_ok =
+		conf.imguse = desk_iload(&glob.img_info, conf.imgname, conf.imgpal, ALIMGERR);
+	else
+	glob.img_ok = 0;
+	if (*conf.dirimg)
+		glob.dir_ok = desk_iload(&glob.dir_img, conf.dirimg, 0, ALDIRIMGERR);
+
+	wind_set(0, WF_NEWDESK, rs_trindex[DESKTOP], ROOT);
+	mn_update();
+	graf_mouse(ARROW, 0L);
+	glob.menu = 1;
+
+	/* Handler fÅr Modale Dialoge installieren, Teil 2 */
+	tb.modal_on = mn_disable;
+	tb.modal_off = mn_update;
+
+#ifdef _DEBUG
+	debugMain("MAIN: final startup (draw desktop, open windows etc.) ...");
+#endif
+
+	/* Desktop aufbauen, Fenster îffnen */
+	if (tb.sys & SY_MULTI) {
+		glob.initialisation = 1;
+		wind_restore(1);
+		glob.initialisation = 0;
+	} else {
+		openwin = glob.openwin;
+		glob.openwin = 0L;
+	}
+
+	/* Autostart-Applikationen anwerfen */
+	rex = 0;
+	if (!glob.tmp) {
+		aptr = desk.appl;
+		while (aptr) {
+			if (aptr->autostart)
+				app_start(aptr, "", 0L, &rex);
+			aptr = aptr->next;
+		}
+	}
+
+	if (!(tb.sys & SY_MULTI)) {
+		glob.openwin = openwin;
+		glob.initialisation = 1;
+		wind_restore(!rex);
+		glob.initialisation = 0;
+	}
+
+#ifdef _DEBUG
+	debugMain("MAIN: ... final startup done");
+#endif
+
+	return (1); /* Rueckgabe: OK */
+}
 
 /**-------------------------------------------------------------------------
  main_exit()
@@ -1425,16 +1390,12 @@ LINOUT
 LINOUT
 	glob.closeall = 0;
 
-#ifdef DIRCH
 	/* Userdefs aus den Dialogen entfernen */
-	if(conf.userdef) {
+	if (conf.userdef) {
 LINOUT
-#if 0
-		for(i = 0; i < rinfo.rsc_file->rsh_ntree; i++)
-		remove_userdefs(rs_trindex[i]);
-#endif
+		for (i = 0; i < rinfo.rsc_file->rsh_ntree; i++)
+			unsetUserdefs(rs_trindex[i]);
 	}
-#endif
 
 	/* Bei Alice abmelden und angemeldete Fenster rauswerfen */
 LINOUT
@@ -1580,8 +1541,7 @@ void main_loop(void) {
 	int fid;
 	EVENT copy;
 
-	graf_mkstate(&mevent.ev_mm1x, &mevent.ev_mm1y, &mevent.ev_mmokstate,
-			&mevent.ev_mbreturn);
+	graf_mkstate(&mevent.ev_mm1x, &mevent.ev_mm1y, &mevent.ev_mmokstate, &mevent.ev_mbreturn);
 	clr_drv();
 	mn_update();
 
@@ -1692,181 +1652,162 @@ void main_loop(void) {
 
 			msg = mevent.ev_mmgpbuf;
 			switch (msg[0]) {
-
-				/* Freedom-Dateiauswahl */
-				case FILE_SELECTED:
-					fid = msg[3];
-					memcpy(&fpath, &msg[4], 4L);
-					memcpy(&fname, &msg[6], 4L);
-					if (fname != 0L) {
-						strcpy(full, fpath);
-						p = strrchr(full, '\\');
-						if (p)
-							strcpy(&p[1], fname);
-						else
-							strcat(full, fname);
-						p = strrchr(full, '\\');
-						if (!p)
-							p = full;
-						/* Je nach ID reagieren */
-						switch (fid) {
-							case 1: /* Datei - oeffnen */
-								if (p[1])
-									va_open(full);
-								else
-									wpath_open(full, "*", 0, "", conf.index.text, -1, conf.index.sortby);
-								break;
-						}
-					}
-					break;
-
-				/* Shutdown */
-				case AP_TERM:
-					/* Shutdown unter MagiC 3.x? */
-					if ((tb.sys & SY_MSHELL) && (msg[1] == -1))
-						dl_shutdown();
+			/* Freedom-Dateiauswahl */
+			case FILE_SELECTED:
+				fid = msg[3];
+				memcpy(&fpath, &msg[4], 4L);
+				memcpy(&fname, &msg[6], 4L);
+				if (fname != 0L) {
+					strcpy(full, fpath);
+					p = strrchr(full, '\\');
+					if (p)
+						strcpy(&p[1], fname);
 					else
-						glob.done = 2;
-					break;
-
-				/* Drag&Drop */
-				case AP_DRAGDROP:
-					handle_dd(msg);
-					break;
-
-				/* Verschiedenes */
-				case FONT_CHANGED:
-				case FONT_SELECT:
-					handle_fontmsg(msg);
-					break;
-
-				/* Messages des AV-Protokolls */
-				case AV_PROTOKOLL:
-					avs_protokoll(msg);
-					break;
-				case AV_GETSTATUS:
-					avs_getstatus(msg);
-					break;
-				case AV_STATUS:
-					avs_status(msg);
-					break;
-				case AV_SENDKEY:
-					avs_sendkey(msg);
-					break;
-				case AV_ASKFILEFONT:
-					avs_askfilefont(msg);
-					break;
-				case AV_ASKCONFONT:
-					avs_askconfont(msg);
-					break;
-				case AV_OPENWIND:
-					avs_openwind(msg);
-					break;
-				case AV_STARTPROG:
-					avs_startprog(msg);
-					break;
-				case AV_ACCWINDOPEN:
-					avs_accwindopen(msg);
-					break;
-				case AV_ACCWINDCLOSED:
-					avs_accwindclosed(msg);
-					break;
-				case AV_PATH_UPDATE:
-					avs_path_update(msg);
-					break;
-				case AV_COPY_DRAGGED:
-					avs_copy_dragged(msg);
-					break;
-				case AV_WHAT_IZIT:
-					avs_what_izit(msg);
-					break;
-				case AV_DRAG_ON_WINDOW:
-					avs_drag_on_window(msg);
-					break;
-				case AV_EXIT:
-					avs_exit(msg);
-					break;
-				case AV_XWIND:
-					avs_xwind(msg);
-					break;
-				case VA_START:
-					avs_vastart(msg);
-					break;
-				case AV_VIEW:
-					avs_view(msg);
-					break;
-				case AV_FILEINFO:
-					avs_fileinfo(msg);
-					break;
-				case AV_COPYFILE:
-					avs_copyfile(msg, 0);
-					break;
-				case AV_DELFILE:
-					avs_copyfile(msg, 1);
-					break;
-				case AV_SETWINDPOS:
-					break;
-
-				/* Menueauswahl */
-				case MN_SELECTED:
-					copy = mevent;
-					handle_menu(msg[3], msg[4], mevent.ev_mmokstate);
-					mevent = copy;
-					break;
-
-				/* Fensteraktionen */
-				case WM_ICONIFY:
-				case WM_UNICONIFY:
-				case WM_ALLICONIFY:
-				case WM_M_BDROPPED:
-				case WM_BOTTOMED:
-				case WM_UNTOPPED:
-				case WM_REDRAW:
-				case WM_NEWTOP:
-				case WM_ONTOP:
-				case WM_TOPPED:
-				case WM_CLOSED:
-				case WM_FULLED:
-				case WM_ARROWED:
-				case WM_HSLID:
-				case WM_VSLID:
-				case WM_SIZED:
-				case WM_MOVED:
-					handle_win(msg[3], msg[0], msg[4], msg[5], msg[6], msg[7], mevent.ev_mmokstate);
-					break;
-
-				/* Weitere Messages */
-				case 80: /* CH_EXIT bei Geneva *grummel* */
-					if (!(tb.sys & SY_GNVA))
+						strcat(full, fname);
+					p = strrchr(full, '\\');
+					if (!p)
+						p = full;
+					/* Je nach ID reagieren */
+					switch (fid) {
+					case 1: /* Datei - oeffnen */
+						if (p[1])
+							va_open(full);
+						else
+							wpath_open(full, "*", 0, "", conf.index.text, -1, conf.index.sortby);
 						break;
-					/* else Fall through */
-				case CH_EXIT: /* Programm wurde beendet */
-					if (conf.autoupdate) {
-						/* Verzeichnisse und Menues aktualisieren */
-						for (j = 0; j < 2; j++) {
-							for (i = 0; i < MAX_PWIN; i++) {
-								if (glob.win[i].state & WSOPEN) {
-									if (j == 0)
-										wpath_lfree(&glob.win[i]);
-									else {
-										wpath_update(&glob.win[i]);
-										win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
-									}
-								}
-							}
-						}
-						mn_update();
 					}
-					break;
+				}
+				break;
 
-				case SH_WDRAW: /* Unter Mag!X/MultiTOS: Inhalt eines Laufwerks wurde geaendert. */
-					for (i = 0; i < MAX_PWIN; i++) {
-						if (glob.win[i].state & WSOPEN) {
-							if (msg[3] == -1) {
-								wpath_update(&glob.win[i]);
-								win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
-							} else {
-								if (((W_PATH *) glob.win[i].user)->filesys.biosdev == msg[3]) {
+			/* Shutdown */
+			case AP_TERM:
+				/* Shutdown unter MagiC 3.x? */
+				if ((tb.sys & SY_MSHELL) && (msg[1] == -1))
+					dl_shutdown();
+				else
+					glob.done = 2;
+				break;
+
+			/* Drag&Drop */
+			case AP_DRAGDROP:
+				handle_dd(msg);
+				break;
+
+			/* Verschiedenes */
+			case FONT_CHANGED:
+			case FONT_SELECT:
+				handle_fontmsg(msg);
+				break;
+
+			/* Messages des AV-Protokolls */
+			case AV_PROTOKOLL:
+				avs_protokoll(msg);
+				break;
+			case AV_GETSTATUS:
+				avs_getstatus(msg);
+				break;
+			case AV_STATUS:
+				avs_status(msg);
+				break;
+			case AV_SENDKEY:
+				avs_sendkey(msg);
+				break;
+			case AV_ASKFILEFONT:
+				avs_askfilefont(msg);
+				break;
+			case AV_ASKCONFONT:
+				avs_askconfont(msg);
+				break;
+			case AV_OPENWIND:
+				avs_openwind(msg);
+				break;
+			case AV_STARTPROG:
+				avs_startprog(msg);
+				break;
+			case AV_ACCWINDOPEN:
+				avs_accwindopen(msg);
+				break;
+			case AV_ACCWINDCLOSED:
+				avs_accwindclosed(msg);
+				break;
+			case AV_PATH_UPDATE:
+				avs_path_update(msg);
+				break;
+			case AV_COPY_DRAGGED:
+				avs_copy_dragged(msg);
+				break;
+			case AV_WHAT_IZIT:
+				avs_what_izit(msg);
+				break;
+			case AV_DRAG_ON_WINDOW:
+				avs_drag_on_window(msg);
+				break;
+			case AV_EXIT:
+				avs_exit(msg);
+				break;
+			case AV_XWIND:
+				avs_xwind(msg);
+				break;
+			case VA_START:
+				avs_vastart(msg);
+				break;
+			case AV_VIEW:
+				avs_view(msg);
+				break;
+			case AV_FILEINFO:
+				avs_fileinfo(msg);
+				break;
+			case AV_COPYFILE:
+				avs_copyfile(msg, 0);
+				break;
+			case AV_DELFILE:
+				avs_copyfile(msg, 1);
+				break;
+			case AV_SETWINDPOS:
+				break;
+
+			/* Menueauswahl */
+			case MN_SELECTED:
+				copy = mevent;
+				handle_menu(msg[3], msg[4], mevent.ev_mmokstate);
+				mevent = copy;
+				break;
+
+			/* Fensteraktionen */
+			case WM_ICONIFY:
+			case WM_UNICONIFY:
+			case WM_ALLICONIFY:
+			case WM_M_BDROPPED:
+			case WM_BOTTOMED:
+			case WM_UNTOPPED:
+			case WM_REDRAW:
+			case WM_NEWTOP:
+			case WM_ONTOP:
+			case WM_TOPPED:
+			case WM_CLOSED:
+			case WM_FULLED:
+			case WM_ARROWED:
+			case WM_HSLID:
+			case WM_VSLID:
+			case WM_SIZED:
+			case WM_MOVED:
+				handle_win(msg[3], msg[0], msg[4], msg[5], msg[6], msg[7], mevent.ev_mmokstate);
+				break;
+
+			/* Weitere Messages */
+			case 80: /* CH_EXIT bei Geneva *grummel* */
+				if (!(tb.sys & SY_GNVA))
+					break;
+				/* else Fall through */
+			case CH_EXIT: /* Programm wurde beendet */
+				if (conf.autoupdate) {
+					/* Verzeichnisse und Menues aktualisieren */
+					for (j = 0; j < 2; j++) {
+						for (i = 0; i < MAX_PWIN; i++) {
+							if (glob.win[i].state & WSOPEN) {
+								if (j == 0) {
+									wpath_lfree(&glob.win[i]);
+								} else {
 									wpath_update(&glob.win[i]);
 									win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 								}
@@ -1874,17 +1815,35 @@ void main_loop(void) {
 						}
 					}
 					mn_update();
-					break;
+				}
+				break;
 
-				case THING_MSG: /* Thing-Command */
-					/* Job - nur wenn MagiC stimmt und Thing selber der Absender war */
-					if (msg[3] == TI_JOB && msg[5] == 0x4711 && msg[1] == tb.app_id)
-						handle_job(&mevent);
-					else {
-						tp_handle(&mevent);
-						mn_update();
+			case SH_WDRAW: /* Unter Mag!X/MultiTOS: Inhalt eines Laufwerks wurde geaendert. */
+				for (i = 0; i < MAX_PWIN; i++) {
+					if (glob.win[i].state & WSOPEN) {
+						if (msg[3] == -1) {
+							wpath_update(&glob.win[i]);
+							win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						} else {
+							if (((W_PATH *) glob.win[i].user)->filesys.biosdev == msg[3]) {
+								wpath_update(&glob.win[i]);
+								win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							}
+						}
 					}
-					break;
+				}
+				mn_update();
+				break;
+
+			case THING_MSG: /* Thing-Command */
+				/* Job - nur wenn MagiC stimmt und Thing selber der Absender war */
+				if (msg[3] == TI_JOB && msg[5] == 0x4711 && msg[1] == tb.app_id) {
+					handle_job(&mevent);
+				} else {
+					tp_handle(&mevent);
+					mn_update();
+				}
+				break;
 			}
 		}
 
@@ -1918,16 +1877,14 @@ void main_loop(void) {
 
 			/* Maustaste */
 			if (mevent.ev_mwich & MU_BUTTON)
-				handle_button(mevent.ev_mmox, mevent.ev_mmoy,
-						mevent.ev_mmobutton, mevent.ev_mmokstate,
-						mevent.ev_mbreturn);
+				handle_button(mevent.ev_mmox, mevent.ev_mmoy, mevent.ev_mmobutton, mevent.ev_mmokstate, mevent.ev_mbreturn);
 		}
 
 		/* Falls Cursor-Fenster nicht mehr aktiv, aber ein Anderes von
 		 Thing, dann den Cursor ebenfalls deaktivieren */
-		if (glob.fmode && tb.topwin && glob.fwin != tb.topwin)
+		if (glob.fmode && tb.topwin && glob.fwin != tb.topwin) {
 			wf_clear();
-		else {
+		} else {
 			/* Andernfalls den Cursor wieder einschalten, falls er vorher
 			 vor der Event-Behandlung ausgeschaltet wurde */
 			if (glob.fmode && fdraw) {
@@ -1938,28 +1895,6 @@ void main_loop(void) {
 	}
 }
 
-#ifdef _DEBUG
-
-/**-------------------------------------------------------------------------
- Debug-Protokoll ausgeben
- -------------------------------------------------------------------------*/
-void main_debug(char *txt) {
-	FILE *fh;
-
-	if (glob.debug_level > 0) {
-		fh = fopen(glob.debug_name, "a");
-		if (fh) {
-			fprintf(fh, "%s\n", txt);
-			fclose(fh);
-		} else {
-			sprintf(almsg, "[3][Failed to create file|%s|debug disabled][ OK ]",
-					glob.debug_name);
-			form_alert(1,almsg);
-		}
-	}
-}
-#endif
-
 /**-------------------------------------------------------------------------
  Programmstart
  -------------------------------------------------------------------------*/
@@ -1968,15 +1903,15 @@ int main(void) {
 
 	ret = main_init();
 	if (ret) {
-LOG((0, "main: Initialisation complete - entering main_loop()\n"));
+DEBUGLOG((0, "main: Initialisation complete - entering main_loop()\n"));
 		main_loop();
-LOG((0, "main: Exit from main_loop() - cleaning up ..."));
+DEBUGLOG((0, "main: Exit from main_loop() - cleaning up..."));
 		main_exit();
-LOG((0, "done\n"));
-		return 0;
+DEBUGLOG((0, "done.\n"));
+		return (0);
 	} else {
 		main_exit();
-		return 10;
+		return (10);
 	}
 }
 

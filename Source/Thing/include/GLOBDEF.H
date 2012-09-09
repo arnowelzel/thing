@@ -29,7 +29,6 @@
  =========================================================================*/
 
 /* #define _DEBUG 1 */
-/* #define _NAES 1 */
 
 #include <portab.h>
 
@@ -40,7 +39,6 @@
 #include <stdlib.h>
 
 #include <tos.h>
-#include "..\include\tosext.h"
 
 #ifdef __MINT__
 #include <support.h>
@@ -71,7 +69,10 @@
 #include <dudolib.h>
 #include <thingimg.h>
 
-#define	UNUSED(x)	(void)(x)
+/*------------------------------------------------------------------*/
+/*  global definitions                                              */
+/*------------------------------------------------------------------*/
+#define STGUIDEHELPFILE "thing.hyp"
 
 /* Anzahl der Objektbaeume in der Hauptresource */
 #define NUM_TREE 52
@@ -101,6 +102,9 @@
 #define FNAME_IMG "thingimg.ovl"	/* Externes ThingImg-Programm */
 #define FNAME_SND "sendto.grp"		/* Gruppe fuer "Senden an" */
 #define FNAME_PAL "icons.pal"		/* Palette fuer die Icons */
+#define PNAME_RSC "rsrc"			/* Resourcen */
+#define PNAME_CON "config"			/* Konfiguration */
+#define PNAME_DOC "doc"				/* Hypertexte */
 
 #define MAX_PWIN  16				/* Anzahl Verzeichnisfenster maximal */
 #define MAX_PLEN 513				/* Maximale Pfadlaenge (mit Nullbyte) */
@@ -669,8 +673,8 @@ typedef struct {
 	char tobj[10][MAX_PLEN]; /* Toolmenue - Objekte */
 	char ttxt[10][18]; /* Toolmenue - Texte */
 	int clickms; /* Zeitspanne fuer Verzoegerung bei Mausklicks, bevor
-	 der Status nochmal abgefragt wird um Drag&Drop oder
-	 Gummiband zu aktivieren */
+					der Status nochmal abgefragt wird um Drag&Drop oder
+					Gummiband zu aktivieren */
 	int scroll; /* Faktor fuer Echtzeitscrolling */
 	int isnap; /* Icons auf dem Desktop einrasten */
 	int snapx, snapy; /* Raster X/Y */
@@ -748,6 +752,7 @@ typedef struct {
  -------------------------------------------------------------------------*/
 /* Voreinstellung */
 typedef struct {
+	CARD *configCard;
 	int mode;
 	int imguse, imgcenter, imgpal, imgtrans;
 	char imgname[MAX_PLEN];
@@ -770,6 +775,7 @@ typedef struct {
 
 /* Applikations-Info */
 typedef struct {
+	CARD *appInfoCard;
 	APPLINFO *appl;
 	int mode;
 	char apname[MAX_PLEN], aparam[MAX_PLEN];
@@ -813,7 +819,7 @@ typedef struct {
 
 /* Eintrag fuer DCOPY.stack */
 typedef struct dstk {
-	int class; /* 0=Datei, 1=Ordner */
+	int class; /* 0 = Datei, 1 = Ordner */
 	char *src; /* Quelle */
 	char *dst; /* Ziel */
 	struct dstk *prev, *next; /* Verkettung */
@@ -890,8 +896,9 @@ extern char **rs_frstr;
 extern long cdecl(*call_thingimg)
 (long magic, int what, THINGIMG *img_info);
 
+#if 0
 extern int is_wild[];
-
+#endif
 extern int (*strcompare)(const char *, const char *);
 
 #endif

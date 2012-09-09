@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include <setjmp.h>
 #include "..\include\dragdrop.h"
@@ -41,11 +42,11 @@ static void cdecl handle_sigbus(long signo);
 /* Lokale Variablen */
 jmp_buf check;
 
-/**-------------------------------------------------------------------------
- av_init()
-
- Buffer etc. initialisieren
- -------------------------------------------------------------------------*/
+/**
+ * Buffer etc. initialisieren
+ *
+ * @return
+ */
 int av_init(void) {
 	/* Speicher reservieren */
 	if (tb.sys & SY_XALLOC)
@@ -56,24 +57,22 @@ int av_init(void) {
 	/* Bei Fehler raus */
 	if (!aesbuf) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0;
+		return (FALSE);
 	}
-	aesapname = &aesbuf[MAX_AVLEN];
 
 	/* Sonst initialisieren */
+	aesapname = &aesbuf[MAX_AVLEN];
 	strcpy(aesapname, "THING   ");
 
-	return 1;
+	return (TRUE);
 }
 
-/**-------------------------------------------------------------------------
- av_exit()
-
- Speicher etc. wieder freigeben
- -------------------------------------------------------------------------*/
+/**
+ * Speicher etc. wieder freigeben
+ */
 void av_exit(void) {
 	if (aesbuf)
-		Mfree( aesbuf);
+		Mfree(aesbuf);
 }
 
 /**-------------------------------------------------------------------------
@@ -95,45 +94,47 @@ void avs_protokoll(int *msgbuf) {
 		return;
 
 	avinfo = avp_get(msgbuf[1]); /* Hat diese App schon mal angefragt? */
-	if (!avinfo) /* Nein */
-	{
-		/* Applikation merken */
+	if (!avinfo) {
+		/* Nein - Applikation merken */
 		avinfo = avp_add(name, msgbuf[1], msgbuf[3]);
 	} else
 		strcpy(avinfo->name, name);
 
 	/* Abfrage der unterstuetzten AV-Nachrichten */
 	/* Unterstuetzung von:
-	 0x0001 + AV_SENDKEY
-	 0x0002 + AV_ASKFILEFONT
-	 0x0004 + AV_ASKCONFONT, AV_OPENCONSOLE
-	 0x0008   AV_ASKOBJECT
-	 0x0010 + AV_OPENWIND
-	 0x0020 + AV_STARTPROG
-	 0x0040 + AV_ACCWINDOPEN, AV_ACCWINDCLOSED
-	 0x0080 + AV_STATUS, AV_GETSTATUS - nur wenn Anmeldung geklappt hat
-	 0x0100 + AV_COPY_DRAGGED
-	 0x0200 + AV_PATH_UPDATE, AV_WHAT_IZIT, AV_DRAG_ON_WINDOW
-	 0x0400 + AV_EXIT
-	 0x0800 + AV_XWIND
-	 0x1000 + VA_FONTCHANGED - nur wenn Anmeldung geklappt hat
-	 0x2000 + AV_STARTED
-	 0x4000 + Quoting
-	 0x8000 + AV_FILEINFO, VA_FILECHANGED
-	 0x0001 + AV_COPYFILE, VA_FILECOPIED
-	 0x0002 + AV_DELFILE, VA_FILEDELETED
-	 0x0004 + AV_VIEW, VA_VIEWED
-	 0x0008   AV_SETWINDPOS */
+	 *   0x0001 + AV_SENDKEY
+	 *   0x0002 + AV_ASKFILEFONT
+	 *   0x0004 + AV_ASKCONFONT, AV_OPENCONSOLE
+	 *   0x0008   AV_ASKOBJECT
+	 *   0x0010 + AV_OPENWIND
+	 *   0x0020 + AV_STARTPROG
+	 *   0x0040 + AV_ACCWINDOPEN, AV_ACCWINDCLOSED
+	 *   0x0080 + AV_STATUS, AV_GETSTATUS - nur wenn Anmeldung geklappt hat
+	 *   0x0100 + AV_COPY_DRAGGED
+	 *   0x0200 + AV_PATH_UPDATE, AV_WHAT_IZIT, AV_DRAG_ON_WINDOW
+	 *   0x0400 + AV_EXIT
+	 *   0x0800 + AV_XWIND
+	 *   0x1000 + VA_FONTCHANGED - nur wenn Anmeldung geklappt hat
+	 *   0x2000 + AV_STARTED
+	 *   0x4000 + Quoting
+	 *   0x8000 + AV_FILEINFO, VA_FILECHANGED
+	 *   0x0001 + AV_COPYFILE, VA_FILECOPIED
+	 *   0x0002 + AV_DELFILE, VA_FILEDELETED
+	 *   0x0004 + AV_VIEW, VA_VIEWED
+	 *   0x0008   AV_SETWINDPOS
+	 */
 	ability = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020 | 0x0040 | 0x0100
 			| 0x0200 | 0x0400 | 0x0800 | 0x2000 | 0x4000 | 0x8000;
 	if (avinfo)
 		ability |= 0x0080 | 0x1000;
-	app_send(msgbuf[1], VA_PROTOSTATUS, PT67, ability, 0x1 | 0x2 | 0x4, 0,
-			(long) aesapname, 0);
+
+	appl_send(msgbuf[1], VA_PROTOSTATUS, PT67, ability, 0x1 | 0x2 | 0x4, 0, (long) aesapname, 0);
 }
 
 /**
- *  AV_GETSTATUS
+ *
+ *
+ * @param *msgbuf
  */
 void avs_getstatus(int *msgbuf) {
 	AVINFO *avinfo;
@@ -154,12 +155,13 @@ void avs_getstatus(int *msgbuf) {
 	if (state)
 		strcpy(aesbuf, state);
 
-	app_send(msgbuf[1], VA_SETSTATUS, PT34, state ? (long) aesbuf : 0L, 0, 0,
-			0, 0);
+	appl_send(msgbuf[1], VA_SETSTATUS, PT34, state ? (long) aesbuf : 0L, 0, 0, 0, 0);
 }
 
 /**
- *  AV_STATUS
+ *
+ *
+ * @param *msgbuf
  */
 void avs_status(int *msgbuf) {
 	AVINFO *avinfo;
@@ -169,9 +171,8 @@ void avs_status(int *msgbuf) {
 	state = (char *) int2long(&msgbuf[3], &msgbuf[4]);
 	if (!avp_checkbuf(msgbuf[1], AV_STATUS, "AV_STATUS", state, 0))
 		return;
-	if (avinfo && state) {
+	if (avinfo && state)
 		astate_add(avinfo->name, state);
-	}
 }
 
 /**
@@ -192,7 +193,7 @@ void avs_askfilefont(int *msgbuf) {
 	if (aptr)
 		aptr->state |= 0x0008;
 
-	app_send(msgbuf[1], VA_FILEFONT, 0, conf.font.id, conf.font.size, 0, 0, 0);
+	appl_send(msgbuf[1], VA_FILEFONT, 0, conf.font.id, conf.font.size, 0, 0, 0);
 }
 
 /* AV_ASKCONFONT */
@@ -204,7 +205,7 @@ void avs_askconfont(int *msgbuf) {
 	if (aptr)
 		aptr->state |= 0x0008;
 
-	app_send(msgbuf[1], VA_CONFONT, 0, con.font.id, con.font.size, 0, 0, 0);
+	appl_send(msgbuf[1], VA_CONFONT, 0, con.font.id, con.font.size, 0, 0, 0);
 }
 
 /* AV_OPENWIND */
@@ -225,7 +226,7 @@ void avs_openwind(int *msgbuf) {
 	if (!strcmp(wildcard, "*.*"))
 		wildcard = "*";
 	ret = wpath_open(path, wildcard, 0, 0L, conf.index.text, -1, conf.index.sortby);
-	app_send(msgbuf[1], VA_WINDOPEN, 0, ret, 0, 0, 0, 0);
+	appl_send(msgbuf[1], VA_WINDOPEN, 0, ret, 0, 0, 0, 0);
 
 	mn_check();
 	mn_update();
@@ -258,7 +259,7 @@ void avs_startprog(int *msgbuf) {
 			quote(tmp);
 
 			if (cmd) {
-				/* L„nge insgesamt ok? */
+				/* Laenge insgesamt ok? */
 				l = (int) strlen(tmp) + (int) strlen(cmd) + 2;
 				if (l < MAX_AVLEN) {
 					strcat(tmp, " ");
@@ -275,7 +276,7 @@ void avs_startprog(int *msgbuf) {
 	} else
 		ret = 0;
 
-	app_send(msgbuf[1], VA_PROGSTART, 0, ret, 0, 0, 0, magic);
+	appl_send(msgbuf[1], VA_PROGSTART, 0, ret, 0, 0, 0, magic);
 
 	mn_check();
 	mn_update();
@@ -322,8 +323,7 @@ void avs_path_update(int *msgbuf) {
 			if (!strncmp(path, wpath->path, (long) l)) {
 				wpath->offx = wpath->offy = 0;
 				wpath_update(&glob.win[i]);
-				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w,
-						tb.desk.h);
+				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 			}
 		}
 	}
@@ -351,7 +351,7 @@ void avs_copy_dragged(int *msgbuf) {
 		strcat(lpath, "\\");
 	ret = dl_copy(lpath, ks, aesbuf);
 
-	app_send(id, VA_COPY_COMPLETE, 0, ret, 0, 0, 0, 0);
+	appl_send(id, VA_COPY_COMPLETE, 0, ret, 0, 0, 0, 0);
 
 	mn_check();
 	mn_update();
@@ -382,22 +382,21 @@ void avs_what_izit(int *msgbuf) {
 		if (win) /* Thing-Fenster */
 		{
 			aesmsg[4] = VA_OB_WINDOW;
-			switch (win->class) /* Je nach Art des Fensters */
-			{
-				case WCPATH: /* Verzeichnisfenster */
+			/* Je nach Art des Fensters */
+			switch (win->class) {
+			case WCPATH: /* Verzeichnisfenster */
 				/* Objekt innerhalb des Fensters ? */
 				item = wpath_efind(win, msgbuf[3], msgbuf[4]);
-				if (item) /* Ja */
-				{
+				if (item) {
+					/* Ja */
 					strcpy(aesbuf, ((W_PATH *)win->user)->path);
-					switch (item->class)
-					{
-						case EC_FILE:
+					switch (item->class) {
+					case EC_FILE:
 						strcat(aesbuf, item->name);
 						aesmsg[4] = VA_OB_FILE;
 						break;
-						case EC_FOLDER:
-						case EC_PARENT:
+					case EC_FOLDER:
+					case EC_PARENT:
 						aesmsg[4] = VA_OB_FOLDER;
 						if (item->class == EC_PARENT) {
 							l = (int)strlen(aesbuf) - 2;
@@ -417,7 +416,7 @@ void avs_what_izit(int *msgbuf) {
 					strcpy(aesbuf, ((W_PATH *)win->user)->path);
 				}
 				break;
-				case WCGROUP: /* Gruppenfenster */
+			case WCGROUP: /* Gruppenfenster */
 				/* Objekt innerhalb des Fensters ? */
 				gitem = wgrp_efind(win, msgbuf[3], msgbuf[4], &gprev);
 				if (gitem) /* Ja */
@@ -438,9 +437,10 @@ void avs_what_izit(int *msgbuf) {
 					strcpy(aesbuf, ((W_GRP *)win->user)->name);
 				}
 				break;
-				case WCDIAL: /* Dialog */
+			case WCDIAL: /* Dialog */
 				break;
-				default: /* Sonstiges, Console */
+
+			default: /* Sonstiges, Console */
 				aesmsg[4] = VA_OB_UNKNOWN;
 				aesmsg[5] =
 				aesmsg[6] = 0;
@@ -470,22 +470,22 @@ void avs_what_izit(int *msgbuf) {
 			ICONDESK *p = desk.dicon + obj;
 
 			switch (p->class) {
-				case IDTRASH:
+			case IDTRASH:
 				aesmsg[4] = VA_OB_SHREDDER;
 				break;
-				case IDCLIP:
+			case IDCLIP:
 				aesmsg[4] = VA_OB_CLIPBOARD;
 				strcpy(aesbuf, p->spec.clip->path);
 				break;
-				case IDFILE:
+			case IDFILE:
 				aesmsg[4] = VA_OB_FILE;
 				strcat(aesbuf, p->spec.file->name);
 				break;
-				case IDFOLDER:
+			case IDFOLDER:
 				aesmsg[4] = VA_OB_FOLDER;
 				strcpy(aesbuf, p->spec.folder->path);
 				break;
-				case IDDRIVE:
+			case IDDRIVE:
 				aesmsg[4] = VA_OB_DRIVE;
 				aesbuf[0] = 'A' + p->spec.drive->drive;
 				aesbuf[1] = ':';
@@ -796,7 +796,7 @@ void avs_drag_on_window(int *msgbuf) {
 				/* Weiterleiten als VA_DRAGACCWIND */
 				if (avp_check(accwin->id)) {
 					if (!has_quotes(aesbuf) || avp_can_quote(accwin->id)) {
-						app_send(accwin->id, VA_DRAGACCWIND, PT67, whandle,
+						appl_send(accwin->id, VA_DRAGACCWIND, PT67, whandle,
 								x, y, (long)aesbuf, 0);
 						drag = 1;
 					} else {
@@ -834,7 +834,7 @@ void avs_drag_on_window(int *msgbuf) {
 
 					/* D&D ging nicht, dann VA_START probieren */
 					if (!ok)
-						app_send(owner, VA_START, PT34, (long)aesbuf, 0, 0, 0, 0);
+						appl_send(owner, VA_START, PT34, (long)aesbuf, 0, 0, 0, 0);
 				} else {
 					frm_alert(1, rs_frstr[ALAVEDRAG], altitle, conf.wdial, 0L);
 				}
@@ -1032,7 +1032,7 @@ void avs_drag_on_window(int *msgbuf) {
 	}
 
 	/* Rueckmeldung: Drag&Drop abgeschlossen */
-	app_send(id, VA_DRAG_COMPLETE, 0, drag, 0, 0, 0, 0);
+	appl_send(id, VA_DRAG_COMPLETE, 0, drag, 0, 0, 0, 0);
 
 	mn_check();mn_update();
 }
@@ -1165,7 +1165,7 @@ void avs_xwind(int *msgbuf) {
 		wpath_info(pwin);
 	}
 
-	app_send(msgbuf[1], VA_XOPEN, 0, ret, 0, 0, 0, 0);
+	appl_send(msgbuf[1], VA_XOPEN, 0, ret, 0, 0, 0, 0);
 
 	mn_check();
 	mn_update();
@@ -1219,7 +1219,7 @@ void avs_view(int *msgbuf) {
 		return;
 
 	ret = dl_show(0, name);
-	app_send(msgbuf[1], VA_VIEWED, 0, ret, 0, 0, 0, 0);
+	appl_send(msgbuf[1], VA_VIEWED, 0, ret, 0, 0, 0, 0);
 }
 
 /**
@@ -1342,7 +1342,7 @@ void avs_fileinfo(int *msgbuf) {
 
 				if (cont == 2) {
 					/* Passendes SH_WDRAW an Thing schicken, zwecks Fenster-Update */
-					app_send(tb.app_id, SH_WDRAW, 0, filesys.biosdev, 0, 0, 0, 0);
+					appl_send(tb.app_id, SH_WDRAW, 0, filesys.biosdev, 0, 0, 0, 0);
 				}
 			}
 		}
@@ -1358,7 +1358,7 @@ void avs_fileinfo(int *msgbuf) {
 	}
 
 	/* Rueckmeldung an Absender */
-	app_send(id, VA_FILECHANGED, PT34, (long)aesbuf, 0, 0, 0, 0);
+	appl_send(id, VA_FILECHANGED, PT34, (long)aesbuf, 0, 0, 0, 0);
 
 	pfree(lsrc);
 }
@@ -1420,7 +1420,7 @@ void avs_copyfile(int *msgbuf, int del) {
 		mevent.ev_mwich &= ~(MU_KEYBD | MU_BUTTON);
 	}
 
-	app_send(id, del ? VA_FILEDELETED : VA_FILECOPIED, 0, ret, 0, 0, 0, 0);
+	appl_send(id, del ? VA_FILEDELETED : VA_FILECOPIED, 0, ret, 0, 0, 0, 0);
 }
 
 /**------------------------------------------------------------------------
@@ -1576,12 +1576,12 @@ ACWIN *acwin_add(int id, int handle) {
 
 	/* Listenverkettung */
 	accwin->next = 0L;
-	if (!glob.accwin) /* Liste bisher leer */
-	{
+	if (!glob.accwin) {
+		/* Liste bisher leer */
 		glob.accwin = accwin;
 		accwin->prev = 0L;
-	} else /* An das Ende der Liste anh„ngen */
-	{
+	} else {
+		/* An das Ende der Liste anh„ngen */
 		aptr = glob.accwin;
 		while (aptr->next)
 			aptr = aptr->next;
@@ -1593,7 +1593,7 @@ ACWIN *acwin_add(int id, int handle) {
 	accwin->id = id;
 	accwin->handle = handle;
 
-	return accwin;
+	return (accwin);
 }
 
 void acwin_remove(ACWIN *accwin) {
@@ -1813,8 +1813,7 @@ int avp_checkbuf(int id, int msg, char *tmsg, char *buf, int write) {
  * Eingabe:
  * signo: Signalnummer (SIGBUS)
  */
-static void cdecl handle_sigbus(long signo)
-{
+static void cdecl handle_sigbus(long signo) {
 	UNUSED(signo);
 	Psigreturn();
 	longjmp(check, 1);

@@ -29,7 +29,8 @@
  =========================================================================*/
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include "..\include\tcmd.h"
 
@@ -76,7 +77,7 @@ ALICE_WIN *alw_add(char *name, int handle) {
 	awin = pmalloc(sizeof(ALICE_WIN));
 	awin->next = 0L;
 	if (!awin)
-		return 0L;
+		return (0L);
 	if (!glob.alicewin) {
 		awin->prev = 0L;
 		glob.alicewin = awin;
@@ -179,7 +180,7 @@ ALICE_WIN *alw_add(char *name, int handle) {
 	awin->tree[1].ob_width = 72;
 	awin->tree[1].ob_height = 40;
 
-	return awin;
+	return (awin);
 }
 
 /**
@@ -211,7 +212,7 @@ ALICE_WIN *alw_get(int handle) {
 			return awin;
 		awin = awin->next;
 	}
-	return 0L;
+	return (0L);
 }
 
 /**

@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h" 
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 
 #ifdef __MINT__
 extern BASPAG *_base;
@@ -49,12 +50,16 @@ USERBLK lusr;
  Startet eine Applikation
  -------------------------------------------------------------------------*/
 
-/* FÅr Single-TOS */
-#ifndef _NAES
+/**
+ * FÅr Single-TOS
+ */
 void res_free(void) {
 	free_wopen(&glob.openwin);
 }
 
+/**
+ *
+ */
 int res_exit(char *appname) {
 	WINOPEN *wopen, *wopen1;
 	WININFO *win;
@@ -68,14 +73,15 @@ int res_exit(char *appname) {
 	} else {
 		res_free();
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return(0);
+		return (0);
 	}
 	wopen1 = glob.openwin;
+
 	/* Offene Fenster merken */
 	win = tb.win;
 	while (win) {
 		/* Dialogfenster nicht merken! */
-		if (win->class!=WCDIAL) {
+		if (win->class != WCDIAL) {
 			/* Neuen Eintrag an die Open-Liste anhaengen */
 			wopen = pmalloc(sizeof(WINOPEN));
 			if (!wopen) {
@@ -87,7 +93,7 @@ int res_exit(char *appname) {
 				wopen1 = wopen;
 				wopen1->next = 0L;
 			}
-			wopen->class=win->class;
+			wopen->class = win->class;
 			wopen->num = -1;
 			if (win == tb.topwin)
 				wopen->istop = 1;
@@ -95,23 +101,24 @@ int res_exit(char *appname) {
 				wopen->istop = 0;
 			wind_get(win->handle, WF_HSLIDE, &wopen->sh);
 			wind_get(win->handle, WF_VSLIDE, &wopen->sv);
+
 			switch (win->class) {
-				case WCPATH:
-					wpath = (W_PATH *)win->user;
-					strcpy(wopen->title, wpath->path);
-					strcpy(wopen->wildcard, wpath->index.wildcard);
-					wopen->rel = wpath->rel;
-					strcpy(wopen->relname, wpath->relname);
-					wopen->text = wpath->index.text;
-					wopen->sortby = wpath->index.sortby;
-					wopen->num = wpath->num;
-					break;
-				case WCGROUP:
-					wgrp = (W_GRP *)win->user;
-					strcpy(wopen->title, wgrp->name);
-					wopen->wildcard[0] = 0;
-					wopen->text = wgrp->text;
-					break;
+			case WCPATH:
+				wpath = (W_PATH *)win->user;
+				strcpy(wopen->title, wpath->path);
+				strcpy(wopen->wildcard, wpath->index.wildcard);
+				wopen->rel = wpath->rel;
+				strcpy(wopen->relname, wpath->relname);
+				wopen->text = wpath->index.text;
+				wopen->sortby = wpath->index.sortby;
+				wopen->num = wpath->num;
+				break;
+			case WCGROUP:
+				wgrp = (W_GRP *)win->user;
+				strcpy(wopen->title, wgrp->name);
+				wopen->wildcard[0] = 0;
+				wopen->text = wgrp->text;
+				break;
 			}
 		}
 		win = win->next;
@@ -153,19 +160,21 @@ int res_exit(char *appname) {
 	wind_update (BEG_UPDATE);
 	wind_new();
 	wind_set(0, WF_NEWDESK, &ldesk, ROOT);
-	form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x,
-			tb.desk.y, tb.desk.w, tb.desk.h);
+	form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 	appl_exit();
 
-	return 1;
+	return (1);
 }
 
+/**
+ *
+ */
 int res_init(void) {
 	/* Bei den AES anmelden */
 	tb.app_id = appl_init();
 	if (tb.app_id < 0) {
 		res_free();
-		return 0;
+		return (0);
 	}
 
 	/* Mauszeiger wiederherstellen */
@@ -196,9 +205,8 @@ int res_init(void) {
 
 	menu_register(-1, "THING   ");
 
-	return 1;
+	return (1);
 }
-#endif /* _NAES */
 
 /**
  * display_alert
@@ -224,6 +232,7 @@ static int display_alert(APPLINFO *aptr) {
 	dst = almsg + 4;
 	cnt = 0;
 	src = copy;
+
 	/*
 	 * FÑlle:
 	 * 1. src paût noch vollstÑndig in die aktuelle Zeile
@@ -355,8 +364,8 @@ int run_conwin(APPLINFO *aptr, char *cmd, int argv, char *env, char *oldenv,
 		}
 		/* Hier ein CH_EXIT schicken, damit die Verzeichnisse
 		 aktualisiert werden */
-		app_send(tb.app_id, CH_EXIT, 0, 0, 0, 0, 0, 0);
-		return aret;
+		appl_send(tb.app_id, CH_EXIT, 0, 0, 0, 0, 0, 0);
+		return(aret);
 	case 0:
 		sprintf(almsg, rs_frstr[ALCONRUN], aptr->title);
 		if (frm_alert(1, almsg, altitle, conf.wdial, 0L) != 1) {
@@ -367,11 +376,11 @@ int run_conwin(APPLINFO *aptr, char *cmd, int argv, char *env, char *oldenv,
 				pfree(env);
 				_BasPag->p_env = oldenv;
 			}
-			return aret;
+			return (aret);
 		}
 		break;
 	}
-	return -1;
+	return (-1);
 }
 
 /**
@@ -400,12 +409,9 @@ int run_app(APPLINFO *aptr, char *cmd, int is_gr, int argv, int doex,
 	int ret = 0;
 
 	if (aptr->overlay || conf.texit) {
-#ifndef _NAES
 		if (tb.sys & SY_MSHELL)
 			return (-1);
-		else
-#endif
-		{
+		else {
 			if (is_gr && !(tb.sys & SY_MAGX))
 				return (-2);
 		}
@@ -415,20 +421,18 @@ int run_app(APPLINFO *aptr, char *cmd, int is_gr, int argv, int doex,
 		doex |= 0x800;
 		argvenv = app_argv(&cmd[1], *(char **) mpar, aptr->unixpaths);
 		if (argvenv == 0L)
-			return (0);
+			return(0);
 		oldenv = _BasPag->p_env;
 		_BasPag->p_env = ((char **) mpar)[4] = argvenv;
+
 		/* ARGV unter MagiC ist vermutlich noch nicht endgÅltig! */
-#ifndef _NAES
 		if (tb.sys & SY_MAGX)
 			ret = shel_write(doex, is_gr, SHW_PARALLEL, mpar, cmd);
 		else
-#endif
 			ret = shel_write(doex, is_gr, 1, mpar, cmd);
 		_BasPag->p_env = oldenv;
 		pfree(argvenv);
 	} else {
-#ifndef _NAES
 		if (tb.sys & SY_MAGX) {
 			/* 'Trick 17' fÅr Environment-Vererbung mit MagiC!3 */
 			if (glob.argv && (env || mpar[1]))
@@ -436,7 +440,6 @@ int run_app(APPLINFO *aptr, char *cmd, int is_gr, int argv, int doex,
 			else
 				ret = shel_write(1, is_gr, SHW_PARALLEL, aptr->startname, cmd);
 		} else
-#endif
 			ret = shel_write(doex, is_gr, SHW_IMMED, mpar, cmd);
 	}
 	return (ret);
@@ -448,14 +451,17 @@ int app_start(APPLINFO *appl, char *parm, char *apath, int *rex) {
 	char *abuf, acmd[2], *ps;
 	long mpar[5];
 	char *mpath;
-	int is_gr, drv, p, app, cmdlen;
+	int is_gr, p, app, cmdlen;
+#if 0
+	int drv;
+#endif
 	int done, ret, atype, aret;
 	char title[80];
 	long ldummy;
 	char *spec, *pipname;
 	int copen;
 	XATTR xattr;
-	OBJECT *tree;
+	OBJECT *objectTree;
 	int doex;
 	/* FÅr Auslagerung von Thing */
 	FILE *rfh;
@@ -475,7 +481,10 @@ int app_start(APPLINFO *appl, char *parm, char *apath, int *rex) {
 	/* FÅr indirekten Start Åber Datei */
 	APPLINFO *aptr, iappl;
 	/* FÅr "Abschneiden" der Pfade bei Parametern */
-	char *src, *dst, *backslash;
+	char *src, *dst;
+#if 0
+	char *backslash;
+#endif
 	static char *dupparm = 0L;
 
 	path = pmalloc(MAX_PLEN * 4L);
@@ -517,7 +526,7 @@ else aptr=appl;
 	if (aptr->homepath != 1) {
 		/* Aktuelles Verzeichnisfenster oder angegebener Pfad */
 		if (tb.topwin && (!apath || aptr->homepath == 2)) {
-			if (tb.topwin->class==WCPATH)
+			if (tb.topwin->class == WCPATH)
 				apath = ((W_PATH *) tb.topwin->user)->path;
 		}
 	}
@@ -589,7 +598,7 @@ else aptr=appl;
 			sprintf(almsg, rs_frstr[ALAPPFIND], name);
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
 			pfree(path);
-			return 0;
+			return (0);
 		}
 	}
 
@@ -599,7 +608,7 @@ else aptr=appl;
 		graf_mouse(ARROW, 0L);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		pfree(path);
-		return 0;
+		return (0);
 	}
 
 	/* Falls vorhanden, dann lokales Environment aufbauen */
@@ -660,8 +669,7 @@ else aptr=appl;
 		 */
 		if (!*parm && (strstr(&cmd[1], "$d") == NULL))
 			*strchr(&cmd[1], '$') = 0;
-		else if (!build_commandline(&cmd[1], MAX_CMDLEN + MAX_CLEN - 1,
-				aptr->parm, parm, apath)) {
+		else if (!build_commandline(&cmd[1], MAX_CMDLEN + MAX_CLEN - 1, aptr->parm, parm, apath)) {
 			graf_mouse(ARROW, 0L);
 			frm_alert(1, rs_frstr[ALCMDLINE], altitle, conf.wdial, 0L);
 			pfree(cmd);
@@ -683,23 +691,23 @@ else aptr=appl;
 
 	/* Parameter ggf. vorher abfragen */
 	if (aptr->getpar && !parm[0]) {
-		tree = rs_trindex[PARAM];
+		objectTree = rs_trindex[PARAM];
 		/* Gesicherten Buffer verwenden oder bisherige Parameter */
 		if (glob.gcmd[0])
-			strcpy(tree[PATEXT].ob_spec.tedinfo->te_ptext, glob.gcmd);
+			strcpy(objectTree[PATEXT].ob_spec.tedinfo->te_ptext, glob.gcmd);
 		else
-			strcpy(tree[PATEXT].ob_spec.tedinfo->te_ptext, &cmd[1]);
+			strcpy(objectTree[PATEXT].ob_spec.tedinfo->te_ptext, &cmd[1]);
 
 #ifdef DIRCH
-		spec = strdup(getObjectText(tree, PATITLE));
+		spec = getObjectText(objectTree, PATITLE);
 		exist = PACANCEL;
 		if (spec != NULL) {
 			sprintf(title, spec, aptr->title);
-			setObjectText(tree, PATITLE, title);
+			setObjectText(objectTree, PATITLE, title);
 #else
-		spec = tree[PATITLE].ob_spec.free_string;
+		spec = objectTree[PATITLE].ob_spec.free_string;
 		sprintf(title, spec, aptr->title);
-		tree[PATITLE].ob_spec.free_string = title;
+		objectTree[PATITLE].ob_spec.free_string = title;
 #endif
 		graf_mouse(ARROW, 0L);
 		frm_start(&fi_param, conf.wdial, conf.cdial, 1);
@@ -717,8 +725,8 @@ else aptr=appl;
 				frm_norm(&fi_param);
 				break;
 			case PATEXT:
-				if (ret & 0x8000) /* Dateiauswahl */
-				{
+				if (ret & 0x8000) {
+					/* Dateiauswahl */
 					strcpy(scmd, "");
 					strcpy(stail, "X:\\*.*");
 					stail[0] = tb.homepath[0];
@@ -734,16 +742,6 @@ else aptr=appl;
 						frm_redraw(&fi_param, PATEXT);
 					}
 				}
-#if 0
-				else /* Evtl. Eingabefeld gelîscht - dann Defaultparameter */
-				{
-					if(!tree[PATEXT].ob_spec.tedinfo->te_ptext[0])
-					{
-						frm_edstring(&fi_param,PATEXT,aptr->parm);
-						frm_redraw(&fi_param,PATEXT);
-					}
-				}
-#endif
 				break;
 			}
 		}
@@ -751,15 +749,14 @@ else aptr=appl;
 		frm_end(&fi_param);
 		/*  msg_clr(); */
 #ifdef DIRCH
-		setObjectText(tree, PATITLE, spec);
-		free(spec);
+		setObjectText(objectTree, PATITLE, spec);
 	}
 #else
-		tree[PATITLE].ob_spec.free_string = spec;
+		objectTree[PATITLE].ob_spec.free_string = spec;
 #endif
 		if (exist == PAOK) {
 			graf_mouse(BUSYBEE, 0L);
-			strcpy(&cmd[1], tree[PATEXT].ob_spec.tedinfo->te_ptext);
+			strcpy(&cmd[1], objectTree[PATEXT].ob_spec.tedinfo->te_ptext);
 			/* Eingabe sichern */
 			strcpy(glob.gcmd, &cmd[1]);
 		} else {
@@ -769,11 +766,11 @@ else aptr=appl;
 				_BasPag->p_env = oldenv;
 			}
 			pfree(path);
-			return 0;
+			return (0);
 		}
 	}
 
-	app_start1: ;
+app_start1:
 	cmdlen = (int) strlen(&cmd[1]);
 	argv = 0;
 	if ((cmdlen <= 124) && !has_quotes(&cmd[1]) && !aptr->unixpaths) {
@@ -786,8 +783,8 @@ else aptr=appl;
 			/* Jammern, falls shel_write() notwendig ist, aber das Multitasking-
 			 System kein ARGV unterstÅtzt */
 			if (tb.sys & SY_MULTI && !glob.argv
-					&& ((aptr->conwin && !getcookie('T2GM', &ldummy)
-							&& conf.uset2g) || !aptr->conwin)) {
+					&& ((aptr->conwin && !getCookie('T2GM', &ldummy)
+					&& conf.uset2g) || !aptr->conwin)) {
 				pfree(cmd);
 				if (env) {
 					pfree(env);
@@ -797,7 +794,7 @@ else aptr=appl;
 				graf_mouse(ARROW, 0L);
 				frm_alert(1, almsg, altitle, conf.wdial, 0L);
 				pfree(path);
-				return 0;
+				return (0);
 			}
 		}
 	}
@@ -806,49 +803,46 @@ else aptr=appl;
 
 	/* Accessory/CPX ? */
 	if (atype == 4 || atype == 6) {
-		if (app >= 0 && atype != 6) /* Accessory aktiv */
-		{
+		if (app >= 0 && atype != 6) {
+			/* Accessory aktiv */
 			call_acc:
 			/* Accessory aufrufen */
-			if (aptr->vaproto) /* ParameterÅbergabe/Start mit AV-Protokoll */
-			{
+			if (aptr->vaproto) {
+				/* ParameterÅbergabe/Start mit AV-Protokoll */
 				strcpy(aesbuf, &cmd[1]);
 				/* Accessory ggf. auf QuotingfÑhigkeit prÅfen */
 				if (!has_quotes(aesbuf) || avp_can_quote(app)) {
-					app_send(app, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
+					appl_send(app, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
 					aret = 1;
 				} else {
 					sprintf(almsg, rs_frstr[ALNOQUOTE], aptr->title);
 					frm_alert(1, almsg, altitle, conf.wdial, 0L);
 					aret = 0;
 				}
-			} else /* Accessory unterstÅtzt kein AV-Protokoll */
-			{
-				if (cmd[1]) /* ParameterÅbergabe nicht mîglich */
-				{
+			} else {
+				/* Accessory unterstÅtzt kein AV-Protokoll */
+				if (cmd[1]) {
+					/* ParameterÅbergabe nicht mîglich */
 					sprintf(almsg, rs_frstr[ALNOVA], aptr->title);
 					frm_alert(1, almsg, altitle, conf.wdial, 0L);
 					aret = 0;
 				} else {
-					app_send(app, AC_OPEN, 0, 0, 0, 0, 0, 0);
+					appl_send(app, AC_OPEN, 0, 0, 0, 0, 0, 0);
 					aret = 1;
 				}
 			}
-		} else /* Accessory nicht aktiv oder eCPX */
-		{
+		} else {
+			/* Accessory nicht aktiv oder eCPX */
+
 			/* Wenn es ein Accessory ist, nach Mîglichkeit als solches starten */
 			if (atype == 4) {
 				if (tb.sys & SY_MAGX) {
-#ifndef _NAES
-					if (tb.magx->aesvars->version >= 0x400) /* geht ab MagiC 4 */
-					{
-#endif
+					if (tb.magx->aesvars->version >= 0x400) {
+						/* geht ab MagiC 4 */
 						run_acc: if (conf.askacc) {
-							sprintf(almsg, rs_frstr[ALACCFAIL], aptr->title,
-									name, rs_frstr[TXINSTALLACC]);
+							sprintf(almsg, rs_frstr[ALACCFAIL], aptr->title, name, rs_frstr[TXINSTALLACC]);
 							graf_mouse(ARROW, 0L);
-							if (frm_alert(1, almsg, altitle, conf.wdial, 0L)
-									!= 1) {
+							if (frm_alert(1, almsg, altitle, conf.wdial, 0L) != 1) {
 								aret = 0;
 								goto prog_loaded;
 							}
@@ -865,9 +859,7 @@ else aptr=appl;
 						graf_mouse(ARROW, 0L);
 						frm_alert(1, almsg, altitle, conf.wdial, 0L);
 						goto prog_loaded;
-#ifndef _NAES
 					}
-#endif
 				} else {
 					if (tb.sys & SY_AGI) {
 						int max_shwr, du;
@@ -890,14 +882,12 @@ else aptr=appl;
 					goto app_start1;
 				}
 			} else {
-				if (atype == 4) /* Accessory als Programm starten */
-				{
+				if (atype == 4) {
+					/* Accessory als Programm starten */
 					atype = 1;
 					goto app_start1;
 				} else /* CPX mit shel_write() starten */
-				{
 					aret = shel_write(1, 1, SHW_PARALLEL, aptr->startname, cmd);
-				}
 			}
 		}
 		prog_loaded: clr_drv();
@@ -908,12 +898,11 @@ else aptr=appl;
 		}
 		graf_mouse(ARROW, 0L);
 		pfree(path);
-		return aret;
-	} else /* Nein - Programm */
-	{
+		return (aret);
+	} else {
+		/* Nein - Programm */
 		/* Multitasking-System */
 		if (tb.sys & SY_MULTI) {
-#ifndef _NAES
 			/* Single-Mode unter MagiC */
 			if (aptr->single && tb.sys & SY_MSHELL) {
 				int mode;
@@ -933,7 +922,7 @@ else aptr=appl;
 						_BasPag->p_env = oldenv;
 					}
 					pfree(path);
-					return 0;
+					return (0);
 				} else {
 					pfree(cmd);
 					if (env) {
@@ -943,9 +932,8 @@ else aptr=appl;
 					main_exit();
 					Pterm0();
 				}
-			} else /* Parallel-Start */
-#endif /* _NAES */
-			{
+			} else {
+				/* Parallel-Start */
 				/* MultiTOS-Parameter setzen */
 				mpath[0] = Dgetdrv() + 65;
 				mpath[1] = ':';
@@ -956,38 +944,37 @@ else aptr=appl;
 				}
 
 				mpar[0] = (long) aptr->startname; /* Programmname */
-				mpar[1] = aptr->memlimit * 1024L;/* Psetlimit */
+				mpar[1] = aptr->memlimit * 1024L; /* Psetlimit */
 				mpar[2] = 0L; /* Prenice */
 				mpar[3] = (long) mpath; /* Startverzeichnis */
 				mpar[4] = (long) _BasPag->p_env; /* Environment */
 				doex = env ? 0x0f01 : 0x0701;
 
-				if (app >= 0) /* Applikation aktiv */
-				{
+				if (app >= 0) {
+					/* Applikation aktiv */
+
 					/* GEM-Applikation mit AV-Protokoll und Parameter vorhanden,
 					 oder leeres VA_START durch Voreinstellung erlaubt? */
-					if (is_gr && aptr->vaproto && (cmd[1] || conf.vastart)) /* Ja */
-					{
+					if (is_gr && aptr->vaproto && (cmd[1] || conf.vastart)) {
+						/* Ja */
 						strcpy(aesbuf, &cmd[1]);
 						/* Accessory ggf. auf QuotingfÑhigkeit prÅfen */
 						if (!has_quotes(aesbuf) || avp_can_quote(app)) {
-							app_send(app, VA_START, PT34, (long) aesbuf, 0, 0,
-									0, 0);
+							appl_send(app, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
 							aret = 1;
 						} else {
 							sprintf(almsg, rs_frstr[ALNOQUOTE], aptr->title);
 							frm_alert(1, almsg, altitle, conf.wdial, 0L);
 							aret = 0;
 						}
-					} else /* Nein - nachfragen und ggf. nochmal starten */
-					{
+					} else {
+						/* Nein - nachfragen und ggf. nochmal starten */
 						aret = 0;
 						sprintf(almsg, rs_frstr[ALSTART], aptr->title, name);
 						if (frm_alert(1, almsg, altitle, conf.wdial, 0L) == 1) {
-							if (!is_gr && aptr->conwin && conf.uset2g) /* Im Console-Fenster */
-							{
-								aret = run_conwin(aptr, cmd, argv, env, oldenv,
-										copen);
+							if (!is_gr && aptr->conwin && conf.uset2g) {
+								/* Im Console-Fenster */
+								aret = run_conwin(aptr, cmd, argv, env, oldenv, copen);
 								if (aret != -1) {
 									pfree(path);
 									return (aret);
@@ -1007,19 +994,14 @@ else aptr=appl;
 								frm_alert(1, almsg, altitle, conf.wdial, 0L);
 								aret = 0;
 							} else {
-								aret = run_app(aptr, cmd, is_gr, argv, doex,
-										(char *) mpar, env);
+								aret = run_app(aptr, cmd, is_gr, argv, doex, (char *) mpar, env);
 								if (aret == 0) {
-									sprintf(almsg, rs_frstr[ALSTARTERR],
-											aptr->title);
+									sprintf(almsg, rs_frstr[ALSTARTERR], aptr->title);
 									graf_mouse(ARROW, 0L);
-									frm_alert(1, almsg, altitle, conf.wdial,
-											0L);
+									frm_alert(1, almsg, altitle, conf.wdial, 0L);
 								}
-#ifndef _NAES
 								else if (aret == -1)
 									goto magic_overlay;
-#endif
 								else if (aret == -2) {
 									multi = 1;
 									goto thingrun;
@@ -1028,10 +1010,10 @@ else aptr=appl;
 						} else
 							magx_switch(app, 1);
 					}
-				} else /* Applikation nicht aktiv */
-				{
-					if (!is_gr && aptr->conwin && conf.uset2g) /* Im Console-Fenster */
-					{
+				} else {
+					/* Applikation nicht aktiv */
+					if (!is_gr && aptr->conwin && conf.uset2g) {
+						/* Im Console-Fenster */
 						aret = run_conwin(aptr, cmd, argv, env, oldenv, copen);
 						if (aret != -1) {
 							pfree(path);
@@ -1052,17 +1034,14 @@ else aptr=appl;
 						frm_alert(1, almsg, altitle, conf.wdial, 0L);
 						aret = 0;
 					} else {
-						aret = run_app(aptr, cmd, is_gr, argv, doex,
-								(char *) mpar, env);
+						aret = run_app(aptr, cmd, is_gr, argv, doex, (char *) mpar, env);
 						if (aret == 0) {
 							sprintf(almsg, rs_frstr[ALSTARTERR], aptr->title);
 							graf_mouse(ARROW, 0L);
 							frm_alert(1, almsg, altitle, conf.wdial, 0L);
 						}
-#ifndef _NAES
 						else if (aret == -1)
 							goto magic_overlay;
-#endif
 						else if (aret == -2) {
 							multi = 1;
 							goto thingrun;
@@ -1070,14 +1049,13 @@ else aptr=appl;
 					}
 				}
 			}
-		} else /* Singletasking-System */
-		{
-#ifndef _NAES
+		} else {
+			/* Singletasking-System */
 			full2comp(aptr->startname, path, name);
-			if (!conf.texit && !aptr->overlay) /* Thing resident im Speicher halten */
-			{
-				if (!is_gr && aptr->conwin && conf.uset2g) /* Im Console-Fenster */
-				{
+			if (!conf.texit && !aptr->overlay) {
+				/* Thing resident im Speicher halten */
+				if (!is_gr && aptr->conwin && conf.uset2g) {
+					/* Im Console-Fenster */
 					aret = run_conwin(aptr, cmd, argv, env, oldenv, copen);
 					if (aret != -1) {
 						pfree(path);
@@ -1085,25 +1063,23 @@ else aptr=appl;
 					} else
 						aret = 0;
 				}
-				/* Kein Console-Fenster - TOS/TTP und evtl. MiNT & TOSRUN
-				 vorhanden? */
+				/* Kein Console-Fenster - TOS/TTP und evtl. MiNT & TOSRUN vorhanden? */
 				trunok = 0;
 				if (!is_gr && tb.sys & SY_MINT) {
 					/* TOSWIN vorhanden? */
 					app = appl_find("TOSWIN  ");
-					if (app >= 0) /* Jo */
-					{
+					if (app >= 0) {
+						/* Jo */
+
 						/* TOSWIN anwerfen */
-						app_send(app, AC_OPEN, 0, 0, 0, 0, 0, 0);
+						appl_send(app, AC_OPEN, 0, 0, 0, 0, 0, 0);
 						/* TOSWIN etwas Bedenkzeit geben */
 						evnt_timer(200, 0);
 						/* Buffer fÅr Parameter reservieren */
-						cmdlen = (int) strlen(aptr->startname) + 2
-								+ (int) strlen(cmd);
+						cmdlen = (int) strlen(aptr->startname) + 2 + (int) strlen(cmd);
 						trunbuf = pmalloc((long) cmdlen);
 						if (!trunbuf)
-							frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial,
-									0L);
+							frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 						else {
 							/* Parameter eintragen */
 							strcpy(trunbuf, path);
@@ -1121,8 +1097,7 @@ else aptr=appl;
 							if (trunfd >= 0L) {
 								/* Parameter in die Pipe schreiben */
 								cmdlen = (int) strlen(trunbuf) + 1;
-								if (Fwrite((int) trunfd, (long) cmdlen, trunbuf)
-										== (long) cmdlen) {
+								if (Fwrite((int) trunfd, (long) cmdlen, trunbuf) == (long) cmdlen) {
 									trunok = 1;
 									aret = 1;
 								}
@@ -1130,8 +1105,7 @@ else aptr=appl;
 								Fclose((int) trunfd);
 							} else {
 								if (!glob.toserr) {
-									err_file(rs_frstr[ALFLCREATE], trunfd,
-											pipname);
+									err_file(rs_frstr[ALFLCREATE], trunfd, pipname);
 									glob.toserr = 1;
 								}
 							}
@@ -1146,35 +1120,31 @@ else aptr=appl;
 						*rex = 1; /* Flag setzen, damit in aufrufenden Prozeduren kein
 						 Bezug mehr auf geîffnete Fenster genommen wird */
 						/* AES Åber die Applikation informieren */
-						aret = shel_write(1, is_gr, SHW_IMMED, aptr->startname,
-								cmd);
+						aret = shel_write(1, is_gr, SHW_IMMED, aptr->startname, cmd);
 						if (aret) {
 							/* Bildschirm-Darstellung anpassen */
-							if (is_gr) /* Grafik-Applikation */
-							{
-								tree = rs_trindex[DESKAPP];
-								strcpy(tree->ob_spec.tedinfo->te_ptext, name);
-								tree->ob_x = 0;
-								tree->ob_y = 0;
-								tree->ob_width = tb.desk.w;
-								tree->ob_height = tb.desk.y - 1;
-								objc_draw(tree, ROOT, MAX_DEPTH, 0, 0,
-										tb.desk.w, tb.desk.y - 1);
-							} else /* Text-Applikation */
-							{
+							if (is_gr) {
+								/* Grafik-Applikation */
+								objectTree = rs_trindex[DESKAPP];
+								strcpy(objectTree->ob_spec.tedinfo->te_ptext, name);
+								objectTree->ob_x = 0;
+								objectTree->ob_y = 0;
+								objectTree->ob_width = tb.desk.w;
+								objectTree->ob_height = tb.desk.y - 1;
+								objc_draw(objectTree, ROOT, MAX_DEPTH, 0, 0, tb.desk.w, tb.desk.y - 1);
+							} else {
+								/* Text-Applikation */
 								v_hide_c(tb.vdi_handle);
 								v_enter_cur(tb.vdi_handle);
 								/* VT52-Zeilenumbruch einschalten */
 								Cconws("\33v");
 							}
 							if (argv) {
-								abuf = app_argv(&cmd[1], aptr->startname,
-										aptr->unixpaths);
+								abuf = app_argv(&cmd[1], aptr->startname, aptr->unixpaths);
 								if (!abuf)
 									aret = 0;
 								else {
-									if (Pexec(0, aptr->startname, acmd, abuf)
-											== 0L)
+									if (Pexec(0, aptr->startname, acmd, abuf) == 0L)
 										aret = 1;
 									else
 										aret = 0;
@@ -1208,13 +1178,8 @@ else aptr=appl;
 											/* Ok - dann jetzt starten */
 											wind_update (BEG_UPDATE);
 											wind_new();
-											wind_set(0, WF_NEWDESK, &ldesk,
-													ROOT);
-											form_dial(FMD_FINISH, tb.desk.x,
-													tb.desk.y, tb.desk.w,
-													tb.desk.h, tb.desk.x,
-													tb.desk.y, tb.desk.w,
-													tb.desk.h);
+											wind_set(0, WF_NEWDESK, &ldesk, ROOT);
+											form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 											strcpy(sappl.name, scmd);
 											if (Pexec(0, scmd, stail, 0L) == 0L)
 												aret = 1;
@@ -1249,10 +1214,9 @@ else aptr=appl;
 						return 0;
 					}
 				}
-			} else /* Thing auslagern */
-			{
+			} else {
+				/* Thing auslagern */
 				multi = 0;
-#endif /* _NAES */
 				thingrun: strcpy(rname, tb.homepath);
 				strcat(rname, FNAME_RUN);
 				strcpy(&rcmd[1], tb.homepath);
@@ -1301,9 +1265,7 @@ else aptr=appl;
 					_BasPag->p_env = oldenv;
 				}
 				Pterm0();
-#ifndef _NAES
 			}
-#endif
 		}
 	}
 	graf_mouse(ARROW, 0L);
@@ -1314,7 +1276,7 @@ else aptr=appl;
 		_BasPag->p_env = oldenv;
 	}
 	pfree(path);
-	return aret;
+	return (aret);
 }
 
 /**
@@ -1329,15 +1291,16 @@ APPLINFO *app_add(void) {
 	/* Speicher reservieren */
 	appl = pmalloc(sizeof(APPLINFO));
 	if (!appl)
-		return 0L;
+		return (0L);
+
 	/* Listenverkettung */
 	appl->next = 0L;
-	if (!desk.appl) /* Liste bisher leer */
-	{
+	if (!desk.appl) {
+		/* Liste bisher leer */
 		desk.appl = appl;
 		appl->prev = 0L;
-	} else /* An das Ende der Liste anhÑngen */
-	{
+	} else {
+		/* An das Ende der Liste anhÑngen */
 		aptr = desk.appl;
 		while (aptr->next)
 			aptr = aptr->next;
@@ -1345,7 +1308,7 @@ APPLINFO *app_add(void) {
 		appl->prev = aptr;
 	}
 	appl->startname[0] = 0;
-	return appl;
+	return (appl);
 }
 
 void app_remove(APPLINFO *appl) {
@@ -1428,7 +1391,7 @@ APPLINFO *app_find(char *name) {
 		aptr = aptr->next;
 	}
 	pfree(name1);
-	return 0L;
+	return (0L);
 }
 
 /**
@@ -1449,7 +1412,7 @@ APPLINFO *app_get(char *title) {
 		}
 		aptr = aptr->next;
 	}
-	return 0L;
+	return (0L);
 }
 
 /**
@@ -1557,16 +1520,16 @@ void app_opensel(APPLINFO *appl) {
 		if (!rex) {
 			if (desk.sel.win) {
 				switch (desk.sel.win->class) {
-					case WCPATH:
+				case WCPATH:
 					((W_PATH *)desk.sel.win->user)->amask[0] = 0;
 					wpath_esel(desk.sel.win, 0L, 0, 0, 1);
 					break;
-					case WCGROUP:
+				case WCGROUP:
 					wgrp_esel(desk.sel.win, 0L, 0, 0);
 					break;
 				}
-			}
-			else icon_select(-1, 0, 0);
+			} else
+				icon_select(-1, 0, 0);
 		}
 	} else {
 		/* Ohne Auswahl starten */
@@ -1607,10 +1570,10 @@ char *app_env(APPLINFO *appl) {
 	nlen++; /* Abschliessendes Nullbyte */
 
 	/* Buffer fÅr neues Environment */
-	new=pmalloc(nlen);
+	new = pmalloc(nlen);
 	if (!new) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0L;
+		return (0L);
 	}
 	p = 0;
 
@@ -1623,7 +1586,7 @@ char *app_env(APPLINFO *appl) {
 				p++;
 				j++;
 			}
-			new[p]=0;
+			new[p] = 0;
 			p++;
 		}
 	}
@@ -1635,7 +1598,7 @@ char *app_env(APPLINFO *appl) {
 	}
 	new[p] = 0;
 	
-	return new;
+	return (new);
 }
 
 /**
@@ -1693,10 +1656,10 @@ char *app_argv(char *cmd, char *prog, int unixpaths) {
 	nlen += ((int) strlen(cmd)) + 1; /* Parameter ab argv[1] */
 
 	/* Buffer reservieren */
-	new=pmalloc(nlen);
+	new = pmalloc(nlen);
 	if (!new) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-		return 0L;
+		return (0L);
 	}
 
 	/* Bisheriges Environment kopieren */
@@ -1718,7 +1681,7 @@ char *app_argv(char *cmd, char *prog, int unixpaths) {
 	/* Abschluss des Environments */
 	new[p] = 0;
 	
-	return new;
+	return (new);
 }
 
 /**
@@ -1732,16 +1695,11 @@ char *app_argv(char *cmd, char *prog, int unixpaths) {
  -------------------------------------------------------------------------*/
 APPLINFO *app_match(int mode, char *name, int *ok) {
 	APPLINFO *appl, *aptr, *aplist[10];
-	OBJECT *tree;
+	OBJECT *objectTree;
 	char *aptxt[10], apall[10], *tptr, *spec;
 	char mask[61], *help, *wild, wildcard[61], wname[MAX_PLEN];
 	int n, i, j, match, amatch, done;
-#ifdef OLD_SLIDER_HANDLING
-	int mx,my,ks,mb,sel,csel;
-	int ret,sx,sy,sd;
-#else
 	int ret, dclick;
-#endif
 
 	aptr = 0L;
 	if (ok)
@@ -1813,8 +1771,9 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 			aplist[0]->startname[0] = 0;
 			return (aplist[0]);
 		}
-		if (n > 1) /* Auswahl notwendig ? */
-		{
+		if (n > 1) {
+			/* Auswahl notwendig ? */
+
 			/* '*'-Masken rausschmeissen, falls es auch Applikationen mit
 			 'genaueren' Angaben wie '*.img' etc. gibt */
 			j = 0;
@@ -1838,8 +1797,9 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 			}
 		}
 
-		if (n > 1) /* Auswahl immer noch notwendig ? */
-		{
+		if (n > 1) {
+			/* Auswahl immer noch notwendig ? */
+
 			/* Semaphore prÅfen/setzen und ggf. Abbruch */
 			if (!glob.sm_selapp)
 				glob.sm_selapp = 1;
@@ -1870,33 +1830,33 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 				}
 
 			/* Dialog vorbereiten */
-			tree = rs_trindex[SELAPP];
-			strcpy(tree[SAFILE].ob_spec.free_string, wname);
+			objectTree = rs_trindex[SELAPP];
+			strcpy(objectTree[SAFILE].ob_spec.free_string, wname);
 
 #ifdef DIRCH
-			spec = getObjectText(tree, SATITLE);
-			switch (mode) {
-				case 0:
-					setObjectText(tree, SATITLE, rs_frstr[TXSOPEN]);
-					break;
-				case 1:
-					setObjectText(tree, SATITLE, rs_frstr[TXSVIEW]);
-					break;
-				case 2:
-					setObjectText(tree, SATITLE, rs_frstr[TXSPRINT]);
-					break;
-			}
-#else
-			spec = tree[SATITLE].ob_spec.free_string;
+			spec = getObjectText(objectTree, SATITLE);
 			switch (mode) {
 			case 0:
-				tree[SATITLE].ob_spec.free_string = rs_frstr[TXSOPEN];
+				setObjectText(objectTree, SATITLE, rs_frstr[TXSOPEN]);
 				break;
 			case 1:
-				tree[SATITLE].ob_spec.free_string = rs_frstr[TXSVIEW];
+				setObjectText(objectTree, SATITLE, rs_frstr[TXSVIEW]);
 				break;
 			case 2:
-				tree[SATITLE].ob_spec.free_string = rs_frstr[TXSPRINT];
+				setObjectText(objectTree, SATITLE, rs_frstr[TXSPRINT]);
+				break;
+			}
+#else
+			spec = objectTree[SATITLE].ob_spec.free_string;
+			switch (mode) {
+			case 0:
+				objectTree[SATITLE].ob_spec.free_string = rs_frstr[TXSOPEN];
+				break;
+			case 1:
+				objectTree[SATITLE].ob_spec.free_string = rs_frstr[TXSVIEW];
+				break;
+			case 2:
+				objectTree[SATITLE].ob_spec.free_string = rs_frstr[TXSPRINT];
 				break;
 			}
 #endif
@@ -1913,27 +1873,22 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 			aptr = 0L;
 			while (!done) {
 				ret = frm_dial(&fi_selapp, &mevent);
-#ifdef OLD_SLIDER_HANDLING
-				graf_mkstate(&mx,&my,&mb,&ks);
-				objc_offset(tree,SASLIDE,&sx,&sy);
-#else
 				if (lst_handle(&li_selapp, ret, &dclick)) {
 					if (dclick) {
 						aptr = aplist[li_selapp.sel];
 						done = 1;
 					}
 				} else {
-#endif
 					switch (fi_selapp.exit_obj) {
 					case -1: /* RÅckgabe von Sondertasten */
 						if (fi_selapp.state == FST_WIN) {
-							wind_update (BEG_UPDATE);
-							wind_update (BEG_MCTRL);
+							wind_update(BEG_UPDATE);
+							wind_update(BEG_MCTRL);
 						}
 						lst_key(&li_selapp, fi_selapp.normkey);
 						if (fi_selapp.state == FST_WIN) {
-							wind_update (END_UPDATE);
-							wind_update (END_MCTRL);
+							wind_update(END_UPDATE);
+							wind_update(END_MCTRL);
 						}
 						break;
 					case SAHELP:
@@ -1948,63 +1903,14 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 						aptr = 0L;
 						done = 1;
 						break;
-#ifdef OLD_SLIDER_HANDLING
-						case SAUP:
-						if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-						lst_up(&li_selapp);
-						if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-						break;
-						case SADOWN:
-						if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-						lst_down(&li_selapp);
-						if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-						break;
-						case SABOX:
-						if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-						if(my<sy) sd=-li_selapp.view;
-						else sd=li_selapp.view;
-						do
-						{
-							lst_move(&li_selapp,sd);
-							graf_mkstate(&mx,&my,&mb,&ks);
-						}
-						while(mb&1);
-						if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-						break;
-						case SASLIDE:
-						if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-						lst_slide(&li_selapp);
-						if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-						break;
-						default:
-						if(fi_selapp.exit_obj>=SALIST+1 && fi_selapp.exit_obj<=SALIST+li_selapp.view)
-						{
-							sel=li_selapp.sel;
-							csel=fi_selapp.exit_obj-SALIST-1+li_selapp.offset;
-							if(li_selapp.num && csel<li_selapp.num)
-							{
-								if(fi_selapp.state==FST_WIN) {wind_update(BEG_UPDATE);wind_update(BEG_MCTRL);}
-								lst_select(&li_selapp,csel);
-								if(fi_selapp.state==FST_WIN) {wind_update(END_UPDATE);wind_update(END_MCTRL);}
-								if(ret&0x8000 || sel==li_selapp.sel)
-								{
-									aptr=aplist[li_selapp.sel];
-									done=1;
-								}
-							}
-						}
-						break;
-#endif
 					}
-#ifndef OLD_SLIDER_HANDLING
 				}
-#endif
 			}
 			frm_end(&fi_selapp);
 #ifdef DIRCH
-			setObjectText(tree, SATITLE, spec);
+			setObjectText(objectTree, SATITLE, spec);
 #else
-			tree[SATITLE].ob_spec.free_string = spec;
+			objectTree[SATITLE].ob_spec.free_string = spec;
 #endif
 
 			/* Semaphore lîschen */
@@ -2016,7 +1922,7 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
 	}
 	if (aptr)
 		aptr->startname[0] = 0;
-	return aptr;
+	return (aptr);
 }
 
 /**
@@ -2121,7 +2027,7 @@ APPLINFO *app_isdrag(char *name) {
 	}
 	if (aptr)
 		aptr->startname[0] = 0;
-	return aptr;
+	return (aptr);
 }
 
 /* EOF */

@@ -31,7 +31,8 @@
 #define _GLOBALS_
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 
 /*-------------------------------------------------------------------------
  Dialoge
@@ -70,9 +71,9 @@ FORMINFO fi_dappinfo = { 0L, DAPPINFO, 0, ROOT, 0, 0, 0, 0, shortpop, 0L, 0, 0L,
 LISTINFO li_dappinfo = { &fi_dappinfo, 0L, DAELIST, DAESLIDE, DAEBOX, DAEUP, DAEDOWN, 20, -1, 6, 50, 0 };
 
 /* Datei->Info (Dateien/Ordner) */
-POPMENU pop_fkeyfd = { 0L, FLFKEY, FLFKEYS, 1, -1, 0, 0, -1, 0 }, pop_mem = {
-		0L, FLPMEM, FLPMEMS, 1, -1, 0, 0, -1, 0 }, *shortpopfd[] = {
-		&pop_fkeyfd, &pop_mem, 0L };
+POPMENU pop_fkeyfd = { 0L, FLFKEY, FLFKEYS, 1, -1, 0, 0, -1, 0 },
+		pop_mem = { 0L, FLPMEM, FLPMEMS, 1, -1, 0, 0, -1, 0 },
+		*shortpopfd[] = { &pop_fkeyfd, &pop_mem, 0L };
 FORMINFO fi_fileinfo = { 0L, FLINFO, 0, ROOT, 0, 0, 0, 0, shortpopfd, 0L, 0, 0L, FICANCEL, FIHELP };
 
 /* Datei->Info (Devices) */
@@ -106,21 +107,22 @@ FORMINFO fi_mask = { 0L, MASK, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 1, 0L, MACANCEL, MAH
 LISTINFO li_mask = { &fi_mask, 0L, MALIST, MASLIDE, MABOX, MAUP, MADOWN, 0, -1, 10, 33, 0 };
 
 /* Datei->Darstellung */
-POPLIST pl_font = { FOFONT, FOFONTA, FOFONTS, -1, 0, 32 }, pl_size = { FOSIZE,
-		FOSIZEA, FOSIZES, -1, 0, 3 }, *fontpl[] = { &pl_font, &pl_size, 0L };
-POPMENU pop_tcolor = { 0L, FOFCOL, FOFCOLS, 1, -1, 0, 0, -1, -1 }, pop_bcolor =
-		{ 0L, FOBCOL, FOBCOLS, 1, -1, 0, 0, -1, -1 }, pop_bpat = { 0L, FOBPAT,
-		FOBPATS, 1, -1, 0, 0, -1, -1 }, *fontpop[] = { &pop_tcolor, &pop_bcolor,
-		&pop_bpat, 0L };
+POPLIST pl_font = { FOFONT, FOFONTA, FOFONTS, -1, 0, 32 },
+		pl_size = { FOSIZE, FOSIZEA, FOSIZES, -1, 0, 3 },
+		*fontpl[] = { &pl_font, &pl_size, 0L };
+POPMENU pop_tcolor = { 0L, FOFCOL, FOFCOLS, 1, -1, 0, 0, -1, -1 },
+		pop_bcolor = { 0L, FOBCOL, FOBCOLS, 1, -1, 0, 0, -1, -1 },
+		pop_bpat = { 0L, FOBPAT, FOBPATS, 1, -1, 0, 0, -1, -1 },
+		*fontpop[] = { &pop_tcolor, &pop_bcolor, &pop_bpat, 0L };
 FORMINFO fi_font = { 0L, FONT, 0, ROOT, 0, 0, 0, 0, fontpop, fontpl, 0, 0L, FOCANCEL, FOHELP };
 USERBLK usr_fontsample = { dl_font_usr, 0L };
 
 /* Extra->Voreinstellung */
-POPMENU pop_dcol = { 0L, CODCOL, CODCOLS, 1, -1, 0, 0, -1, -1 }, pop_dpat = {
-		0L, CODPAT, CODPATS, 1, -1, 0, 0, -1, -1 }, pop_autox = { 0L,
-		COAUTOSIZEX, COAUTOSIZEXS, 1, -1, 0, 0, -1, 0 }, pop_autoy = { 0L,
-		COAUTOSIZEY, COAUTOSIZEYS, 1, -1, 0, 0, -1, 0 }, *configpop[] = {
-		&pop_dcol, &pop_dpat, &pop_autox, &pop_autoy, 0L };
+POPMENU pop_dcol = { 0L, CODCOL, CODCOLS, 1, -1, 0, 0, -1, -1 },
+		pop_dpat = { 0L, CODPAT, CODPATS, 1, -1, 0, 0, -1, -1 },
+		pop_autox = { 0L, COAUTOSIZEX, COAUTOSIZEXS, 1, -1, 0, 0, -1, 0 },
+		pop_autoy = { 0L, COAUTOSIZEY, COAUTOSIZEYS, 1, -1, 0, 0, -1, 0 },
+		*configpop[] = { &pop_dcol, &pop_dpat, &pop_autox, &pop_autoy, 0L };
 FORMINFO fi_config = { 0L, CONFIG, 0, ROOT, 0, 0, 0, 0, configpop, 0L, 0, 0L, COCANCEL, COHELP };
 
 /* Extra->Funktionstasten */
@@ -131,8 +133,8 @@ FORMINFO fi_defappl = { 0L, DEFAPPL, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 1, 0L, DAOK, D
 LISTINFO li_defappl = { &fi_defappl, 0L, DALIST, DASLIDE, DABOX, DAUP, DADOWN, 0, -1, 10, 48, 0 };
 
 /* Extra->Aufl”sung wechseln */
-POPMENU pop_rez = { 0L, CRREZ, CRREZS, 1, -1, 0, 0, -1, 0 }, *rezpop[] = {
-		&pop_rez, 0L };
+POPMENU pop_rez = { 0L, CRREZ, CRREZS, 1, -1, 0, 0, -1, 0 },
+		*rezpop[] = { &pop_rez, 0L };
 FORMINFO fi_rez = { 0L, CHANGEREZ, 0, ROOT, 0, 0, 0, 0, rezpop, 0L, 0, 0L, CRCANCEL, CRHELP };
 
 /* Datei/Ordner umbenennen beim Kopieren */
@@ -150,8 +152,7 @@ LISTINFO li_hotkeys = { &fi_hotkeys, 0L, HKLIST, HKSLIDE, HKBOX, HKUP, HKDOWN, 0
  -------------------------------------------------------------------------*/
 
 /* Mauszeiger fuer "Aktion nicht moeglich" bei Drag&Drop */
-MFORM mf_no =
-		{ 8, 8, 1, 0, 1, { 0xE007, 0xF00F, 0xF81F, 0x7C3E, 0x3E7C, 0x1FF8,
+MFORM mf_no = { 8, 8, 1, 0, 1, { 0xE007, 0xF00F, 0xF81F, 0x7C3E, 0x3E7C, 0x1FF8,
 				0x0FF0, 0x07E0, 0x07E0, 0x0FF0, 0x1FF8, 0x3E7C, 0x7C3E, 0xF81F,
 				0xF00F, 0xE007 }, { 0x0000, 0x6006, 0x700E, 0x381C, 0x1C38,
 				0x0E70, 0x07E0, 0x03C0, 0x03C0, 0x07E0, 0x0E70, 0x1C38, 0x381C,
@@ -173,13 +174,7 @@ DESKINFO desk; /* Desktop */
 WININFO *popwin, *topwin; /* Aktives Fenster */
 
 char almsg[256]; /* Fuer variable Alerts */
-#if defined(_MILAN)
-char *altitle="Ming"; /* Titel fuer Alertboxen */
-#elif defined(_NAES)
-char *altitle="N.Thing"; /* Titel fuer Alertboxen */
-#else
 char *altitle = "Thing"; /* Titel fuer Alertboxen */
-#endif
 
 int aesmsg[8]; /* Nachrichtenaustausch mit anderen Applikationen */
 char *aesbuf;
@@ -234,8 +229,10 @@ char **rs_frstr;
 /* Prototyp-Variable der Hauptfunktion von ThingImg */
 long cdecl (*call_thingimg)(long magic, int what, THINGIMG *img_info);
 
+#if 0
 /* Tabelle fuer schnelles Wildcard-Erkennung */
 int is_wild[256];
+#endif
 
 /*
  * Prototyp-Variable fuer Stringvergleich beim Sortieren und beim

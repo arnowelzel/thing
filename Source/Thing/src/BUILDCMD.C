@@ -260,4 +260,5 @@ int build_commandline(char *dest, size_t len, char *format, char *params,
 	return (1);
 }
 #pragma warn .sig
+
 /* EOF */

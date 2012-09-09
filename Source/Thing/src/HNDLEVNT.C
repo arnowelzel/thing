@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include "..\include\dragdrop.h"
 #include "..\include\tcmd.h"
@@ -71,13 +72,8 @@ void handle_menu(int title, int item, int ks) {
 
 	if ((rs_trindex[MAINMENU][item].ob_state & DISABLED) || (rs_trindex[MAINMENU][title].ob_state & DISABLED))
 		return;
+
 	mn_tnormal(rs_trindex[MAINMENU], title, 0);
-#ifdef OLD_MENU
-	if(conf.wdial)
-	{
-		mn_tnormal(rs_trindex[MAINMENU],title,1);
-	}
-#endif
 	if (ks & K_CTRL) {
 		/* Hilfetext anzeigen, falls [Control] gedrÅckt */
 		switch (item) {
@@ -400,7 +396,6 @@ void handle_menu(int title, int item, int ks) {
 		case MDRIVE:
 			dl_drives(1, 0, ks & (K_LSHIFT | K_RSHIFT));
 			break;
-#ifndef _NAES
 		case MCHANGEREZ:
 			if ((tb.sys & SY_MAGX) && (tb.sys & SY_MSHELL)) {
 				if (tb.magx->aesvars->version >= 0x400) {
@@ -413,10 +408,6 @@ void handle_menu(int title, int item, int ks) {
 			} else
 				dl_changeres_nomagic();
 			break;
-#else
-			case MCHANGEREZ: dl_changeres_nomagic();
-			break;
-#endif /* _NAES */
 		case MEDITICONS:
 			dl_iconedit();
 			break;
@@ -496,13 +487,14 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	if (tb.sm_nowdial && (msg == WM_REDRAW))
 		return;
 	win = win_getwinfo(handle);
-	if (!win) /* Kein eigenes Fenster */
-	{
+	if (!win) {
+		/* Kein eigenes Fenster */
+
 		/* Evtl. Redraw von Alice-Fenster? */
 		if (msg == WM_REDRAW) {
 			awin = alw_get(handle);
 			if (awin)
-				alw_draw(awin, f1, f2, f3, f4); /* Jo... */
+				alw_draw(awin, f1, f2, f3, f4); /* Ja */
 		}
 		return;
 	}
@@ -514,20 +506,20 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	wgrp = 0L;
 	fi = 0L;
 	switch (win->class) {
-		case WCDIAL:
+	case WCDIAL:
 		fi = (FORMINFO *)win->user;
 		break;
-		case WCPATH:
+	case WCPATH:
 		wpath = (W_PATH *)win->user;
 		break;
-		case WCGROUP:
+	case WCGROUP:
 		wgrp = (W_GRP *)win->user;
 		break;
 	}
 
 	lshift = rshift = new = 0;
 	if (ks & K_ALT)
-	new = 1;
+		new = 1;
 	if (ks & K_LSHIFT)
 		lshift = 1;
 	if (ks & K_RSHIFT)
@@ -551,18 +543,16 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	case WM_BOTTOMED: /* WINX */
 		if (!tb.alwin || (win != tb.alwin)) {
 			wind_set(win->handle, WF_BOTTOM, 0, 0, 0, 0);
-			get_twin (&top);
+			get_twin(&top);
 			tb.topwin = win_getwinfo(top);
 			win_newtop(tb.topwin);
 			mn_check();
 			mn_update();
 			/* Workaround fÅr MagiC */
-#ifndef _NAES
 			if (tb.sys & SY_MAGX && !tb.topwin) {
 				if (wind_get(top, WF_OWNER, &owner))
 					magx_switch(owner, 0);
 			}
-#endif
 		}
 		break;
 	case WM_UNTOPPED:
@@ -570,7 +560,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		timer1 = clock() - timer1;
 		fprintf(stdout, "\033H\n\nZeit bis WM_UNTOPPED: %ld \n", (long)timer1);
 #endif
-		get_twin (&top);
+		get_twin(&top);
 		win = win_getwinfo(top);
 		if (tb.topwin != win) {
 			tb.topwin = win;
@@ -617,194 +607,193 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		mn_update();
 		break;
 	case WM_CLOSED:
-		if (tb.sm_alert) /* Alert offen? - dann geht kein Close! */
-		{
+		/* Alert offen? - dann geht kein Close! */
+		if (tb.sm_alert) {
 			mybeep();
 			if (tb.alwin)
 				win_top(tb.alwin);
-		} else {
-			switch (win->class) {
-				case WCDIAL:
-				fi->exit(1,0);
-				break;
+			break;
+		}
 
-				case WCPATH:
-				if (!conf.closebox) {
-					if (ks & K_CTRL) {
+		switch (win->class) {
+		case WCDIAL:
+			fi->exit(1,0);
+			break;
+
+		case WCPATH:
+			if (!conf.closebox) {
+				if (ks & K_CTRL) {
+					/* Auf Loslassen der Maustaste warten */
+					wind_update(BEG_MCTRL);
+					do
+						graf_mkstate(&mx, &my, &mb, &lks);
+					while (mb & 1);
+					wind_update(END_MCTRL);
+
+					if (wpath->path[3]) {
+						/* Ggf. Wildcard-Dialog schlieûen */
+						if (fi_mask.open) {
+							if (dmask->win == win)
+								fi_mask.exit(1, 0);
+						}
+
+						wpath->rel = 0;
+						wpath->path[3] = 0;
+						wpath_update(win);
+						win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					}
+				} else {
+					if (lshift || rshift) {
 						/* Auf Loslassen der Maustaste warten */
 						wind_update(BEG_MCTRL);
-						do graf_mkstate(&mx,&my,&mb,&lks); while(mb&1);
+						do
+							graf_mkstate(&mx, &my, &mb, &lks);
+						while (mb & 1);
 						wind_update(END_MCTRL);
 
-						if (wpath->path[3]) {
-							/* Ggf. Wildcard-Dialog schlieûen */
-							if(fi_mask.open) {if(dmask->win==win) fi_mask.exit(1,0);}
-
-							wpath->rel=0;
-							wpath->path[3]=0;
-							wpath_update(win);
-							win_redraw(win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-						}
+						tb.topwin = win;
+						dl_closewin();
 					} else {
-						if (lshift || rshift) {
+						if (new) {
+							/* Verzeichnis in neuem Fenster îffnen */
+
 							/* Auf Loslassen der Maustaste warten */
 							wind_update(BEG_MCTRL);
-							do graf_mkstate(&mx,&my,&mb,&lks); while(mb&1);
+							do
+								graf_mkstate(&mx, &my, &mb, &lks);
+							while (mb & 1);
 							wind_update(END_MCTRL);
 
-							tb.topwin = win;
-							dl_closewin();
+							if (desk.sel.win) {
+								((W_PATH *)desk.sel.win->user)->amask[0] = 0;
+								wpath_esel(desk.sel.win, 0L, 0, 0, 1);
+							}
+							else icon_select(-1, 0, 0);
+							if (!wpath_parent(win, 1, 1)) {
+								tb.topwin = win;
+								dl_closewin();
+							}
 						} else {
-							if (new) {
-								/* Verzeichnis in neuem Fenster îffnen */
+							/* Im gleichen Fenster */
 
+							/* Falls bereits Root, dann schliessen */
+							if (!((W_PATH *)win->user)->path[3]) {
 								/* Auf Loslassen der Maustaste warten */
 								wind_update(BEG_MCTRL);
 								do
-									graf_mkstate(&mx,&my,&mb,&lks);
-								while (mb&1);
+									graf_mkstate(&mx, &my, &mb, &lks);
+								while (mb & 1);
 								wind_update(END_MCTRL);
 
-								if (desk.sel.win) {
-									((W_PATH *)desk.sel.win->user)->amask[0] = 0;
-									wpath_esel(desk.sel.win,0L,0,0,1);
-								}
-								else icon_select(-1, 0, 0);
-								if (!wpath_parent(win, 1, 1)) {
-									tb.topwin = win;
-									dl_closewin();
-								}
+								tb.topwin = win;
+								dl_closewin();
 							} else {
-								/* Im gleichen Fenster */
-
-								/* Falls bereits Root, dann schliessen */
-								if (!((W_PATH *)win->user)->path[3]) {
-									/* Auf Loslassen der Maustaste warten */
-									wind_update(BEG_MCTRL);
-									do
-										graf_mkstate(&mx,&my,&mb,&lks);
-									while (mb&1);
-									wind_update(END_MCTRL);
-
-									tb.topwin = win;
-									dl_closewin();
-								} else /* Kein Root */
-								{
-									/* Hotclose? */
-									wind_update(BEG_MCTRL);
-									evnt_timer(conf.clickms,0);
-									graf_mkstate(&mx,&my,&mb,&lks);
-									if(mb&1) {
-										if(!wpath_parent(win,2,1)) {
-											do
-												graf_mkstate(&mx,&my,&mb,&lks);
-											while(mb&1);
-											tb.topwin=win;
-											dl_closewin();
-											mn_check();
-										} else {
-											graf_mouse(USER_DEF,&mf_hotc);
-											mc=0;
-											while (mb&1) {
-												evnt_timer(100, 0);
-												mc++;
-												if (mc > 4) {
-													mc = 0;
-													if (!wpath_parent(win, 2, 1))
-														mb = 0;
-												}
-												if (mb)
-													graf_mkstate(&mx, &my, &mb, &lks);
+								/* Kein Root */
+								/* Hotclose? */
+								wind_update(BEG_MCTRL);
+								evnt_timer(conf.clickms, 0);
+								graf_mkstate(&mx, &my, &mb, &lks);
+								if (mb & 1) {
+									if (!wpath_parent(win, 2, 1)) {
+										do
+											graf_mkstate(&mx, &my, &mb, &lks);
+										while (mb & 1);
+										tb.topwin = win;
+										dl_closewin();
+										mn_check();
+									} else {
+										graf_mouse(USER_DEF, &mf_hotc);
+										mc = 0;
+										while (mb & 1) {
+											evnt_timer(100, 0);
+											mc++;
+											if (mc > 4) {
+												mc = 0;
+												if (!wpath_parent(win, 2, 1))
+													mb = 0;
 											}
-											do
-												graf_mkstate(&mx,&my,&mb,&lks);
-											while (mb&1);
-											graf_mouse(ARROW,0L);
-											wpath_update(win);
-											win_slide(win,S_INIT,0,0);
-											win_redraw(win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
+											if (mb)
+												graf_mkstate(&mx, &my, &mb, &lks);
 										}
-									} else /* Kein Hotclose */
-									{
-										if (!wpath_parent(win,0,1)) {
-											tb.topwin = win;
-											dl_closewin();
-										}
+										do
+											graf_mkstate(&mx, &my, &mb, &lks);
+										while (mb & 1);
+										graf_mouse(ARROW, 0L);
+										wpath_update(win);
+										win_slide(win, S_INIT, 0, 0);
+										win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
 									}
-									wind_update(END_MCTRL);
+								} else {
+									/* Kein Hotclose */
+									if (!wpath_parent(win, 0, 1)) {
+										tb.topwin = win;
+										dl_closewin();
+									}
 								}
+								wind_update(END_MCTRL);
 							}
 						}
 					}
 				}
-				else
-				{
-					/* Auf Loslassen der Maustaste warten */
-					wind_update(BEG_MCTRL);
-					do graf_mkstate(&mx,&my,&mb,&lks); while(mb&1);
-					wind_update(END_MCTRL);
-					tb.topwin=win;
-					dl_closewin();
-				}
-				break;
-
-				case WCGROUP:
-				if (lshift || rshift)
-				glob.autoclose = 1;
-				default: /* FALL THROUGH */
-				tb.topwin=win;
+			} else {
+				/* Auf Loslassen der Maustaste warten */
+				wind_update(BEG_MCTRL);
+				do
+					graf_mkstate(&mx, &my, &mb, &lks);
+				while(mb & 1);
+				wind_update(END_MCTRL);
+				tb.topwin = win;
 				dl_closewin();
-				glob.autoclose = 0;
-				break;
 			}
-			mn_check();
-			mn_update();
+			break;
+
+		case WCGROUP:
+			if (lshift || rshift)
+				glob.autoclose = 1;
+		default: /* FALL THROUGH */
+			tb.topwin = win;
+			dl_closewin();
+			glob.autoclose = 0;
+			break;
 		}
+		mn_check();
+		mn_update();
 		break;
-		case WM_FULLED:
+	case WM_FULLED:
 		switch (win->class) {
-			case WCCON:
+		case WCCON:
 			/* Console speziell behandeln */
-			if(win->state&WSFULL)
-				wind_get(win->handle,WF_PREVXYWH,&x,&y,&w,&h);
+			if (win->state & WSFULL)
+				wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
 			else
-				wind_get(win->handle,WF_FULLXYWH,&x,&y,&w,&h);
-			win->curr.x=x;
-			win->curr.y=y;
-			win->curr.w=w;
-			win->curr.h=h;
-			win->state^=WSFULL;
+				wind_get(win->handle, WF_FULLXYWH, &x, &y, &w, &h);
+			win->curr.x = x;
+			win->curr.y = y;
+			win->curr.w = w;
+			win->curr.h = h;
+			win->state ^= WSFULL;
 			cwin_attr();
 			break;
-			case WCGROUP:
+		case WCGROUP:
 			/* Bei Gruppen ggf. Flag fÅr énderung setzen */
-			if(!(win->state&WSICON))
-			{
+			if (!(win->state & WSICON)) {
 				wgrp_change(win);
 				mn_update();
 			}
 			/* Fall through */
-			case WCPATH:
+		case WCPATH:
 			ofull = win->state & WSFULL;
-			if((lshift || rshift) && !conf.autosize)
-			{
+			if ((lshift || rshift) && !conf.autosize) {
 				/* Mit Shift: Fuller auf Bildschirmgrîûe, falls nicht
 				 automatische Grîûenanpassung */
-				if (!ofull)
-				{
-#if 0
-					win->full.x=tb.desk.x;win->full.y=tb.desk.y;
-					win->full.w=tb.desk.w;win->full.h=tb.desk.h;
-#else
+				if (!ofull) {
 					win->full = tb.desk;
-					if (conf.autoplace)
-					{
+					if (conf.autoplace) {
 						win->full.x += tb.fleft;
 						win->full.y += tb.fupper;
 						win->full.w -= tb.fleft + tb.fright;
 						win->full.h -= tb.fupper + tb.flower;
 					}
-#endif
 				}
 				win_full(win);
 			} else {
@@ -814,83 +803,94 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 				as = conf.autosize;
 				asx = conf.autosizex;
 				asy = conf.autosizey;
-				if (!as)
-				conf.autosize = conf.autosizex = conf.autosizey = 1;
+				if (!as) {
+					conf.autosize = conf.autosizex = conf.autosizey = 1;
+				}
 				w_full(win);
 				conf.autosize = as;
 				conf.autosizex = asx;
 				conf.autosizey = asy;
 			}
 			if (ofull)
-			win->state &= ~WSFULL;
+				win->state &= ~WSFULL;
 			else
-			win->state |= WSFULL;
+				win->state |= WSFULL;
 			break;
 		}
 		break;
-		case WM_ARROWED:
+	case WM_ARROWED:
 		switch (f1) {
-			case WA_UPPAGE:
-			win_slide(win,S_REL,0,-2);
+		case WA_UPPAGE:
+			win_slide(win, S_REL, 0, -2);
 			break;
-			case WA_DNPAGE:
-			win_slide(win,S_REL,0,2);
+		case WA_DNPAGE:
+			win_slide(win, S_REL, 0, 2);
 			break;
-			case WA_UPLINE:
-			win_slide(win,S_REL,0,-1);
+		case WA_UPLINE:
+			win_slide(win, S_REL, 0, -1);
 			break;
-			case WA_DNLINE:
-			win_slide(win,S_REL,0,1);
+		case WA_DNLINE:
+			win_slide(win, S_REL, 0, 1);
 			break;
-			case WA_LFPAGE:
-			win_slide(win,S_REL,-2,0);
+		case WA_LFPAGE:
+			win_slide(win, S_REL, -2, 0);
 			break;
-			case WA_RTPAGE:
-			win_slide(win,S_REL,2,0);
+		case WA_RTPAGE:
+			win_slide(win, S_REL, 2, 0);
 			break;
-			case WA_LFLINE:
-			win_slide(win,S_REL,-1,0);
+		case WA_LFLINE:
+			win_slide(win, S_REL, -1, 0);
 			break;
-			case WA_RTLINE:
-			win_slide(win,S_REL,1,0)
-			;break;
+		case WA_RTLINE:
+			win_slide(win, S_REL, 1, 0);
+			break;
 		}
 		break;
-		case WM_HSLID:
-		win_slide(win,S_ABS,f1,-1);
+	case WM_HSLID:
+		win_slide(win, S_ABS, f1, -1);
 		break;
-		case WM_VSLID:
-		win_slide(win,S_ABS,-1,f1);
+	case WM_VSLID:
+		win_slide(win, S_ABS, -1, f1);
 		break;
-		case WM_SIZED:
+	case WM_SIZED:
+		switch (win->class) {
 		/* Bei Console auf Zeichengroesse snappen */
-		if(win->class==WCCON)
-		{
-			win->state&=~WSFULL;
-			win->curr.w=f3;
-			win->curr.h=f4;
+		case WCCON:
+			win->state &= ~WSFULL;
+			win->curr.w = f3;
+			win->curr.h = f4;
 			cwin_attr();
+			break;
+		/* Bei Gruppen Flag fuer Aenderung setzen */
+		case WCGROUP:
+			wgrp_change(win);
+			mn_update();
+			break;
 		}
-		else
-		{
-			switch(win->class)
-			{
+#if 0
+		/* Bei Console auf Zeichengroesse snappen */
+		if (win->class == WCCON) {
+			win->state &= ~WSFULL;
+			win->curr.w = f3;
+			win->curr.h = f4;
+			cwin_attr();
+		} else {
+			switch (win->class) {
 				/* Bei Gruppen Flag fuer Aenderung setzen */
-				case WCGROUP:
+			case WCGROUP:
 				wgrp_change(win);
 				mn_update();
 				break;
 			}
-			win_size(win,f1,f2,f3,f4);
+			win_size(win, f1, f2, f3, f4);
 		}
+#endif
 		break;
-		case WM_MOVED:
-		switch (win->class)
-		{
-			case WCGROUP:
+	case WM_MOVED:
+		switch (win->class) {
+		case WCGROUP:
 			/* Bei Gruppen Flag fuer Aenderung setzen */
-			if (!(win->state & WSICON))
-			{
+			if (!(win->state & WSICON)) {
 				/* Nur, wenn das Fenster nicht ausgeblendet war oder wird */
 				/* Workaround: Fenster werden zweimal eingeblendet?? */
 				if (((f1 != win->curr.x) || (f2 != win->curr.y)) &&
@@ -905,10 +905,10 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			}
 			correct = wgrp->bpat;
 			break;
-			case WCPATH:
+		case WCPATH:
 			correct = wpath->bpat;
 			break;
-			default:
+		default:
 			correct = 0;
 			break;
 		}
@@ -921,7 +921,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			f1 += tb.desk.x;
 			f2 += tb.desk.y;
 		}
-		win_size(win,f1,f2,f3,f4);
+		win_size(win, f1, f2, f3, f4);
 		break;
 	}
 }
@@ -963,11 +963,11 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 
 	/* Klick im Fenster ? */
 	whandle = wind_find(mx, my);
-	if (whandle) /* Yo ... Fensterklick auswerten */
-	{
+	if (whandle) {
+		/* Yo ... Fensterklick auswerten */
 		win = win_getwinfo(whandle); /* Fenster bekannt ? */
-		if (win) /* Yo ... */
-		{
+		if (win) {
+			/* Yo ... */
 			/* Fenster ikonifiziert? - dann keine weiteren Aktionen */
 			if (win->state & WSICON)
 				return;
@@ -980,9 +980,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 
 			/* Falls Mausklick nicht im Arbeitsbereich, dann ignorieren
 			 ist unter MTOS notwendig */
-			if (mx < win->work.x || my < win->work.y
-					|| mx >= win->work.x + win->work.w
-					|| my >= win->work.y + win->work.h)
+			if (mx < win->work.x || my < win->work.y || mx >= win->work.x + win->work.w || my >= win->work.y + win->work.h)
 				return;
 
 			/* Falls Auswahl im Hintergrund abgeschaltet, dann rechten
@@ -997,8 +995,9 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 				evnt_timer(conf.clickms, 0);
 				graf_mkstate(&lmx, &lmy, &lmk, &lks);
 				wind_update (END_MCTRL);
-				if (lmk & 3) /* Linke Taste nach Doppelklick noch gedrÅckt? */
-				{ /* Ja -> Rechtsklick simulieren */
+				if (lmk & 3) {
+					/* Linke Taste nach Doppelklick noch gedrÅckt? */
+					/* Ja -> Rechtsklick simulieren */
 					dsim = 1;
 					but = 2;
 					br = 1;
@@ -1007,41 +1006,36 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 
 			switch (but) {
 			case 1: /* Linke Maustaste */
-				handle_button1: ;
-				switch (win->class)
-				{
-					case WCPATH: /* Verzeichnisfenster */
-					wpath=(W_PATH *)win->user;
-					item=wpath_efind(win,mx,my);
+handle_button1: ;
+				switch (win->class) {
+				case WCPATH: /* Verzeichnisfenster */
+					wpath = (W_PATH *)win->user;
+					item = wpath_efind(win, mx, my);
 					/* Objekt angeklickt ? */
-					if(item) /* Yo ... */
-					{
+					if (item) {
 						/* Objekte in anderen Fenstern deselektieren */
-						win1=tb.win;
-						while(win1)
-						{
-							if(win1!=win)
-							{
-								switch(win1->class)
-								{
-									case WCPATH:
-									((W_PATH *)win1->user)->amask[0]=0;
-									wpath_esel(win1,0L,0,0,1);
+						win1 = tb.win;
+						while (win1) {
+							if (win1 != win) {
+								switch (win1->class) {
+								case WCPATH:
+									((W_PATH *)win1->user)->amask[0] = 0;
+									wpath_esel(win1, 0L, 0, 0, 1);
 									break;
-									case WCGROUP:
-									wgrp_esel(win1,0L,0,0);
+								case WCGROUP:
+									wgrp_esel(win1, 0L, 0, 0);
 									break;
 								}
 							}
-							win1=win1->next;
+							win1 = win1->next;
 						}
-						icon_select(-1,0,0); /* Desktop-Objekte deselektieren */
-						if(br > 1) /* Doppelklick oder Kontext */
-						{
-							wpath->amask[0]=0;
-							wpath->focus=item->obnum-1;
-							if (br == 2) /* Doppelklick */
-							{
+						icon_select(-1, 0, 0); /* Desktop-Objekte deselektieren */
+						if (br > 1) {
+							/* Doppelklick oder Kontext */
+							wpath->amask[0] = 0;
+							wpath->focus=item->obnum - 1;
+							if (br == 2) {
+								/* Doppelklick */
 								wpath_esel(win,item,0,1,1); /* Objekt als einziges selektieren */
 								icon_checksel(); /* Aktuelle Auswahl aktualisieren */
 								/* Zusammen mit [Control] - Anzeigen */
@@ -1049,30 +1043,28 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 									dl_show(0,0L);
 								else
 									dl_open(ks); /* Sonst îffnen */
-							}
-							else /* Kontext */
-							{
-								if (!item->sel)
-								{
+							} else {
+								/* Kontext */
+								if (!item->sel) {
 									wpath_esel(win, item, 0, 1, 1);
 									icon_checksel();
 								}
 								if (item->class == EC_PARENT)
-								parent_popup(win, mx, my);
+									parent_popup(win, mx, my);
 								else
-								handle_context(mx, my, 0L);
+									handle_context(mx, my, 0L);
 							}
-						}
-						else /* Einfacher Klick */
-						{
+						} else {
+							/* Einfacher Klick */
 							wind_update(BEG_MCTRL);
-							if(wait) evnt_timer(conf.clickms,0);
+							if (wait)
+								evnt_timer(conf.clickms, 0);
 							graf_mkstate(&lmx,&lmy,&lmk,&lks);
 							wind_update(END_MCTRL);
-							if(lmk&3) /* Maustaste immer noch gedrÅckt -> Drag&Drop */
-							{
-								if(!item->sel && item->class!=EC_PARENT) /* Keine selektierte Gruppe */
-								{
+							if (lmk&3) {
+								/* Maustaste immer noch gedrÅckt -> Drag&Drop */
+								if (!item->sel && item->class != EC_PARENT) {
+									/* Keine selektierte Gruppe */
 									wpath->amask[0]=0;
 									wpath->focus=item->obnum-1;
 									if(lshift || rshift)
@@ -1083,93 +1075,92 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 								icon_checksel(); /* Aktuelle Auswahl aktualisieren */
 
 								/* Sonderbehandlung von Parent-Verzeichnissen... */
-								if(item->class==EC_PARENT)
-								{
-									wpath->amask[0]=0;
-									wpath->focus=item->obnum-1;
-									wpath_esel(win,item,1,0,1);
+								if (item->class == EC_PARENT) {
+									wpath->amask[0] = 0;
+									wpath->focus = item->obnum - 1;
+									wpath_esel(win, item, 1, 0, 1);
 									goto wrubber;
-								}
-								else /* ...sonst Drag&Drop ausfÅhren */
-								{
-									wpath->focus=item->obnum-1;
+								} else {
+									/* ...sonst Drag&Drop ausfÅhren */
+									wpath->focus = item->obnum - 1;
 									wind_update(BEG_UPDATE);
-									wpath_edrag(mx,my,lmk,lks);
+									wpath_edrag(mx, my, lmk, lks);
 									wind_update(END_UPDATE);
 								}
-							}
-							else /* Nur angeklickt */
-							{
-								wpath->amask[0]=0;
-								wpath->focus=item->obnum-1;
-								if(lshift || rshift || item->sel)
-								{
+							} else {
+								/* Nur angeklickt */
+								wpath->amask[0] = 0;
+								wpath->focus = item->obnum - 1;
+								if (lshift || rshift || item->sel) {
 									/* Mausklick mit [Shift] oder selektiertes Objekt */
-									if(item->sel || item->class!=EC_PARENT) {
-										if(wpath->list->class==EC_PARENT && item!=wpath->list)
-											wpath_esel(win,wpath->list,1,0,0);
-										wpath_esel(win,item,1,1-item->sel,1);
+									if (item->sel || item->class != EC_PARENT) {
+										if(wpath->list->class == EC_PARENT && item != wpath->list)
+											wpath_esel(win, wpath->list, 1, 0, 0);
+										wpath_esel(win, item, 1, 1-item->sel, 1);
 									}
+								} else {
+									/* Normaler Klick */
+									wpath_esel(win,item,0,1-item->sel,1);
 								}
-								else
-								/* Normaler Klick */
-								wpath_esel(win,item,0,1-item->sel,1);
 							}
 						}
-					}
-					else /* Nein, kein Objekt ... */
-					{
-						if(br==1) /* Klick oder immer noch gedrÅckt? */
-						{
+					} else {
+						/* Nein, kein Objekt ... */
+						if (br == 1) {
+							/* Klick oder immer noch gedrÅckt? */
 							wind_update(BEG_MCTRL);
-							if(wait) evnt_timer(conf.clickms,0);
-							graf_mkstate(&lmx,&lmy,&lmk,&lks);
+							if (wait)
+								evnt_timer(conf.clickms, 0);
+							graf_mkstate(&lmx ,&lmy, &lmk, &lks);
 							wind_update(END_MCTRL);
 							/* Hintergrund eines inaktiven Fensters angeklickt? */
-							if(!istop && !(lmk&3)) {
+							if (!istop && !(lmk&3)) {
 								win_top(win);
 								magx_switch(tb.app_id, 0);
 								mn_check();
 							} else {
 								/* Objekte in anderen Fenster deselektieren */
-								win1=tb.win;
-								while(win1) {
-									if(win1!=win) {
-										switch(win1->class) {
-											case WCPATH:
-											((W_PATH *)win1->user)->amask[0]=0;
-											wpath_esel(win1,0L,0,0,1);
+								win1 = tb.win;
+								while (win1) {
+									if (win1 != win) {
+										switch (win1->class) {
+										case WCPATH:
+											((W_PATH *)win1->user)->amask[0] = 0;
+											wpath_esel(win1, 0L, 0, 0, 1);
 											break;
-											case WCGROUP:
-											wgrp_esel(win1,0L,0,0);
+										case WCGROUP:
+											wgrp_esel(win1, 0L, 0, 0);
 											break;
 										}
 									}
-									win1=win1->next;
+									win1 = win1->next;
 								}
 								/* Desktop-Objekte deselektieren und Auto-Locator
 								 lîschen */
-								icon_select(-1,0,0);
-								wpath->amask[0]=0;
-								wrubber:;
+								icon_select(-1, 0, 0);
+								wpath->amask[0] = 0;
+wrubber:
 								/* Falls nicht mit [Shift] geklickt, dann alle Obj. deselekt. */
-								if(!lshift && !rshift) wpath_esel(win,0L,0,0,1);
-								if(lmk&3) /* Immer noch gedrÅckt - "Gummiband" aufziehen */
-								{
-									wind_update(BEG_MCTRL);wind_update(BEG_UPDATE);
-									wpath_exsel(win,mx,my,lmk,ks);
-									wind_update(END_MCTRL);wind_update(END_UPDATE);
+								if (!lshift && !rshift)
+									wpath_esel(win, 0L, 0, 0, 1);
+
+								/* Immer noch gedrÅckt - "Gummiband" aufziehen */
+								if (lmk & 3) {
+									wind_update(BEG_MCTRL);
+									wind_update(BEG_UPDATE);
+									wpath_exsel(win, mx, my, lmk, ks);
+									wind_update(END_MCTRL);
+									wind_update(END_UPDATE);
 								}
 								/* Focus auf das erste selektierte Objekt */
-								for(i=0;i<wpath->e_total;i++) {
+								for (i = 0; i < wpath->e_total; i++) {
 									if(wpath->lptr[i]->sel) {
-										wpath->focus=i;
+										wpath->focus = i;
 										break;
 									}
 								}
 							}
-						}
-						else if ((br == 3) || ((obut == 2) && (br == 2))) {
+						} else if ((br == 3) || ((obut == 2) && (br == 2))) {
 							if (istop) {
 								icon_select(-1, 0, 0);
 								handle_context(mx, my, win);
@@ -1181,32 +1172,33 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 						}
 					}
 					break;
-					case WCGROUP: /* Gruppenfenster */
-					wgrp=(W_GRP *)win->user;
-					gitem=wgrp_efind(win,mx,my,&gprev);
+				case WCGROUP: /* Gruppenfenster */
+					wgrp = (W_GRP *)win->user;
+					gitem = wgrp_efind(win, mx, my, &gprev);
 					/* Objekt angeklickt ? */
-					if(gitem) /* Yo ... */
-					{
+					if (gitem) {
 						/* Objekte in anderen Fenstern deselektieren */
-						win1=tb.win;
-						while(win1) {
-							if(win1!=win) {
-								switch(win1->class) {
-									case WCPATH:
-									((W_PATH *)win1->user)->amask[0]=0;
-									wpath_esel(win1,0L,0,0,1);
+						win1 = tb.win;
+						while (win1) {
+							if (win1 != win) {
+								switch (win1->class) {
+								case WCPATH:
+									((W_PATH *)win1->user)->amask[0] = 0;
+									wpath_esel(win1, 0L, 0, 0, 1);
 									break;
-									case WCGROUP:
-									wgrp_esel(win1,0L,0,0);
+								case WCGROUP:
+									wgrp_esel(win1, 0L, 0, 0);
 									break;
 								}
 							}
-							win1=win1->next;
+							win1 = win1->next;
 						}
+
 						/* Desktop-Objekte deselektieren */
-						icon_select(-1,0,0);
+						icon_select(-1, 0, 0);
+
 						/* Gruppen-Objekt bearbeiten... */
-						wgrp->focus=gitem->obnum-1;
+						wgrp->focus = gitem->obnum - 1;
 						if(br > 1) /* Doppelklick oder Kontext */
 						{
 							if (br == 2) /* Doppelklick */
@@ -1515,16 +1507,14 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 	mn_update();
 }
 
-/**-------------------------------------------------------------------------
- handle_key()
-
- Verarbeiten von Tastatureingaben
- -------------------------------------------------------------------------*/
+/**
+ * Verarbeiten von Tastatureingaben
+ */
 void call_smu(void) {
 	int smu_id;
 
 	if ((smu_id = appl_find("START   ")) >= 0)
-		app_send(smu_id, VA_START, 0, 0, 0, 0, 0, 0);
+		appl_send(smu_id, VA_START, 0, 0, 0, 0, 0, 0);
 	else
 		mybeep();
 }
@@ -1559,8 +1549,8 @@ void handle_key(int ks, int kr) {
 	if (menu_key(rs_trindex[MAINMENU], key, &title, &item)) {
 		/* Shortcut vorhanden, Menuehandling ausfuehren */
 		handle_menu(title, item, 0);
-	} else /* Kein Shortcut, normale Verarbeitung */
-	{
+	} else {
+		/* Kein Shortcut, normale Verarbeitung */
 		char match[5];
 
 		/* Shortcut fuer SMU-Aufruf? */
@@ -1634,7 +1624,7 @@ void handle_key(int ks, int kr) {
 			break;
 		case NKF_FUNC | NKF_CTRL | NK_UNDO:
 			if (tb.topwin) {
-				if ((tb.topwin->class==WCPATH) && !(tb.topwin->state&WSICON)) {
+				if ((tb.topwin->class == WCPATH) && !(tb.topwin->state & WSICON)) {
 					wpath = (W_PATH *) tb.topwin->user;
 					if (wpath->path[3]) {
 						/* Ggf. Wildcard-Dialog schlieûen */
@@ -1647,11 +1637,7 @@ void handle_key(int ks, int kr) {
 							wpath->rel = 0;
 						wpath->path[3] = 0;
 						wpath_update(tb.topwin);
-#if 1
 						w_draw(tb.topwin);
-#else
-						win_redraw(tb.topwin,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-#endif
 					}
 					mn_update();
 				}
@@ -1661,34 +1647,25 @@ void handle_key(int ks, int kr) {
 		case NKF_FUNC | NKF_SHIFT | NK_ESC:
 			if (tb.topwin) {
 				if (!(tb.topwin->state & WSICON)) {
-					switch (tb.topwin->class)
-					{
-						case WCPATH:
-						wpath=(W_PATH *)tb.topwin->user;
-						if(key&NKF_SHIFT)
-						{
+					switch (tb.topwin->class) {
+					case WCPATH:
+						wpath = (W_PATH *)tb.topwin->user;
+						if (key & NKF_SHIFT) {
 							/* Media-Change und Path-Update auslîsen */
-							graf_mouse(BUSYBEE,0L);
-							drv=wpath->filesys.biosdev;
+							graf_mouse(BUSYBEE, 0L);
+							drv = wpath->filesys.biosdev;
 							lock_device(drv);
 							unlock_device(drv);
-							app_send(tb.app_id, SH_WDRAW, 0, drv, 0, 0, 0, 0);
+							appl_send(tb.app_id, SH_WDRAW, 0, drv, 0, 0, 0, 0);
 							graf_mouse(ARROW,0L);
-						}
-						else
-						{
+						} else {
 							/* wpath->offx=wpath->offy=0;*/
 							wpath_update(tb.topwin);
-#if 1
 							w_draw(tb.topwin);
-#else
-							win_redraw(tb.topwin,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-#endif
 						}
 						break;
-						case WCGROUP: /* Gruppenfenster */
-						if(key&NKF_SHIFT)
-						{
+					case WCGROUP: /* Gruppenfenster */
+						if (key & NKF_SHIFT) {
 							strcpy(fpath,((W_GRP *)tb.topwin->user)->name);
 							dl_closewin();
 							wgrp_open(fpath,0L, 0L);
@@ -1699,31 +1676,33 @@ void handle_key(int ks, int kr) {
 				}
 			}
 			break;
-			case NKF_FUNC|NK_RET: /* Alternativer Shortcut "ôffnen" */
-			case NKF_FUNC|NKF_NUM|NK_ENTER:
-			case NKF_FUNC|NK_RET|NKF_ALT:
-			case NKF_FUNC|NKF_NUM|NK_ENTER|NKF_ALT:
-			case NKF_FUNC|NK_RET|NKF_SHIFT:
-			case NKF_FUNC|NKF_NUM|NK_ENTER|NKF_SHIFT:
-			if(desk.sel.desk || desk.sel.win) handle_menu(MFILE,MOPEN,ks);
+		case NKF_FUNC | NK_RET: /* Alternativer Shortcut "ôffnen" */
+		case NKF_FUNC | NKF_NUM | NK_ENTER:
+		case NKF_FUNC | NK_RET | NKF_ALT:
+		case NKF_FUNC | NKF_NUM | NK_ENTER|NKF_ALT:
+		case NKF_FUNC | NK_RET | NKF_SHIFT:
+		case NKF_FUNC | NKF_NUM | NK_ENTER | NKF_SHIFT:
+			if (desk.sel.desk || desk.sel.win)
+				handle_menu(MFILE, MOPEN, ks);
 			break;
-			case NKF_FUNC|NKF_CTRL|NK_RET: /* Alternativer Shortcut "Anzeigen" */
-			case NKF_FUNC|NKF_CTRL|NKF_NUM|NK_ENTER:
-			case NKF_FUNC|NKF_CTRL|NK_RET|NKF_ALT:
-			case NKF_FUNC|NKF_CTRL|NKF_NUM|NK_ENTER|NKF_ALT:
+		case NKF_FUNC|NKF_CTRL|NK_RET: /* Alternativer Shortcut "Anzeigen" */
+		case NKF_FUNC|NKF_CTRL|NKF_NUM|NK_ENTER:
+		case NKF_FUNC|NKF_CTRL|NK_RET|NKF_ALT:
+		case NKF_FUNC|NKF_CTRL|NKF_NUM|NK_ENTER|NKF_ALT:
 			handle_menu(MFILE,MSHOW,ks&(~K_CTRL));
 			break;
-			case NKF_FUNC|NK_TAB: /* Alternativer Shortcut "Info" */
-			case NKF_FUNC|NKF_ALT|NK_TAB:
+		case NKF_FUNC|NK_TAB: /* Alternativer Shortcut "Info" */
+		case NKF_FUNC|NKF_ALT|NK_TAB:
 			handle_menu(MFILE,MINFO,0);
 			break;
-			case NKF_FUNC|NK_DEL: /* Alternativer Shortcut "Lîschen" */
-			if(conf.usedel) handle_menu(MFILE,MDELETE,0);
+		case NKF_FUNC|NK_DEL: /* Alternativer Shortcut "Lîschen" */
+			if (conf.usedel)
+				handle_menu(MFILE, MDELETE, 0);
 			break;
-			case NKF_FUNC|NKF_CTRL|NK_DEL:
+		case NKF_FUNC|NKF_CTRL|NK_DEL:
 			handle_menu(MFILE,MDELETE,0);
 			break;
-			case NKF_FUNC|NKF_CTRL|NK_BS: /* Parent-Popup */
+		case NKF_FUNC|NKF_CTRL|NK_BS: /* Parent-Popup */
 			if (tb.topwin && (tb.topwin->class == WCPATH))
 			{
 				if ((wpath = (W_PATH *)tb.topwin->user)->path[3])
@@ -1821,37 +1800,7 @@ void handle_key(int ks, int kr) {
 						path[1]=':';path[2]='\\';path[3]=0;
 						/* Nur ôffnen, wenn Laufwerk vorhanden */
 						if(chk_drive((path[0] & ~32) - 'A')!=-1) {
-#if 1
 							dl_open_p(path, NULL, 0, "*", ks);
-#else
-							wrd=0;
-							if(key&NKF_SHIFT) /* Aktuelles Fenster nehmen */
-							{
-								if(tb.topwin)
-								{
-									if((tb.topwin->class==WCPATH) && !(tb.topwin->state&WSICON))
-									{
-										wpath=(W_PATH *)tb.topwin->user;
-										strcpy(wpath->path,path);
-										wpath->offx=wpath->offy=0;
-										wpath->rel=0;
-										wpath_update(tb.topwin);
-#if 1
-										w_draw(tb.topwin);
-#else
-										win_redraw(tb.topwin,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
-#endif
-										wrd=1;
-									}
-								}
-							}
-
-							if(!wrd)
-							{
-								/* Neues Fenster oeffnen */
-								wpath_open(path, "*", 0, 0L, conf.index.text, -1, conf.index.sortby);
-							}
-#endif
 						}
 						else mybeep(); /* Sonst mosern */
 					}
@@ -2013,7 +1962,7 @@ void handle_key(int ks, int kr) {
 											}
 											else /* Kein AL, dann als 'Schlieûen' behandeln */
 											{
-												app_send(tb.app_id, MN_SELECTED, 0, MFILE, MCLOSE,
+												appl_send(tb.app_id, MN_SELECTED, 0, MFILE, MCLOSE,
 														0, 0, 0);
 											}
 										}
@@ -2287,8 +2236,8 @@ void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
 				aesmsg[7] = 0;
 				shel_write(SHW_AESSEND, 0, 0, (char *) aesmsg, 0L);
 				frm_alert(1, rs_frstr[ALNOSHUT], altitle, 0, 0L);
-			} else /* Nein - alles klar */
-			{
+			} else {
+				/* Nein - alles klar */
 				/* Falls als MagiC-Shell, dann globalen Shutdown auslîsen */
 				if ((tb.sys & SY_MSHELL) && (mevent->ev_mmgpbuf[1] == -1))
 					dl_shutdown();
@@ -2302,17 +2251,19 @@ void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
 				 beenden */
 				win = tb.win;
 				while (win) {
-					switch (win->class)
-					{
-						case WCDIAL:
-						lfi=(FORMINFO *)win->user;
-						if(lfi->exit) lfi->exit(1,0); else frm_end(lfi);
+					switch (win->class) {
+					case WCDIAL:
+						lfi = (FORMINFO *)win->user;
+						if (lfi->exit)
+							lfi->exit(1, 0);
+						else
+							frm_end(lfi);
 						break;
-						default:
-						tb.topwin=win;
+					default:
+						tb.topwin = win;
 						dl_closewin();
 					}
-					win=win->next;
+					win = win->next;
 				}
 				main_exit();
 				Pterm0();
@@ -2490,15 +2441,14 @@ void handle_fontmsg(int *msg) {
 			mwin = tb.topwin;
 
 		if (mwin) {
-			switch (mwin->class)
-			{
-				case WCPATH:
+			switch (mwin->class) {
+			case WCPATH:
 				if (!font.id)
-				font.id = conf.font.id;
+					font.id = conf.font.id;
 				/* Pruefen, ob der Font ueberhaupt existiert */
 				for (i = 0; i < gdos.numfonts; i++)
-				if (gdos.fontid[i * 2L] == font.id)
-				ok = 1;
+					if (gdos.fontid[i * 2L] == font.id)
+						ok = 1;
 
 				/* Falls ja, dann uebernehmen */
 				if (ok) {
@@ -2517,14 +2467,16 @@ void handle_fontmsg(int *msg) {
 					}
 				}
 				break;
-				case WCGROUP: /* Gruppenfenster */
+			case WCGROUP: /* Gruppenfenster */
 				wgrp = (W_GRP *)mwin->user;
 				if (!font.id)
-				font.id = wgrp->font.id;
+					font.id = wgrp->font.id;
+
 				/* Pruefen, ob der Font ueberhaupt existiert */
 				for (i = 0; i < gdos.numfonts; i++)
-				if (gdos.fontid[i * 2L] == font.id)
-				ok = 1;
+					if (gdos.fontid[i * 2L] == font.id)
+						ok = 1;
+
 				/* Falls ja, dann uebernehmen */
 				if (ok) {
 					wgrp->font.id = font.id;
@@ -2536,70 +2488,78 @@ void handle_fontmsg(int *msg) {
 					wgrp_change(mwin);
 				}
 				break;
-				case WCCON:
+			case WCCON: /* Consolefenster */
 				if (!font.id)
-				font.id = con.font.id;
-				/* Pruefen, ob der Font ueberhaupt existiert */
-				for(i=0;i<gdos.numfonts;i++) if(gdos.fontid[i*2L]==font.id) ok=1;
-				/* Falls ja, dann pruefen, ob er fuer die Console geeignet ist */
-				if(ok) {
-					vdipb.contrl=_VDIParBlk.contrl;
-					vdipb.intin=_VDIParBlk.intin;
-					vdipb.ptsin=_VDIParBlk.ptsin;
-					vdipb.intout=_VDIParBlk.intout;
-					vdipb.ptsout=_VDIParBlk.ptsout;
+					font.id = con.font.id;
 
-					dotest=1;
-					if(tb.gdos) /* Sicherheitshalber nur mit GDOS ;-) */
-					{
-						for(i=0;i<gdos.numfonts;i++) {
-							if(gdos.fontid[i*2L]==font.id) {
-								_VDIParBlk.contrl[0]=130;
-								_VDIParBlk.contrl[1]=0;
-								_VDIParBlk.contrl[3]=2;
-								_VDIParBlk.contrl[5]=1;
-								_VDIParBlk.contrl[6]=tb.vdi_handle;
-								_VDIParBlk.intin[0]=gdos.fontid[i*2L+1];
-								_VDIParBlk.intin[1]=0;
+				/* Pruefen, ob der Font ueberhaupt existiert */
+				for (i = 0; i < gdos.numfonts; i++)
+					if (gdos.fontid[i * 2L] == font.id)
+						ok = 1;
+
+				/* Falls ja, dann pruefen, ob er fuer die Console geeignet ist */
+				if (ok) {
+					vdipb.contrl = _VDIParBlk.contrl;
+					vdipb.intin = _VDIParBlk.intin;
+					vdipb.ptsin = _VDIParBlk.ptsin;
+					vdipb.intout = _VDIParBlk.intout;
+					vdipb.ptsout = _VDIParBlk.ptsout;
+
+					dotest = 1;
+					if (tb.gdos) {
+						/* Sicherheitshalber nur mit GDOS ;-) */
+						for (i = 0; i < gdos.numfonts; i++) {
+							if (gdos.fontid[i * 2L] == font.id) {
+								_VDIParBlk.contrl[0] = 130;
+								_VDIParBlk.contrl[1] = 0;
+								_VDIParBlk.contrl[3] = 2;
+								_VDIParBlk.contrl[5] = 1;
+								_VDIParBlk.contrl[6] = tb.vdi_handle;
+								_VDIParBlk.intin[0] = gdos.fontid[i * 2L + 1];
+								_VDIParBlk.intin[1] = 0;
 								vdi(&vdipb);
 								/* Font monospaced? */
-								if(_VDIParBlk.contrl[4]>=35) {
-									dotest=0; /* Keine weiteren Tests nîtig */
-									if((_VDIParBlk.intout[34]&0xff00)==0x0100)
-										wmin=wmax=0;
-									else {
-										wmin=0;
-										wmax=1;
+								if (_VDIParBlk.contrl[4] >= 35) {
+									dotest = 0; /* Keine weiteren Tests nîtig */
+									wmin = 0;
+									if ((_VDIParBlk.intout[34] & 0xff00) == 0x0100) {
+										wmax = 0;
+									} else {
+										wmax = 1;
 									}
 								}
 							}
 						}
 					}
 
-					if(dotest) /* Hat nicht geklappt ... also wie bisher :( */
-					{
-						vst_font(tb.vdi_handle,font.id);
-						vqt_fontinfo(tb.vdi_handle,&minade,&maxade,dist,&mw,eff);
-						wmin=32767;wmax=0;
-						for(j=minade;j<=maxade;j++) {
-							vqt_width(tb.vdi_handle,(char)j,&w,&dummy,&dummy);
-							if(w>wmax) wmax=w;
-							if(w<wmin) wmin=w;
+					if (dotest) {
+						/* Hat nicht geklappt ... also wie bisher :( */
+						vst_font(tb.vdi_handle, font.id);
+						vqt_fontinfo(tb.vdi_handle, &minade, &maxade, dist, &mw, eff);
+						wmin = 32767;
+						wmax = 0;
+						for (j = minade; j <= maxade; j++) {
+							vqt_width(tb.vdi_handle, (char)j, &w, &dummy, &dummy);
+							if (w > wmax)
+								wmax = w;
+							if (w < wmin)
+								wmin = w;
 						}
 					}
 
 					/* Font ok, dann setzen */
-					if(wmin==wmax) {
-						con.font.id=font.id;
-						con.font.size=font.size;
+					if (wmin == wmax) {
+						con.font.id = font.id;
+						con.font.size = font.size;
 						cwin_update();
-					}
-					else ok=0;
+					} else
+						ok = 0;
 				}
 				break;
 			}
 		}
-		if(!ok) mybeep();
+		if (!ok)
+			mybeep();
 		break;
 	}
 }
@@ -2614,12 +2574,12 @@ void handle_job(EVENT *event) {
 	case JB_FORMAT:
 		job_format();
 		break;
-		/*  case JB_COPY:   job_copy();break; */
+/*  case JB_COPY:   job_copy();break; */
 	}
 }
 
 void do_job(int j_id) {
-	app_send(tb.app_id, THING_MSG, 0, TI_JOB, j_id, 0x4711, 0, 0);
+	appl_send(tb.app_id, THING_MSG, 0, TI_JOB, j_id, 0x4711, 0, 0);
 }
 
 /**-------------------------------------------------------------------------
@@ -2635,11 +2595,11 @@ int read_dd_data(char *buf, long len, int fd) {
 	c = DD_OK;
 	Fwrite((int) fd, 1L, &c);
 	Fread((int) fd, 1L, &c);
-	if (c == DD_OK) /* Empfaenger einverstanden? */
-	{
+	if (c == DD_OK) {
+		/* Empfaenger einverstanden? */
 		return (Fread((int) fd, len, buf) == len);
 	} else
-		/* Nî :( */
+		/* Noe :( */
 		return (0);
 }
 
@@ -2716,8 +2676,8 @@ void handle_dd(int *msg) {
 
 		/* Daten entsprechend behandeln */
 		if (dbuf) {
-			if (!strcmp(hext, "ARGS")) /* Kommandozeile */
-			{
+			if (!strcmp(hext, "ARGS")) {
+				/* Kommandozeile */
 				if (read_dd_data(dbuf, dlen, (int) fd)) {
 					if (dlen > MAX_AVLEN)
 						dlen = MAX_AVLEN;
@@ -2726,8 +2686,8 @@ void handle_dd(int *msg) {
 				} else
 					mybeep();
 				Fclose((int) fd);
-			} else /* Normale Daten */
-			{
+			} else {
+				/* Normale Daten */
 				strcpy(path, "X:\\");
 				path[0] = tb.homepath[0];
 				name[0] = 0;
@@ -2737,68 +2697,66 @@ void handle_dd(int *msg) {
 				whandle = wind_find(px, py);
 				win = win_getwinfo(whandle);
 				if (win) {
-					switch (win->class)
-					{
-						case WCPATH:
-						strcpy(path,((W_PATH *)win->user)->path);
+					switch (win->class) {
+					case WCPATH:
+						strcpy(path, ((W_PATH *)win->user)->path);
 						break;
-						case WCDIAL:
-						i=2;dobj=-1;
-						if(!strcmp(hext,".TXT")) /* Auf Dialoge nur Text zulaessig! */
-						{
-							fi=(FORMINFO *)win->user;
-							if((fi==&fi_cfunc || fi==&fi_mask || fi==&fi_dappinfo))
-							{
-								dobj=objc_find(fi->tree,ROOT,MAX_DEPTH,px,py);
-								if(!(fi->tree[dobj].ob_flags&EDITABLE)) dobj=-1;
-								if(fi==&fi_dappinfo && (dobj==DAILABEL || dobj==DAEVAL)) dobj=-1;
+					case WCDIAL:
+						i = 2;
+						dobj = -1;
+						if (!strcmp(hext, ".TXT")) {
+							/* Auf Dialoge nur Text zulaessig! */
+							fi = (FORMINFO *)win->user;
+							if ((fi == &fi_cfunc || fi == &fi_mask || fi == &fi_dappinfo)) {
+								dobj = objc_find(fi->tree, ROOT, MAX_DEPTH, px, py);
+								if (!(fi->tree[dobj].ob_flags & EDITABLE))
+									dobj = -1;
+								if (fi == &fi_dappinfo && (dobj == DAILABEL || dobj == DAEVAL))
+									dobj = -1;
 							}
 						}
 
-						if(dobj==-1)
-						{
+						if (dobj == -1) {
 							mybeep();
 							c = DD_NAK;
 							Fwrite((int)fd, 1L, &c);
-						}
-						else
-						{
+						} else {
 							if (read_dd_data(dbuf, dlen, (int)fd))
-							dl_wdrag_d(fi,dobj,dbuf,ks);
+								dl_wdrag_d(fi, dobj, dbuf, ks);
 							else
-							mybeep();
+								mybeep();
 						}
 						Fclose((int)fd);
 						break;
-						case WCGROUP:
+					case WCGROUP:
 						strcpy(path, ((W_GRP *)win->user)->name);
 						if ((p = strrchr(path, '\\')) != NULL)
-						p[1] = 0;
+							p[1] = 0;
 						break;
 					}
 				} else {
-					dobj=icon_find(px,py);
-					if(dobj) {
+					dobj = icon_find(px, py);
+					if (dobj) {
 						ICONDESK *q = desk.dicon + dobj;
 						switch(q->class) {
-							case IDDRIVE:
+						case IDDRIVE:
 							path[0]=q->spec.drive->drive+'A';
 							break;
-							case IDFOLDER:
+						case IDFOLDER:
 							strcpy(path,q->spec.folder->path);
 							break;
-							case IDFILE:
+						case IDFILE:
 							strcpy(path,q->spec.file->name);
 							p=strrchr(path,'\\');if(p) p[1]=0;
 							break;
-							case IDCLIP:
+						case IDCLIP:
 							strcpy(path,q->spec.folder->path);
 							strcpy(name,"SCRAP");strcat(name,hext);
 							i=1; /* Daten kopieren, aber kein Fileselector */
 							scrap_clear();
 							break;
-							case IDPRT:
-							case IDTRASH:
+						case IDPRT:
+						case IDTRASH:
 							i = 2; /* Daten schon verarbeitet */
 							c = (q->class == IDPRT) ? DD_PRINTER : DD_TRASH;
 							Fwrite((int)fd, 1L, &c);
@@ -2872,8 +2830,8 @@ int handle_fkey_or_tool(char *entry) {
 		if (*fpath) {
 			while (*p == ' ')
 				p++;
-			if (fpath[strlen(fpath) - 1] == '\\') /* Verzeichnis */
-			{
+			if (fpath[strlen(fpath) - 1] == '\\') {
+				/* Verzeichnis */
 				if (*p) /* Mit Wildcard */
 					wpath_open(fpath, p, 1, 0L, conf.index.text, -1, conf.index.sortby);
 				else /* Ohne Wildcard */
@@ -2909,10 +2867,9 @@ void handle_context(int mx, int my, WININFO *win) {
 	WG_ENTRY *entry;
 	POPMENU popsort, popshow, dummy;
 	POPLIST plsendto;
-	POPSUBMENU subpath[] = { { 0, NULL, POPCWSHOW }, { 0, NULL, POPCWSORT }, {
-			0, NULL, 0 } }, subgroup[] = { { 0, NULL, POPCGSHOW },
-			{ 0, NULL, 0 } }, subitem[] = { { 1, NULL, POPCSENDTO }, { 0, NULL,
-			0 } };
+	POPSUBMENU subpath[] = { { 0, NULL, POPCWSHOW }, { 0, NULL, POPCWSORT }, { 0, NULL, 0 } },
+			subgroup[] = { { 0, NULL, POPCGSHOW }, { 0, NULL, 0 } },
+			subitem[] = { { 1, NULL, POPCSENDTO }, { 0, NULL, 0 } };
 
 	popsort.tree = rs_trindex[POPSORT];
 	popshow.tree = rs_trindex[POPSHOW];
@@ -2936,93 +2893,85 @@ void handle_context(int mx, int my, WININFO *win) {
 
 	/* Kontextmenue fuer ein Fenster? */
 	if (win) {
-		switch (win->class)
-		{
-			case WCPATH:
+		switch (win->class) {
+		case WCPATH:
 			cobj = POPCWMASK;
 			tree = rs_trindex[POPCWINDOW];
 			break;
-			case WCGROUP:
-			case WCCON:
+		case WCGROUP:
+		case WCCON:
 			cobj = POPCGFONT;
 			tree = rs_trindex[POPCGRPWIN];
 			break;
 		}
-		for (i = 1;; i++)
-		{
+		for (i = 1;; i++) {
 			tree[i].ob_width = tree->ob_width - (tree->ob_width % tb.ch_w);
 			if (tree[i].ob_flags & SELECTABLE)
-			tree[i].ob_state &= ~(DISABLED|CHECKED);
+				tree[i].ob_state &= ~(DISABLED|CHECKED);
 			if (tree[i].ob_flags & LASTOB)
-			break;
+				break;
 		}
 		/* Waehlbare Eintraege anpassen */
-		switch (win->class)
-		{
-			case WCPATH:
+		switch (win->class) {
+		case WCPATH:
 			wpath = (W_PATH *)win->user;
-			switch (wpath->index.text)
-			{
-				case 0:
+			switch (wpath->index.text) {
+			case 0:
 				obj = POPSHOWICONS;
 				break;
-				case 1:
+			case 1:
 				obj = POPSHOWTEXT;
 				break;
-				case 2:
+			case 2:
 				obj = POPSHOWSYMTEXT;
 				break;
 			}
 			popshow.tree[obj].ob_state |= CHECKED;
 			popshow.sel = obj;
-			switch (wpath->index.sortby & ~(SORTREV|SORTFOLD))
-			{
-				case SORTNONE:
+			switch (wpath->index.sortby & ~(SORTREV|SORTFOLD)) {
+			case SORTNONE:
 				obj = POPSORTNONE;
 				break;
-				case SORTNAME:
+			case SORTNAME:
 				obj = POPSORTNAME;
 				break;
-				case SORTSIZE:
+			case SORTSIZE:
 				obj = POPSORTSIZE;
 				break;
-				case SORTDATE:
+			case SORTDATE:
 				obj = POPSORTDATE;
 				break;
-				case SORTTYPE:
+			case SORTTYPE:
 				obj = POPSORTEXT;
 				break;
 			}
 			popsort.tree[obj].ob_state |= CHECKED;
 			popsort.sel = obj;
 			if (wpath->index.sortby & SORTREV)
-			popsort.tree[POPSORTREV].ob_state |= CHECKED;
+				popsort.tree[POPSORTREV].ob_state |= CHECKED;
 			if (wpath->index.sortby & SORTFOLD)
-			popsort.tree[POPSORTFOLD].ob_state |= CHECKED;
+				popsort.tree[POPSORTFOLD].ob_state |= CHECKED;
 			if (tb.topwin != win)
-			tree[POPCWPASTE].ob_state |= DISABLED;
-			if ((tb.topwin != win) ||
-					!drv_ejectable(wpath->filesys.biosdev))
-			{
+				tree[POPCWPASTE].ob_state |= DISABLED;
+			if ((tb.topwin != win) || !drv_ejectable(wpath->filesys.biosdev)) {
 				tree[POPCWEJECT].ob_state |= DISABLED;
 			}
 			dummy.subs = subpath;
 			break;
-			case WCGROUP:
+		case WCGROUP:
 			wgrp = (W_GRP *)win->user;
 			if (wgrp->changed)
-			cobj = POPCGSAVEGROUP;
+				cobj = POPCGSAVEGROUP;
 			else
-			tree[POPCGSAVEGROUP].ob_state |= DISABLED;
-			switch (wgrp->text)
-			{
-				case 0:
+				tree[POPCGSAVEGROUP].ob_state |= DISABLED;
+			switch (wgrp->text) {
+			case 0:
 				obj = POPSHOWICONS;
 				break;
-				case 1:
+			case 1:
 				obj = POPSHOWTEXT;
 				break;
-				case 2:
+			case 2:
 				obj = POPSHOWSYMTEXT;
 				break;
 			}
@@ -3030,13 +2979,12 @@ void handle_context(int mx, int my, WININFO *win) {
 			popshow.sel = obj;
 			dummy.subs = subgroup;
 			break;
-			case WCCON:
+		case WCCON:
 			cobj = POPCGFONT;
-			for (i = 1;; i++)
-			{
+			for (i = 1;; i++) {
 				tree[i].ob_state |= DISABLED;
 				if (tree[i].ob_flags & LASTOB)
-				break;
+					break;
 			}
 			tree[POPCGFONT].ob_state &= ~DISABLED;
 			break;
@@ -3050,83 +2998,80 @@ void handle_context(int mx, int my, WININFO *win) {
 		{
 			if (win->class != WCPATH)
 			pitem |= 0x100;
-			switch (pitem)
-			{
-				case POPCWNEW:
-				case 0x100|POPCGNEW:
+			switch (pitem) {
+			case POPCWNEW:
+			case 0x100|POPCGNEW:
 				fi_new.init();
 				break;
-				case 0x100|POPCGINFO:
+			case 0x100|POPCGINFO:
 				dl_groupinfo(win);
 				break;
-				case POPCWINFO:
+			case POPCWINFO:
 				memset(msg, 0, sizeof(msg));
 				msg[0] = AV_FILEINFO;
 				msg[1] = tb.app_id;
 				long2int((long)wpath->path, &msg[3], &msg[4]);
 				avs_fileinfo(msg);
 				break;
-				case POPCWSHOW:
-				case 0x100|POPCGSHOW:
-				switch (popshow.sel)
-				{
-					case POPSHOWICONS:
+			case POPCWSHOW:
+			case 0x100|POPCGSHOW:
+				switch (popshow.sel) {
+				case POPSHOWICONS:
 					dl_itext(0);
 					break;
-					case POPSHOWTEXT:
+				case POPSHOWTEXT:
 					dl_itext(1);
 					break;
-					case POPSHOWSYMTEXT:
+				case POPSHOWSYMTEXT:
 					dl_itext(2);
 					break;
 				}
 				break;
-				case POPCWSORT:
-				switch (popsort.sel)
-				{
-					case POPSORTFOLD:
+			case POPCWSORT:
+				switch (popsort.sel) {
+				case POPSORTFOLD:
 					dl_isort(SORTFOLD);
 					break;
-					case POPSORTREV:
+				case POPSORTREV:
 					dl_isort(SORTREV);
 					break;
-					case POPSORTNONE:
+				case POPSORTNONE:
 					dl_isort(SORTNONE);
 					break;
-					case POPSORTNAME:
+				case POPSORTNAME:
 					dl_isort(SORTNAME);
 					break;
-					case POPSORTSIZE:
+				case POPSORTSIZE:
 					dl_isort(SORTSIZE);
 					break;
-					case POPSORTDATE:
+				case POPSORTDATE:
 					dl_isort(SORTDATE);
 					break;
-					case POPSORTEXT:
+				case POPSORTEXT:
 					dl_isort(SORTTYPE);
 					break;
 				}
 				break;
-				case POPCWMASK:
+			case POPCWMASK:
 				fi_mask.init();
 				break;
-				case POPCWFONT:
-				case 0x100|POPCGFONT:
+			case POPCWFONT:
+			case 0x100|POPCGFONT:
 				dl_font(0L);
 				break;
-				case POPCWUPDATE:
+			case POPCWUPDATE:
 				handle_key(ks, nkc_n2gem(NKF_FUNC|NK_ESC));
 				break;
-				case POPCWEJECT:
+			case POPCWEJECT:
 				dl_eject();
 				break;
-				case 0x100|POPCGSAVEGROUP:
+			case 0x100|POPCGSAVEGROUP:
 				dl_savegrp();
 				break;
-				case POPCWPASTE:
+			case POPCWPASTE:
 				dl_pastewin();
 				break;
-				case POPCWSAVEINDEX:
+			case POPCWSAVEINDEX:
 				dl_saveindex();
 				break;
 			}
@@ -3161,27 +3106,26 @@ void handle_context(int mx, int my, WININFO *win) {
 			}
 			/* Waehlbare Eintraege anpassen */
 			cobj = POPICOPEN;
-			switch (p->class)
-			{
-				case IDDRIVE:
+			switch (p->class) {
+			case IDDRIVE:
 				if ((!*conf.format) && (p->spec.drive->drive > 1))
-				tree[POPICFORMAT].ob_state |= DISABLED;
+					tree[POPICFORMAT].ob_state |= DISABLED;
 				if (!drv_ejectable(p->spec.drive->drive))
-				tree[POPICEJECT].ob_state |= DISABLED;
+					tree[POPICEJECT].ob_state |= DISABLED;
 				break;
-				case IDTRASH:
+			case IDTRASH:
 				cobj = POPICINFO;
 				tree[POPICOPEN].ob_state |= DISABLED;
 				tree[POPICEJECT].ob_state |= DISABLED;
 				tree[POPICFORMAT].ob_state |= DISABLED;
 				tree[POPICDEL].ob_state |= DISABLED;
 				break;
-				case IDCLIP:
+			case IDCLIP:
 				tree[POPICEJECT].ob_state |= DISABLED;
 				tree[POPICFORMAT].ob_state |= DISABLED;
 				tree[POPICDEL].ob_state |= DISABLED;
 				break;
-				case IDPRT:
+			case IDPRT:
 				cobj = POPICINFO;
 				tree[POPICOPEN].ob_state |= DISABLED;
 				tree[POPICEJECT].ob_state |= DISABLED;
@@ -3526,15 +3470,14 @@ void desk_popup(int mx, int my) {
 			desk.sel.numobs = desk.sel.desk = 1;
 			p = icons[items.sel];
 			p->select = 1;
-			switch (p->class)
-			{
-				case IDDRIVE:
+			switch (p->class) {
+			case IDDRIVE:
 				desk.sel.drives = 1;
 				break;
-				case IDFILE:
+			case IDFILE:
 				desk.sel.files = 1;
 				break;
-				case IDFOLDER:
+			case IDFOLDER:
 				desk.sel.folders = 1;
 				break;
 			}

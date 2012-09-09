@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 
 /*-------------------------------------------------------------------------
@@ -61,7 +62,7 @@ void desk_init(void) {
 	p = desk.dicon + 1;
 	for (i = 1; i <= MAXICON; i++, p++) {
 		p->obnum = i;
-		p->class=IDFREE;
+		p->class = IDFREE;
 		p->select = 0;
 		p->prevsel = 0;
 		p->x = -1;
@@ -115,7 +116,7 @@ void desk_draw(int x, int y, int w, int h) {
 	RECT area, box;
 
 	/* AES sperren und Maus abschalten */
-	wind_update (BEG_UPDATE);
+	wind_update(BEG_UPDATE);
 	graf_mouse(M_OFF, 0L);
 
 	/* Vorbereitungen */
@@ -129,17 +130,16 @@ void desk_draw(int x, int y, int w, int h) {
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
-		/* Nur durchfÅhren, wenn Rechteck innerhalb des zu
-		 zeichnenden Bereichs liegt */
+		/* Nur durchfÅhren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
 		if (rc_intersect(&area, &box))
-			objc_draw(rs_trindex[DESKTOP], ROOT, MAX_DEPTH, box.x, box.y, box.w,
-					box.h);
+			objc_draw(rs_trindex[DESKTOP], ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
+
 		/* NÑchstes Rechteck holen */
 		wind_get(0, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	/* Maus einschalten und AES freigeben */
-	wind_update (END_UPDATE);
+	wind_update(END_UPDATE);
 	graf_mouse(M_ON, 0L);
 }
 
@@ -169,11 +169,11 @@ void rub_ticon(int n, int *pxy) {
 	graf_mouse(M_ON, 0L);
 }
 
-/*-------------------------------------------------------------------------
- rub_frame()
-
- "Gummiband" auf dem Desktop zeichnen
- -------------------------------------------------------------------------*/
+/**
+ * "Gummiband" auf dem Desktop zeichnen
+ *
+ * @param *sel
+ */
 void rub_frame(RECT *sel) {
 	int pxy[10];
 
@@ -192,11 +192,11 @@ void rub_frame(RECT *sel) {
 	graf_mouse(M_ON, 0L);
 }
 
-/*-------------------------------------------------------------------------
- icon_free()
-
- Icon freigeben
- -------------------------------------------------------------------------*/
+/**
+ * Icon freigeben
+ *
+ * @param n
+ */
 void icon_free(int n) {
 	ICONDESK *p = desk.dicon + n;
 
@@ -207,7 +207,7 @@ void icon_free(int n) {
 	}
 }
 
-/*
+/**
  * icon_match
  *
  * PrÅft, ob ein passendes Icon existiert.
@@ -240,7 +240,7 @@ ICONIMG *icon_match(char *mask, char drive, int class, ICONIMG *def) {
 	return(def);
 }
 
-/*
+/**
  * icon_redraw
  *
  * Aktualisiert und zeichnet ein Icon auf dem Desktop
@@ -270,6 +270,7 @@ void icon_redraw(int n) {
 		h = tree[n].ob_height;
 	if (y2 < y)
 		y = y2;
+
 	desk_draw(x, y, w, h);
 }
 
@@ -302,8 +303,7 @@ void icon_update(int n) {
 	for (i = s; i <= e; i++, q++) {
 		c = 0;
 
-		/* Je nach Icontyp Image, Beschriftung und ggf. Laufwerksbuchstaben
-		 setzen */
+		/* Je nach Icontyp Image, Beschriftung und ggf. Laufwerksbuchstaben setzen */
 		title = q->title;
 		switch (q->class) {
 			case IDDRIVE: /* Laufwerk */
@@ -488,7 +488,7 @@ void icon_update(int n) {
 	}
 }
 
-/*-------------------------------------------------------------------------
+/**-------------------------------------------------------------------------
  icon_select()
 
  Icon nach Mausklick selektieren/deselektieren
@@ -548,18 +548,18 @@ void icon_select(int obj, int add, int sel) {
 	RECT drect;
 	int rd;
 
-	if (obj == -1) /* Alle Objekte bearbeiten */
-	{
+	if (obj == -1) {
+		/* Alle Objekte bearbeiten */
 		rd = 0;
 		for (i = 1; i <= MAXICON; i++)
 			icon_select1(i, sel, &drect, &rd);
 		if (rd) {
 			desk_draw(drect.x, drect.y, drect.w, drect.h);
 		}
-	} else /* Ein Objekt bearbeiten */
-	{
-		if (!add) /* Ggf. alle anderen Objekte deselektieren */
-		{
+	} else {
+		/* Ein Objekt bearbeiten */
+		if (!add) {
+			/* Ggf. alle anderen Objekte deselektieren */
 			rd = 0;
 			for (i = 1; i <= MAXICON; i++)
 				if (i != obj)
@@ -576,7 +576,7 @@ void icon_select(int obj, int add, int sel) {
 	}
 }
 
-/*-------------------------------------------------------------------------
+/**-------------------------------------------------------------------------
  icon_drag()
 
  Alle selektierten Objekte via "Drag & Drop" verschieben
@@ -609,7 +609,7 @@ void icon_drag(int mx, int my, int mk, int ks) {
 	n = 0;
 	for (i = 1; i <= MAXICON; i++) {
 		desk.dicon[i].prevsel = desk.dicon[i].select;
-		if (desk.dicon[i].select && desk.dicon[i].class!=IDFREE)
+		if (desk.dicon[i].select && desk.dicon[i].class != IDFREE)
 			n++;
 	}
 
@@ -630,7 +630,7 @@ void icon_drag(int mx, int my, int mk, int ks) {
 	ty1 = tb.desk.y + tb.desk.h;
 	tx2 = ty2 = 0;
 	for (i = 1; i <= MAXICON; i++) {
-		if (desk.dicon[i].select && desk.dicon[i].class!=IDFREE) {
+		if (desk.dicon[i].select && desk.dicon[i].class != IDFREE) {
 			obnum[p] = i;
 			/* Koordinaten/Maûe holen */
 			objc_offset(tree, i, &x, &y);
@@ -694,6 +694,7 @@ void icon_drag(int mx, int my, int mk, int ks) {
 				w = (tb.desk.x + tb.desk.w) - tx2;
 			if (ty2 + h > tb.desk.y + tb.desk.h)
 				h = (tb.desk.y + tb.desk.h) - ty2;
+
 			/* Nur aktualisieren, wenn xy-Delta != 0 */
 			if (w != 0 || h != 0) {
 				/* Lîschen */
@@ -713,8 +714,8 @@ void icon_drag(int mx, int my, int mk, int ks) {
 
 			/* Maus Åber einem Fenster ? */
 			whandle = wind_find(lmx, lmy);
-			if (whandle) /* Ja */
-			{
+			if (whandle) {
+				/* Ja */
 				drag = 1;
 				/* Bisher selektiertes Desktop-Objekt deselektieren */
 				if (obj != -1) {
@@ -725,119 +726,103 @@ void icon_drag(int mx, int my, int mk, int ks) {
 				}
 				/* Fenster ermitteln */
 				win = win_getwinfo(whandle);
-				if (win) /* Fenster bekannt -> dann Drag&Drop in Fenster */
-				{
-					switch (win->class)
-					{
-						case WCCON: /* Console */
-						item=0L;gitem=0L;
-						drag=0;
+				if (win) {
+					/* Fenster bekannt -> dann Drag&Drop in Fenster */
+					switch (win->class) {
+					case WCCON: /* Console */
+						item = 0L;
+						gitem = 0L;
+						drag = 0;
 						break;
-						case WCPATH: /* Verzeichnisfenster */
-						gitem=0L;
-						if(desk.sel.trash || desk.sel.clip || desk.sel.printer ||
-						desk.sel.devices)
-						{
-							item=0L;
-							drag=0;
-						}
-						else
-						{
-							iwin=win; /* Fenster merken */
-							if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, rub_icon))
-							{
+					case WCPATH: /* Verzeichnisfenster */
+						gitem = 0L;
+						if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices) {
+							item = 0L;
+							drag = 0;
+						} else {
+							iwin = win; /* Fenster merken */
+							if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, rub_icon)) {
 								item = 0L;
 								break;
 							}
-							item=wpath_efind(win,lmx,lmy); /* Objekt ermitteln */
-							if(item)
-							{
-								drag=1;
-								switch(item->class)
-								{
-									case EC_FILE: /* Datei */
-									if(!item->aptype)
-									{
+							item = wpath_efind(win, lmx, lmy); /* Objekt ermitteln */
+							if(item) {
+								drag = 1;
+								switch (item->class) {
+								case EC_FILE: /* Datei */
+									if (!item->aptype) {
 										/* Evtl. indirekt angemeldet */
-										if(!app_isdrag(item->name)) item=0L; /* Nein */
+										if (!app_isdrag(item->name))
+											item = 0L; /* Nein */
 									}
 									break;
-									case EC_DEVICE: /* Device */
+								case EC_DEVICE: /* Device */
 									/* Nur einzelne Datei zulÑssig */
-									if(desk.sel.files>1 || desk.sel.folders || desk.sel.drives)
-									drag=0;
+									if (desk.sel.files > 1 || desk.sel.folders || desk.sel.drives)
+										drag = 0;
 									break;
 								}
-								if(!drag) item=0L;
+								if (!drag)
+									item = 0L;
 							}
 						}
 						break;
-						case WCGROUP: /* Gruppenfenster */
-						item=0L;
-						iwin=win; /* Fenster merken */
-						if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, rub_icon))
-						{
+					case WCGROUP: /* Gruppenfenster */
+						item = 0L;
+						iwin = win; /* Fenster merken */
+						if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, rub_icon)) {
 							gitem = 0L;
 							break;
 						}
-						gitem=wgrp_efind(win,lmx,lmy,&gprev); /* Objekt ermitteln */
-						if(gitem)
-						{
-							drag=1;
-							switch(gitem->class)
-							{
-								case EC_FILE: /* Datei */
-								if(!gitem->aptype)
-								{
+						gitem = wgrp_efind(win, lmx, lmy, &gprev); /* Objekt ermitteln */
+						if (gitem) {
+							drag = 1;
+							switch (gitem->class) {
+							case EC_FILE: /* Datei */
+								if (!gitem->aptype) {
 									/* Evtl. indirekt angemeldet */
-									if(!app_isdrag(gitem->name)) gitem=0L; /* Nein */
+									if (!app_isdrag(gitem->name))
+										gitem = 0L; /* Nein */
 								}
 								break;
-								case EC_DEVICE: /* Device */
+							case EC_DEVICE: /* Device */
 								/* Nur einzelne Datei zulÑssig */
-								if(desk.sel.files>1 || desk.sel.folders || desk.sel.drives)
-								drag=0;
+								if (desk.sel.files>1 || desk.sel.folders || desk.sel.drives)
+									drag = 0;
 								break;
 							}
-							if(!drag) gitem=0L;
+							if (!drag)
+								gitem = 0L;
 						}
 
 						/* Gruppenhintergrund */
-						if(!gitem)
-						{
+						if(!gitem) {
 							/* Nur Dateien/Ordner/Laufwerke zulassen */
 							if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices) {
-								gitem=0L;
-								drag=0;
+								gitem = 0L;
+								drag = 0;
 							}
-#if 0
-							else
-							{
-								if(desk.sel.drives) drag=0;
-							}
-#endif
 						}
 						break;
-						case WCDIAL:
-						item=0L;
-						gitem=0L;
-						if(desk.sel.numobs>1 || desk.sel.trash ||
-						desk.sel.printer || desk.sel.clip) drag=0;
+					case WCDIAL:
+						item = 0L;
+						gitem = 0L;
+						if (desk.sel.numobs>1 || desk.sel.trash || desk.sel.printer || desk.sel.clip)
+							drag = 0;
 						break;
 					}
+				} else {
+					/* Fenster nicht bekannt - eventuell Acc-Fenster ? */
+					item = 0L;
+					gitem = 0L;
+					accwin = acwin_find(whandle);
+					/* Es kînnen nur Dateien, Ordner oder Laufwerke in ein Fenster gelegt werden */
+					if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+						drag = 0;
+					else
+						drag = 1;
 				}
-				else /* Fenster nicht bekannt - eventuell Acc-Fenster ? */
-				{
-					item=0L;gitem=0L;
-					accwin=acwin_find(whandle);
-					/* Es kînnen nur Dateien, Ordner oder Laufwerke in ein
-					 Fenster gelegt werden */
-					if(desk.sel.trash || desk.sel.clip || desk.sel.printer ||
-							desk.sel.devices) drag=0;
-					else drag=1;
-				}
-				/* Bisher selektiertes Zielobjekt deselektieren und ggf.
-				 neues Zielobjekt selektieren */
+				/* Bisher selektiertes Zielobjekt deselektieren und ggf. neues Zielobjekt selektieren */
 				if (item != item1) {
 					rub_icon(n, pxy);
 					if (item1 != 0L)
@@ -854,8 +839,8 @@ void icon_drag(int mx, int my, int mk, int ks) {
 						wgrp_esel(iwin, gitem, 1, 1);
 					rub_icon(n, pxy);
 				}
-			} else /* Maus nicht Åber einem Fenster */
-			{
+			} else {
+				/* Maus nicht Åber einem Fenster */
 				/* Bisheriges Fenster-Objekt deselektieren */
 				if (item || gitem) {
 					rub_icon(n, pxy);
@@ -879,49 +864,44 @@ void icon_drag(int mx, int my, int mk, int ks) {
 					if (desk.dicon[obj].prevsel)
 						obj = -1;
 					else {
-						switch (desk.dicon[obj].class)
-						{
-							case IDDRIVE:
-							case IDFOLDER:
-							if(desk.sel.trash || desk.sel.clip || desk.sel.printer ||
-							desk.sel.devices) obj=-1;
+						switch (desk.dicon[obj].class) {
+						case IDDRIVE:
+						case IDFOLDER:
+							if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+								obj = -1;
 							break;
-							case IDFILE:
-							if(desk.sel.trash || desk.sel.clip || desk.sel.printer ||
-							desk.sel.devices) obj=-1;
-							if(!is_app(desk.dicon[obj].spec.file->name,
-									desk.dicon[obj].spec.file->mode))
-							{
-								if(!app_isdrag(desk.dicon[obj].spec.file->name)) obj=-1;
+						case IDFILE:
+							if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+								obj = -1;
+							if (!is_app(desk.dicon[obj].spec.file->name, desk.dicon[obj].spec.file->mode)) {
+								if (!app_isdrag(desk.dicon[obj].spec.file->name))
+									obj = -1;
 							}
 							break;
-							case IDCLIP:
-							if(desk.sel.numobs>1 || desk.sel.folders ||
-							desk.sel.drives || desk.sel.trash || desk.sel.printer ||
-							desk.sel.devices) obj=-1;
-							case IDTRASH:
-							if((desk.sel.drives && (desk.sel.files || desk.sel.folders)) ||
-							desk.sel.printer) obj=-1;
+						case IDCLIP:
+							if (desk.sel.numobs > 1 || desk.sel.folders || desk.sel.drives || desk.sel.trash || desk.sel.printer || desk.sel.devices)
+								obj = -1;
+						case IDTRASH:
+							if ((desk.sel.drives && (desk.sel.files || desk.sel.folders)) || desk.sel.printer)
+								obj = -1;
 							break;
-							case IDPRT:
-							if(desk.sel.files>1 || desk.sel.folders || desk.sel.drives ||
-							desk.sel.clip || desk.sel.trash || desk.sel.devices)
-							obj=-1;
+						case IDPRT:
+							if (desk.sel.files > 1 || desk.sel.folders || desk.sel.drives || desk.sel.clip || desk.sel.trash || desk.sel.devices)
+								obj=-1;
 							break;
-							case IDDEVICE:
-							if(desk.sel.files>1 || desk.sel.folders || desk.sel.drives ||
-							desk.sel.clip || desk.sel.trash || desk.sel.devices ||
-							desk.sel.printer)
-							obj=-1;
+						case IDDEVICE:
+							if (desk.sel.files > 1 || desk.sel.folders || desk.sel.drives || desk.sel.clip || desk.sel.trash || desk.sel.devices || desk.sel.printer)
+								obj = -1;
 							break;
 						}
-						if(obj==-1) drag=0;
+						if (obj == -1)
+							drag = 0;
 					}
-				}
-				else
-				{
-					if(lmx<tb.desk.x||lmy<tb.desk.y) drag=0;
-					else drag=1;
+				} else {
+					if (lmx < tb.desk.x || lmy < tb.desk.y)
+						drag = 0;
+					else
+						drag = 1;
 				}
 				/* Bisher selektiertes Zielobjekt deselektieren und ggf.
 				 neues Zielobjekt selektieren */
@@ -970,13 +950,14 @@ void icon_drag(int mx, int my, int mk, int ks) {
 		desk.dicon[i].prevsel = 0;
 	}
 
-	if (obj != -1) /* Zielobjekt auf dem Desktop ? */
-	{
+	/* Zielobjekt auf dem Desktop ? */
+	if (obj != -1) {
 		dl_ddrag(&desk.dicon[obj], lks);
-	} else /* Kein Zielobjekt auf dem Desktop */
-	{
-		if (whandle) /* Fenster ? */
-		{
+	} else {
+		/* Kein Zielobjekt auf dem Desktop */
+
+		/* Fenster ? */
+		if (whandle) {
 			/* Eigenes Fenster und Verschieben mîglich ? */
 			if (win && drag) {
 				dl_wdrag(win, item, gitem, gprev, lmx, lmy, lks);
@@ -986,17 +967,19 @@ void icon_drag(int mx, int my, int mk, int ks) {
 				else
 					mybeep();
 			}
-		} else /* kein Zielfenster - dann Icons auf dem Desktop verschieben */
-		{
-			if (drag) /* Verschieben mîglich ? */
-			{
+		} else {
+			/* kein Zielfenster - dann Icons auf dem Desktop verschieben */
+
+			/* Verschieben mîglich ? */
+			if (drag) {
 				/* xy-Delta der Gruppe berechnen */
 				tx2 = tx1 - otx;
 				otx = tx2;
 				ty2 = ty1 - oty;
 				oty = ty2;
-				if (otx != 0 || oty != 0) /* Nur wenn nîtig */
-				{
+				if (otx != 0 || oty != 0) {
+					/* Nur wenn nîtig */
+
 					/* Position/Maûe des Gesamtrechtecks fÅr Desktop-Redraw */
 					tx1 = tb.desk.x + tb.desk.w;
 					ty1 = tb.desk.y + tb.desk.h;
@@ -1091,6 +1074,7 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 	while (lmk & 1) {
 		/* Neue Mausposition holen */
 		graf_mkstate(&lmx, &lmy, &lmk, &lks);
+
 		/* Neues Auswahlrechteck berechnen */
 		sel2.w = lmx - sel.x + 1;
 		sel2.h = lmy - sel.y + 1;
@@ -1103,6 +1087,7 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 			sel2.w = tb.desk.x - sel2.x + 1;
 		if (sel2.x + sel2.w > tb.desk.x + tb.desk.w)
 			sel2.w = tb.desk.x + tb.desk.w - sel2.x;
+
 		/* Bei énderung Auswahlrechteck neu zeichnen */
 		if (sel.w != sel2.w || sel.h != sel2.h) {
 			/* Lîschen und neue Maûe verwenden */
@@ -1136,7 +1121,7 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 			for (i = 1; i <= MAXICON; i++, p++) {
 				int psel;
 
-				if (p->class!=IDFREE) {
+				if (p->class != IDFREE) {
 					if (icon_inrect(i, &rsel)) {
 						if (!p->select && !p->prevsel)
 							icon_select1(i, 1, &wrd, &rd);
@@ -1187,7 +1172,7 @@ int icon_find(int mx, int my) {
 	obj = -1;
 	p = desk.dicon + 1;
 	for (i = 1; i <= MAXICON; i++, p++) {
-		if (p->class!=IDFREE) {
+		if (p->class != IDFREE) {
 			px = tb.desk.x + rs_trindex[DESKTOP][i].ob_x;
 			py = tb.desk.y + rs_trindex[DESKTOP][i].ob_y;
 			iblk = &desk.wicon[i].ciconblk.monoblk;
@@ -1199,17 +1184,15 @@ int icon_find(int mx, int my) {
 			tw = iblk->ib_wtext;
 			th = iblk->ib_htext;
 			/* Innerhalb des Textes ? */
-			if (mx >= px + tx && mx <= px + tx + tw - 1 && my >= py + ty
-					&& my <= py + ty + th - 1)
+			if (mx >= px + tx && mx <= px + tx + tw - 1 && my >= py + ty && my <= py + ty + th - 1)
 				obj = i;
 			/* Innerhalb des Images ? */
-			if (mx >= px + ix && mx <= px + ix + iw - 1 && my >= py
-					&& my <= py + ih)
+			if (mx >= px + ix && mx <= px + ix + iw - 1 && my >= py && my <= py + ih)
 				obj = i;
 		}
 	}
 
-	return obj;
+	return (obj);
 }
 
 /*-------------------------------------------------------------------------
@@ -1244,7 +1227,7 @@ int icon_inrect(int n, RECT *rect) {
 	if (rc_intersect(rect, &orect))
 		is_in = 1;
 
-	return is_in;
+	return (is_in);
 }
 
 /*-------------------------------------------------------------------------
@@ -1267,82 +1250,96 @@ void icon_checksel(void) {
 	/* Icons auf dem Desktop selektiert ? ... */
 	p = desk.dicon + 1;
 	for (i = 1; i <= MAXICON; i++, p++) {
-		if (p->class!=IDFREE && p->select) {
+		if (p->class != IDFREE && p->select) {
 			desk.sel.numobs++;
 
 			switch (p->class) {
-				case IDTRASH:
-					desk.sel.trash++;
-					break;
-				case IDCLIP:
-					desk.sel.clip++;
-					break;
-				case IDDRIVE:
-					desk.sel.drives++;
-					break;
-				case IDFILE:
-					desk.sel.files++;
-					break;
-				case IDFOLDER:
-					desk.sel.folders++;
-					break;
-				case IDPRT:
-					desk.sel.printer++;
-					break;
-				case IDDEVICE:
-					desk.sel.devices++;
-					break;
+			case IDTRASH:
+				desk.sel.trash++;
+				break;
+			case IDCLIP:
+				desk.sel.clip++;
+				break;
+			case IDDRIVE:
+				desk.sel.drives++;
+				break;
+			case IDFILE:
+				desk.sel.files++;
+				break;
+			case IDFOLDER:
+				desk.sel.folders++;
+				break;
+			case IDPRT:
+				desk.sel.printer++;
+				break;
+			case IDDEVICE:
+				desk.sel.devices++;
+				break;
 			}
 		}
 	}
 	/* ... ja */
 	if (desk.sel.numobs)
 		desk.sel.desk = 1;
-	else /* ... nein, dann Fenster prÅfen */
-	{
+	else {
+		/* ... nein, dann Fenster prÅfen */
 		win = tb.win;
 		while (win && !desk.sel.win) {
 			switch (win->class) {
-				case WCPATH:
-				wpath=(W_PATH *)win->user;
-				if(wpath->e_sel) {
-					desk.sel.win=win;
-					for(j=0;j<wpath->e_total;j++) {
-						item=wpath->lptr[j];
-						if(item->sel) {
+			case WCPATH:
+				wpath = (W_PATH *)win->user;
+				if (wpath->e_sel) {
+					desk.sel.win = win;
+					for (j = 0; j < wpath->e_total; j++) {
+						item = wpath->lptr[j];
+						if (item->sel) {
 							desk.sel.numobs++;
-							switch(item->class)
-							{
-								case EC_FILE: desk.sel.files++;break;
-								case EC_FOLDER: desk.sel.folders++;break;
-								case EC_PARENT: desk.sel.parent=1;break;
-								case EC_DEVICE: desk.sel.devices++;break;
+							switch(item->class) {
+							case EC_FILE:
+								desk.sel.files++;
+								break;
+							case EC_FOLDER:
+								desk.sel.folders++;
+								break;
+							case EC_PARENT:
+								desk.sel.parent = 1;
+								break;
+							case EC_DEVICE:
+								desk.sel.devices++;
+								break;
 							}
 						}
 					}
 				}
 				break;
-				case WCGROUP:
-				wgrp=(W_GRP *)win->user;
-				gitem=wgrp->entry;
-				while(gitem) {
-					if(gitem->sel) {
-						desk.sel.win=win;
+			case WCGROUP:
+				wgrp = (W_GRP *)win->user;
+				gitem = wgrp->entry;
+				while (gitem) {
+					if (gitem->sel) {
+						desk.sel.win = win;
 						desk.sel.numobs++;
-						switch(gitem->class)
-						{
-							case EC_FILE: desk.sel.files++;break;
-							case EC_FOLDER: desk.sel.folders++;break;
-							case EC_PARENT: desk.sel.parent=1;break;
-							case EC_DEVICE: desk.sel.devices++;break;
-							/* ErgÑnzen:          case EC_DRIVE:  desk.sel.drives++;break; */
+						switch(gitem->class) {
+						case EC_FILE:
+							desk.sel.files++;
+							break;
+						case EC_FOLDER:
+							desk.sel.folders++;
+							break;
+						case EC_PARENT:
+							desk.sel.parent = 1;
+							break;
+						case EC_DEVICE:
+							desk.sel.devices++;
+							break;
+/* ErgÑnzen:			case EC_DRIVE:  desk.sel.drives++;break; */
 						}
 					}
-					gitem=gitem->next;
+					gitem = gitem->next;
 				}
 				break;
 			}
-			win=win->next;
+			win = win->next;
 		}
 	}
 }
@@ -1634,13 +1631,16 @@ int desk_iload(THINGIMG *dest, char *name, int usepal, int alert) {
 	dest->first = -1;
 	if ((timg = desk_timgload()) == 0L)
 		return (0);
+
 	(call_thingimg)(TI_MAGIC, TI_INIT, dest);
 	err = (call_thingimg)(TI_MAGIC, TI_SIZE, dest);
 	Mfree(timg->p_env);
 	Mfree(timg);
 	if (err) {
 		frm_alert(1, rs_frstr[alert], altitle, conf.wdial, 0L);
-dil_exit_error: if (dest->picture.fd_addr)
+
+dil_exit_error:
+		if (dest->picture.fd_addr)
 			pfree(dest->picture.fd_addr);
 		dest->picture.fd_addr = 0L;
 		return (0);
@@ -1757,16 +1757,16 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 
 		if (conf.imgtrans) {
 			if (glob.img_info.is_mono)
-			mode = MD_TRANS;
+				mode = MD_TRANS;
 			else if (tb.truecolor)
-			mode = S_AND_D;
+				mode = S_AND_D;
 			else
-			mode = S_OR_D;
+				mode = S_OR_D;
 		} else {
 			if (glob.img_info.is_mono)
-			mode = MD_REPLACE;
+				mode = MD_REPLACE;
 			else
-			mode = S_ONLY;
+				mode = S_ONLY;
 		}
 		if (conf.imgcenter) {
 			/* zentriert */
@@ -1870,23 +1870,23 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 			if (p->class!=IDFREE && p->select) {
 				name[0] = 0;
 				switch (p->class) {
-					case IDDRIVE:
-						name[0] = 'A' + p->spec.drive->drive;
-						name[1] = ':';
-						name[2] = '\\';
-						name[3] = 0;
-						strcpy(apath, name);
-						aname[0] = 0;
-						break;
-					case IDFILE:
-						strcpy(name, p->spec.file->name);
-						full2comp(name, apath, aname);
-						break;
-					case IDFOLDER:
-						strcpy(name, p->spec.folder->path);
-						strcpy(apath, p->spec.folder->path);
-						aname[0] = 0;
-						break;
+				case IDDRIVE:
+					name[0] = 'A' + p->spec.drive->drive;
+					name[1] = ':';
+					name[2] = '\\';
+					name[3] = 0;
+					strcpy(apath, name);
+					aname[0] = 0;
+					break;
+				case IDFILE:
+					strcpy(name, p->spec.file->name);
+					full2comp(name, apath, aname);
+					break;
+				case IDFOLDER:
+					strcpy(name, p->spec.folder->path);
+					strcpy(apath, p->spec.folder->path);
+					aname[0] = 0;
+					break;
 				}
 				if (buf) {
 					quote(name);
@@ -1908,74 +1908,74 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 	} else {
 		if (desk.sel.win && !(desk.sel.win->state & WSICON)) {
 			switch (desk.sel.win->class) {
-				case WCPATH:
-					wpath = (W_PATH *)desk.sel.win->user;
-					for (i = 0; i < wpath->e_total && cont; i++) {
-						wpitem = wpath->lptr[i];
-						if (wpitem->sel) {
-							strcpy(name, wpath->path);
-							strcat(name, wpitem->name);
-							if (wpitem->class == EC_FILE)
-								full2comp(name, apath, aname);
-							else {
-								strcat(name, "\\");
-								strcpy(apath, name);
-							}
-							if (buf) {
-								quote(name);
-								m = (int)strlen(buf);
-								n = (int)strlen(name);
+			case WCPATH:
+				wpath = (W_PATH *)desk.sel.win->user;
+				for (i = 0; i < wpath->e_total && cont; i++) {
+					wpitem = wpath->lptr[i];
+					if (wpitem->sel) {
+						strcpy(name, wpath->path);
+						strcat(name, wpitem->name);
+						if (wpitem->class == EC_FILE)
+							full2comp(name, apath, aname);
+						else {
+							strcat(name, "\\");
+							strcpy(apath, name);
+						}
+						if (buf) {
+							quote(name);
+							m = (int)strlen(buf);
+							n = (int)strlen(name);
+							if (pn)
+								n++;
+							if (n + m < maxlen) {
 								if (pn)
-									n++;
-								if (n + m < maxlen) {
-									if (pn)
-										strcat(buf, " ");
-									else
-										pn = 1;
-									strcat(buf, name);
-								} else
-									cont = 0;
-							}
+									strcat(buf, " ");
+								else
+									pn = 1;
+								strcat(buf, name);
+							} else
+								cont = 0;
 						}
 					}
-					break;
+				}
+				break;
 
-				case WCGROUP:
-					wgrp = (W_GRP *)desk.sel.win->user;
-					wgitem = wgrp->entry;
-					while (wgitem && cont) {
-						if (wgitem->sel) {
-							wgrp_eabs(wgrp, wgitem, name);
-							if (wgitem->class == EC_FILE)
-								full2comp(name, apath, aname);
-							else {
-								strcpy(apath, name);
-								aname[0] = 0;
-							}
-							if (buf) {
-								quote(name);
-								m = (int)strlen(buf);
-								n = (int)strlen(name);
-								if (pn)
-									n++;
-								if (n + m < maxlen) {
-									if (pn)
-										strcat(buf, " ");
-									else
-										pn = 1;
-									strcat(buf, name);
-								} else
-									cont = 0;
-							}
+			case WCGROUP:
+				wgrp = (W_GRP *)desk.sel.win->user;
+				wgitem = wgrp->entry;
+				while (wgitem && cont) {
+					if (wgitem->sel) {
+						wgrp_eabs(wgrp, wgitem, name);
+						if (wgitem->class == EC_FILE)
+							full2comp(name, apath, aname);
+						else {
+							strcpy(apath, name);
+							aname[0] = 0;
 						}
-						wgitem = wgitem->next;
+						if (buf) {
+							quote(name);
+							m = (int)strlen(buf);
+							n = (int)strlen(name);
+							if (pn)
+								n++;
+							if (n + m < maxlen) {
+								if (pn)
+									strcat(buf, " ");
+								else
+									pn = 1;
+								strcat(buf, name);
+							} else
+								cont = 0;
+						}
 					}
-					break;
+					wgitem = wgitem->next;
+				}
+				break;
 			}
 		}
 	}
 
-	return cont;
+	return (cont);
 }
 
 int drag_scroll(int my, int w, int h, int moved, WININFO *win, int n, int *pxy,
@@ -2002,19 +2002,18 @@ int drag_scroll(int my, int w, int h, int moved, WININFO *win, int n, int *pxy,
 		}
 		old_offy = *offy;
 		if (my < win->work.y)
-		dy = win->work.y - my;
+			dy = win->work.y - my;
 		if (my > (win->work.y + win->work.h - Y_OFFSET))
-		dy = win->work.y + win->work.h - Y_OFFSET - my;
-		if (dy)
-		{
+			dy = win->work.y + win->work.h - Y_OFFSET - my;
+		if (dy) {
 			if (dy / 2)
-			dy /= 2;
+				dy /= 2;
 			(rubbox)(n, pxy);
 			win_slide(win, S_PABS, 0, dy * conf.scroll);
 			evnt_timer(20, 0);
 			(rubbox)(n, pxy);
 		}
-		return(*offy != old_offy);
+		return (*offy != old_offy);
 	}
 	return (0);
 }

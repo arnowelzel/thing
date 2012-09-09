@@ -33,7 +33,8 @@
 #include <stdarg.h>
 #include "..\xhdi\xhdi.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include "..\include\jobid.h"
 
 #undef ORIG_DIRCHECK
@@ -48,73 +49,10 @@ static int build_filename(char *dst, char *a, char *b);
 #endif
 void title_update(int drive);
 
-/**
- get_text()
-
- Wird von conf_load() verwendet um Strings, die von AnfÅhrungszeichen
- umschlossen sind, einzulesen.
- Als Ergebnis wird ein Zeiger auf die erste Position hinter dem
- zweiten AnfÅhrungszeichen (einschlieûlich einer Leerstelle
- Zwischenraum) geliefert.
- -------------------------------------------------------------------------*/
-char *get_text(char *str, char *buf, int maxlen) {
-	int i, j, p, done;
-	int val;
-	char vbuf[4];
-
-	i = 0;
-	while (str[i] != '"' && str[i] != 0)
-		i++;
-	buf[0] = 0;
-	if (!str[i])
-		return &str[i];
-	i++;
-	p = 0;
-	done = 0;
-	while (!done) {
-		switch (str[i]) {
-		case '"':
-		case 0:
-			done = 1;
-			break;
-		case '@':
-			j = 0;
-			i++;
-			while (str[i] >= '0' && str[i] <= '9' && j < 2) {
-				vbuf[j] = str[i];
-				j++;
-				i++;
-			}
-			vbuf[j] = 0;
-			val = atoi(vbuf);
-			if (val < 1)
-				val = 1;
-			if (val > 255)
-				val = 255;
-			buf[p] = (char) val;
-			p++;
-			break;
-		default:
-			buf[p] = str[i];
-			i++;
-			p++;
-		}
-		if (p == maxlen)
-			done = 1;
-	}
-	buf[p] = 0;
-	if (str[i]) {
-		if (str[i] != '"') {
-			while (str[i] != '"' && str[i])
-				i++;
-		} else
-			i++;
-		if (str[i] == ' ')
-			i++;
-	}
-
-	return &str[i];
-}
+/*------------------------------------------------------------------*/
+/*  global variables                                                */
+/*------------------------------------------------------------------*/
+extern BYTE *aesBuffer;
 
 /**
  put_text()
@@ -151,11 +89,11 @@ int chk_drive(int drv) {
 	if (dmap & dtst) { /* Laufwerk dem GEMDOS bekannt ? */
 		/* Bei A: und B: Floppy, sonst Platte */
 		if (drv < 2)
-			return 0;
+			return (0);
 		else
-			return 1;
+			return (1);
 	} else { /* Nein */
-		return -1;
+		return (-1);
 	}
 }
 
@@ -352,8 +290,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 		xread = 1;
 		while (fret == 0) {
 			if (xread)
-				fret = (int) Dxreaddir(MAX_FLEN + 4, dirh, fname, &xattr,
-						&xfret);
+				fret = (int) Dxreaddir(MAX_FLEN + 4, dirh, fname, &xattr, &xfret);
 			if (follow || !xread || (fret == -32L)) {
 				if (!xread || (fret == -32L)) {
 					xread = 0;
@@ -385,8 +322,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 					continue;
 				if ((fret = build_filename(xname, fpath, &fname[4])) != 0)
 					break;
-				fret = dir_check(xname, nfiles, nfolders, size, nlinks, follow,
-						sub + 1);
+				fret = dir_check(xname, nfiles, nfolders, size, nlinks, follow, sub + 1);
 				if (fret) {
 					fret = 1;
 					break;
@@ -536,58 +472,6 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
  PrÅft, ob eine Maske (Wildcard) zu einem Dateinamen passt.
  -------------------------------------------------------------------------*/
 #if 0
-int wild_match1(char *mask,char *name)
-{
-	register int i,j,p;
-	register char cm,cn;
-	int ok;
-
-	i=0;
-	j=0;
-	ok=1;
-	while(1)
-	{
-		cm=mask[i];
-		cn=name[j];
-		if(!cm || !cn)
-		{
-			if(!cm && cn) ok=0;
-			else
-			if(cm && !cn)
-			{
-				if(cm!='*') ok=0;
-			}
-			break;
-		}
-		if(cm=='*')
-		{
-			i++;
-			while(mask[i]!='.' && mask[i]) i++;
-			if(!mask[i]) break;
-			p=-1;
-			while(name[j])
-			{
-				if(name[j]=='.') p=j;
-				j++;
-			}
-			if(p!=-1) j=p;
-			/*    while(name[j]!='.' && name[j]) j++; */
-			if(!name[j])
-			{
-				cn=mask[i+1];
-				cm=mask[i];
-				if(cm=='.' && (cn!='*' && cn!=0)) ok=0;
-				break;
-			}
-		}
-		else if(cm!=cn && cm!='?') {ok=0;break;}
-		i++;j++;
-	}
-#pragma warn -rch
-	return ok;
-#pragma warn .rch
-}
-#else
 static int has_wildcards(char *s) {
 	unsigned char c;
 	int *is_w;
@@ -600,7 +484,7 @@ static int has_wildcards(char *s) {
 	return (0);
 }
 
-int wild_match2(register char *p, register char *s) {
+int wild_match2(register char *pattern, register char *str) {
 	register int scc;
 	int ok, lc;
 	int c, cc;
@@ -608,47 +492,47 @@ int wild_match2(register char *p, register char *s) {
 	int l;
 
 	for (;;) {
-		scc = *s++ & 0177;
-		switch (c = *p++) {
+		scc = *str++ & 0177;
+		switch (c = *pattern++) {
 		case '[':
 			ok = 0;
 			lc = 077777;
-			while ((cc = *p++) != 0) {
+			while ((cc = *pattern++) != 0) {
 				if (cc == ']') {
 					if (ok)
 						break;
 					return (0);
 				}
 				if (cc == '-') {
-					if (lc <= scc && scc <= *p++)
+					if (lc <= scc && scc <= *pattern++)
 						ok++;
 				} else if (scc == (lc = cc))
 					ok++;
 			}
 			if (cc == 0)
 				if (ok)
-					p--;
+					pattern--;
 				else
 					return 0;
 			continue;
 
 		case '*':
-			if (!*p)
+			if (!*pattern)
 				return (1);
-			s--;
-			if (!has_wildcards(p)) {
+			str--;
+			if (!hasWildcards(pattern)) {
 				l = 0;
-				while (*s++)
+				while (*str++)
 					l++;
-				s--;
-				t = p;
+				str--;
+				t = pattern;
 				while (*t++) {
-					s--;
+					str--;
 					l--;
 				}
 				if (l >= 0) {
-					while (*p) {
-						if (*p++ != *s++)
+					while (*pattern) {
+						if (*pattern++ != *str++)
 							return (0);
 					}
 					return (1);
@@ -656,9 +540,9 @@ int wild_match2(register char *p, register char *s) {
 					return (0);
 			}
 			do {
-				if (wild_match2(p, s))
+				if (wild_match2(pattern, str))
 					return (1);
-			} while (*s++);
+			} while (*str++);
 			return (0);
 
 		case 0:
@@ -676,14 +560,14 @@ int wild_match2(register char *p, register char *s) {
 		}
 	}
 }
-
-int wild_match1(char *p, char *s) {
-	if (*p == '~')
-		return (!wild_match2(++p, s));
-	else
-		return (wild_match2(p, s));
-}
 #endif
+
+int wild_match1(char *p, char *str) {
+	if (*p == '~')
+		return (!patternMatching(++p, str));
+	else
+		return (patternMatching(p, str));
+}
 
 int wild_match(char *mask, char *name) {
 	char *p;
@@ -696,6 +580,7 @@ int wild_match(char *mask, char *name) {
 	return wild_match1(mask, p);
 }
 
+#if 0
 /**
  abs2rel()
 
@@ -708,6 +593,7 @@ int abs2rel(int rel, int abs, int value) {
 	res = (double) rel * (double) value / (double) abs;
 	return (int) (res + 0.5);
 }
+#endif
 
 /**
  va_open()
@@ -735,7 +621,7 @@ int va_open(char *name) {
 	if (!get_buf_entry(name, full, &parm)) {
 		frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
 		pfree(full);
-		return 0;
+		return (0);
 	}
 	while (*parm == ' ')
 		parm++;
@@ -746,7 +632,7 @@ int va_open(char *name) {
 	 * passenden Applikation fortfahren. Falls kein Dateiname extrahiert
 	 * werden kann, eine Warnung ausgeben und abbrechen
 	 */
-	if (!valid_path(full)) {
+	if (!isValidPath(full)) {
 		char *p;
 
 		strcpy(apath, tb.homepath);
@@ -758,7 +644,7 @@ int va_open(char *name) {
 			goto only_filename;
 		frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
 		pfree(full);
-		return 0;
+		return (0);
 	}
 
 	fsinfo(full, &fs);
@@ -775,8 +661,8 @@ int va_open(char *name) {
 		if (t) {
 			/* Als Applikation angemeldet ? */
 			appl = app_find(full);
-			if (!appl) /* Nein */
-			{
+			if (!appl) {
+				/* Nein */
 				strcpy(app.name, full);
 				app_default(&app);
 				strcpy(app.title, afile);
@@ -794,8 +680,8 @@ int va_open(char *name) {
 			ret = app_start(appl, name, apath, &rex);
 			pfree(full);
 			return (ret);
-		} else /* Aehm - eventuell ein Viewer vorhanden? */
-		{
+		} else {
+			/* Aehm - eventuell ein Viewer vorhanden? */
 			if (!aok) {
 				appl = app_match(1, afile, &aok);
 				if (appl) {
@@ -812,10 +698,10 @@ int va_open(char *name) {
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		}
 		pfree(full);
-		return 0;
+		return (0);
 	} else {
 		pfree(full);
-		return 1;
+		return (1);
 	}
 }
 
@@ -828,7 +714,7 @@ void err_file(char *alstr, long code, char *name) {
 	char lname[31], msg[256];
 	int i, c;
 
-	str230(lname, name);
+	strShortener(lname, name, 30);
 	i = c = 0;
 	while (c < 2 && alstr[i]) {
 		msg[i] = alstr[i];
@@ -848,10 +734,31 @@ void err_file(char *alstr, long code, char *name) {
  Anzeige eines Hilfetextes mit ST-Guide
  -------------------------------------------------------------------------*/
 void show_help(char *ref) {
-	int ap_id, ok, rex;
+#if 0
+	int ap_id;
+#endif
+	int ok, rex;
 	APPLINFO app;
 	char *p;
 
+	if (!showSTGuideHelp(STGUIDEHELPFILE, ref)) {
+		/* In einer Multitasking-Umgebung ggf. nachladen, sonst mosern. */
+		ok = FALSE;
+		if (tb.sys & SY_MULTI) {
+			p = getenv("STGUIDE");
+			if (p) {
+				ok = TRUE;
+				strcpy(app.name, p);
+				app_default(&app);
+				app.overlay = 0;
+				app.single = 0;
+				app_start(&app, aesBuffer, 0L, &rex);
+			}
+		}
+		if (!ok)
+			frm_alert(1, rs_frstr[ALNOGUIDE], altitle, conf.wdial, 0L);
+	}
+#if 0
 	/* Kommandozeile */
 	strcpy(aesbuf, "*:\\thing.hyp");
 	if (ref) {
@@ -862,7 +769,7 @@ void show_help(char *ref) {
 	/* ST-Guide vorhanden? */
 	ap_id = appl_find("ST-GUIDE");
 	if (ap_id >= 0)
-		app_send(ap_id, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
+		appl_send(ap_id, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
 	else {
 		/* In einer Multitasking-Umgebung ggf. nachladen, sonst mosern. */
 		ok = 0;
@@ -880,6 +787,7 @@ void show_help(char *ref) {
 		if (!ok)
 			frm_alert(1, rs_frstr[ALNOGUIDE], altitle, conf.wdial, 0L);
 	}
+#endif
 }
 
 /**
@@ -1016,10 +924,10 @@ int sys_open(char *path, char *name) {
 	char full[MAX_PLEN], lname[MAX_FLEN];
 
 	ret = 0;
-	if (!strcmp(path, tb.homepath)) /* Startverzeichnis von Thing? */
-	{
-		if (!strcmp(FNAME_PRG, name)) /* Thing selber? */
-		{
+	if (!strcmp(path, tb.homepath)) {
+		/* Startverzeichnis von Thing? */
+		if (!strcmp(FNAME_PRG, name)) {
+			/* Thing selber? */
 			frm_alert(1, rs_frstr[ALDOUBLE], altitle, conf.wdial, 0L);
 			ret = 1;
 		}
@@ -1040,7 +948,7 @@ int sys_open(char *path, char *name) {
 		}
 	}
 
-	return ret;
+	return (ret);
 }
 
 /**
@@ -1095,9 +1003,8 @@ void title_update(int drive) {
  Infos Åber ein Dateisystem ermitteln
  -------------------------------------------------------------------------*/
 #ifdef DEBUG
-void fsinfo_debug(char *file, int line, char *name, FILESYS *fs)
-{
-	LOG((0, "fsinfo() called in file %s, line %d\n", file, line));
+void fsinfo_debug(char *file, int line, char *name, FILESYS *fs) {
+DEBUGLOG((0, "fsinfo() called in file %s, line %d\n", file, line));
 	fs_info(name, fs);
 }
 #endif
@@ -1108,7 +1015,7 @@ void fs_info(char *name, FILESYS *filesys) {
 	int namelen;
 	char lpath[MAX_PLEN], *p;
 
-LOG((0, "fsinfo(%s)\n", name));
+DEBUGLOG((0, "fsinfo(%s)\n", name));
 	/* Default-Werte, falls kein MiNT etc. vorhanden ist */
 	filesys->flags = UPCASE | TOS;
 	filesys->namelen = 12;
@@ -1118,7 +1025,7 @@ LOG((0, "fsinfo(%s)\n", name));
 		filesys->biosdev = Dgetdrv();
 
 	if (!name[0]) {
-		LOG((0, "fsinfo: Name is empty, exiting\n"));
+DEBUGLOG((0, "fsinfo: Name is empty, exiting\n"));
 		return;
 	}
 
@@ -1129,9 +1036,9 @@ LOG((0, "fsinfo(%s)\n", name));
 		p[1] = 0;
 
 	/* Aktuelles Verzeichnis setzen */
-LOG((0, "fsinfo: Setting dir to %s\n", lpath));
+DEBUGLOG((0, "fsinfo: Setting dir to %s\n", lpath));
 	if (set_dir(lpath)) {
-		LOG((0, "fsinfo: set_dir() failed, exiting\n"));
+DEBUGLOG((0, "fsinfo: set_dir() failed, exiting\n"));
 		return;
 	}
 
@@ -1139,9 +1046,10 @@ LOG((0, "fsinfo: Setting dir to %s\n", lpath));
 	if (mode < 0L) {
 		/* Kein Dpathconf() verfÅgbar */
 		clr_drv();
-		LOG((0, "fsinfo: No Dpathconf() available (%ld), exiting\n", mode));
+DEBUGLOG((0, "fsinfo: No Dpathconf() available (%ld), exiting\n", mode));
 		return;
-	} LOG((0, "fsinfo: max. mode for Dpathconf(): %ld\n", mode));
+	}
+DEBUGLOG((0, "fsinfo: max. mode for Dpathconf(): %ld\n", mode));
 
 	filesys->flags |= UNIXATTR | OWNER | STIMES | SYMLINKS;
 	/* Maximale LÑnge eines Dateinamens ermitteln */
@@ -1205,7 +1113,7 @@ LOG((0, "fsinfo: Setting dir to %s\n", lpath));
 		ret = Dpathconf(".", 7);
 		if (ret < 0L)
 			ret = Dpathconf(lpath, 7);
-		LOG((0, "fsinfo: Dpathconf(7) -> %lo (0x%lx)\n", ret, ret));
+DEBUGLOG((0, "fsinfo: Dpathconf(7) -> %lo (0x%lx)\n", ret, ret));
 		if (ret >= 0L) {
 			if ((ret & (0xfffL << 8L)) == 0)
 				filesys->flags &= ~UNIXATTR;
@@ -1218,10 +1126,9 @@ LOG((0, "fsinfo: Setting dir to %s\n", lpath));
 	 * Unter MagiC auch dann als nicht vorhanden ansehen, wenn das FS
 	 * Dpathconf-Modus 7 nicht unterstÅtzt
 	 */
-#ifndef _NAES
 	if ((ret < 0L) && (tb.sys & SY_MAGX))
 		filesys->flags &= ~(UNIXATTR | OWNER | STIMES);
-#endif
+
 	if (mode >= 8) {
 		ret = Dpathconf(".", 8);
 		if (ret < 0L)
@@ -1248,44 +1155,42 @@ LOG((0, "fsinfo: Setting dir to %s\n", lpath));
 		}
 	}
 	title_update(filesys->biosdev);
-LOG((0, "fsinfo: Result:\n"));
-LOG((0, "  upcase: %d\n", filesys->flags & UPCASE));
-LOG((0, "  namelen: %d\n", filesys->namelen));
-LOG((0, "  tos: %d\n", filesys->flags & TOS));
-LOG((0, "  unixattr: %d\n", filesys->flags & UNIXATTR));
-LOG((0, "  owner: %d\n", filesys->flags & OWNER));
-LOG((0, "  stimes: %d\n", filesys->flags & STIMES));
-LOG((0, "  biosdev: %d\n", filesys->biosdev));
+DEBUGLOG((0, "fsinfo: Result:\n"));
+DEBUGLOG((0, "  upcase: %d\n", filesys->flags & UPCASE));
+DEBUGLOG((0, "  namelen: %d\n", filesys->namelen));
+DEBUGLOG((0, "  tos: %d\n", filesys->flags & TOS));
+DEBUGLOG((0, "  unixattr: %d\n", filesys->flags & UNIXATTR));
+DEBUGLOG((0, "  owner: %d\n", filesys->flags & OWNER));
+DEBUGLOG((0, "  stimes: %d\n", filesys->flags & STIMES));
+DEBUGLOG((0, "  biosdev: %d\n", filesys->biosdev));
 	clr_drv();
 }
 
 /**
- clr_drv()
-
- Verzeichniss des aktuellen LW auf '\' setzen, und als aktuelles
- LW/Verzeichnis das Startverzeichnis von Thing setzen -
- - z.B. nach AusfÅhrung eines Programms, das evtl. die Pfade verÑndert
- hat
- -------------------------------------------------------------------------*/
+ * Verzeichniss des aktuellen LW auf '\' setzen, und als aktuelles
+ * LW/Verzeichnis das Startverzeichnis von Thing setzen -
+ * - z.B. nach AusfÅhrung eines Programms, das evtl. die Pfade verÑndert hat
+ */
 void clr_drv(void) {
 	Dsetpath("\\");
 	set_dir(tb.homepath);
 }
 
 /**
- fsconv()
-
- Dateinamen an ein Dateisystem anpassen (case-sensitiv, TOS etc.)
- -------------------------------------------------------------------------*/
+ * Dateinamen an ein Dateisystem anpassen (case-sensitiv, TOS etc.)
+ *
+ * @param *name
+ * @param *filesys
+ */
 void fsconv(char *name, FILESYS *filesys) {
 	int i, j, isfl;
 	char *p, *pn;
 	char newname[MAX_FLEN];
 
-	LOG((0, "fsconv(%s)\n", name));
-	LOG((0, "fsconv: filesys->upcase: %d\n", filesys->flags & UPCASE));
-	LOG((0, "fsconv: filesys->tos: %d\n", filesys->flags & TOS));
-	LOG((0, "fsconv: filesys->namelen: %d\n", filesys->namelen));
+DEBUGLOG((0, "fsconv(%s)\n", name));
+DEBUGLOG((0, "fsconv: filesys->upcase: %d\n", filesys->flags & UPCASE));
+DEBUGLOG((0, "fsconv: filesys->tos: %d\n", filesys->flags & TOS));
+DEBUGLOG((0, "fsconv: filesys->namelen: %d\n", filesys->namelen));
 	i = 0;
 	while (name[i])
 		i++;
@@ -1295,7 +1200,8 @@ void fsconv(char *name, FILESYS *filesys) {
 	else
 		isfl = 0;
 
-	if ((name[1] && name[1] != ':') || !name[1]) /* Dateiname? */
+	/* Dateiname? */
+	if ((name[1] && name[1] != ':') || !name[1])
 		pn = name;
 	else {
 		/* Nein - kompletter Pfad */
@@ -1312,16 +1218,17 @@ void fsconv(char *name, FILESYS *filesys) {
 			return;
 	}
 
+	/* Nur Grossbuchstaben? */
 	if (filesys->flags & UPCASE) {
-		/* Nur Grossbuchstaben? */
 		i = 0;
 		while (pn[i]) {
 			pn[i] = nkc_toupper(pn[i]);
 			i++;
 		}
 	}
+
+	/* TOS-Konvention (8+3)? */
 	if (filesys->flags & TOS) {
-		/* TOS-Konvention (8+3)? */
 		p = strrchr(pn, '.');
 		/* Dateiname max. 8 Zeichen */
 		i = j = 0;
@@ -1356,44 +1263,14 @@ void fsconv(char *name, FILESYS *filesys) {
 			if (*p == ' ')
 				*p = '_';
 		}
-	} else /* Kein TOS-System, dann evtl. LÑngenbegrenzung */
-	{
+	} else {
+		/* Kein TOS-System, dann evtl. LÑngenbegrenzung */
 		i = (int) strlen(pn);
 		if (i > filesys->namelen)
 			pn[filesys->namelen - 1] = 0;
 		if (isfl)
 			strcat(pn, "\\");
 	}
-}
-
-/**
- str230()
- str245()
-
- Begrenzt eine Pfadangabe etc. auf 30/45 Zeichen - z.B. fÅr Dialoge
- -------------------------------------------------------------------------*/
-void str230(char *dest, char *src) {
-	int l;
-
-	l = (int) strlen(src);
-	if (l > 30) {
-		strncpy(dest, src, 10);
-		strcpy(&dest[10], "...");
-		strcat(dest, &src[l - 16]);
-	} else
-		strcpy(dest, src);
-}
-
-void str245(char *dest, char *src) {
-	int l;
-
-	l = (int) strlen(src);
-	if (l > 45) {
-		strncpy(dest, src, 10);
-		strcpy(&dest[10], "...");
-		strcat(dest, &src[l - 32]);
-	} else
-		strcpy(dest, src);
 }
 
 /**
@@ -1535,8 +1412,7 @@ long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
  * the_dta: Zeiger auf die Quell-DTA
  */
 void fill_xattr(char *path, XATTR *xattr, DTA *the_dta) {
-	xattr->mode =
-			(the_dta->d_attrib & 16) ?
+	xattr->mode = (the_dta->d_attrib & 16) ?
 					(S_IFDIR | (0777 & ~glob.umask)) :
 					(S_IFREG | (0666 & ~glob.umask));
 	if (the_dta->d_attrib & 1)
@@ -1820,22 +1696,6 @@ int has_quotes(char *buf) {
 	}
 	return (cnt);
 }
-
-#ifdef DEBUG
-void debug_log(int init, const char *format, ...) {
-	FILE *log;
-	va_list va;
-	char logfile[MAX_PLEN];
-
-	sprintf(logfile, "%s%s", tb.homepath, "thing.log");
-	if ((log = fopen(logfile, init ? "w" : "a")) == NULL)
-		return;
-	va_start(va, format);
-	vfprintf(log, format, va);
-	va_end(va);
-	fclose(log);
-}
-#endif
 
 /**
  * count_char

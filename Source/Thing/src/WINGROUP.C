@@ -30,7 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "..\include\thingrsc.h"
+#include "rsrc\thing_de.h"
+#include "rsrc\thgtxtde.h"
 #include <ctype.h>
 #include <time.h>
 
@@ -56,15 +57,14 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 	/* Falls die Gruppe schon auf ist, dann nur nach vorne holen */
 	win = tb.win;
 	while (win) {
-		if (win->state&WSOPEN && win->class==WCGROUP) {
+		if (win->state&WSOPEN && win->class == WCGROUP) {
 			wgrp = (W_GRP *) win->user;
 			if (!strcmp(wgrp->name, name)) {
 				if (win->state & WSICON)
-					win_unicon(win, win->save.x, win->save.y, win->save.w,
-							win->save.h);
+					win_unicon(win, win->save.x, win->save.y, win->save.w, win->save.h);
 				win_top(win);
 				mn_check();
-				return 1;
+				return (1);
 			}
 		}
 		win = win->next;
@@ -75,7 +75,7 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 		if (wait == 'SND2') {
 			wait = realwin = 0;
 			if ((win->user = pmalloc(sizeof(W_GRP))) == NULL)
-				return 0;
+				return (0);
 			goto newgrp;
 		}
 	} else { /* Neues Fenster einrichten */
@@ -84,32 +84,30 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 		font.size = conf.font.size;
 		font.fcol = conf.font.fcol;
 		font.bcol = conf.font.bcol;
-		font.attr = 0;
+		font.attr = (0);
 
 		win = pmalloc(sizeof(WININFO));
 		if (!win) { /* Kein Speicher mehr */
 			frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-			return 0;
+			return (0);
 		}
 		win->user = pmalloc(sizeof(W_GRP));
 		if (!win->user) { /* Kein Speicher mehr */
 			pfree(win);
 			frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
-			return 0;
+			return (0);
 		}
 		win->name[0] = 0;
 		win->info[0] = 0;
-		win->class=WCGROUP;
-		win->flags = CLOSER | MOVER | FULLER | SIZER | NAME | UPARROW | DNARROW
-				| VSLIDE;
+		win->class = WCGROUP;
+		win->flags = CLOSER | MOVER | FULLER | SIZER | NAME | UPARROW | DNARROW | VSLIDE;
 		if (conf.hscr)
 			win->flags |= LFARROW | RTARROW | HSLIDE;
 
 		/* Zusatzelemente - je nach System */
-#ifndef _NAES
 		if (tb.sys & SY_MAGX)
 			win->flags |= BACKDROP;
-#endif
+
 		if (tb.sys & SY_ICONIFY)
 			win->flags |= SMALLER;
 		win->state = WSDESKSIZE;
@@ -123,7 +121,7 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 			pfree(win);
 			graf_mouse(ARROW, 0L);
 			frm_alert(1, rs_frstr[ALNOWIN], altitle, conf.wdial, 0L);
-			return 0;
+			return (0);
 		}
 		newgrp: wgrp = win->user;
 
@@ -162,7 +160,8 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 	fh = fopen(name, "r");
 	fok = cok = gtaok = aclok = bpok = 0;
 	if (!fh) {
-		grouperr: if (realwin)
+grouperr:
+		if (realwin)
 			win_close(win);
 		while (wgrp->entry)
 			wgrp_remove(wgrp, wgrp->entry);
@@ -174,7 +173,7 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 			graf_mouse(ARROW, 0L);
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		}
-		return 0;
+		return (0);
 	} else {
 		grok = 0;
 		while (!feof(fh)) {
@@ -313,7 +312,7 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 					if ((id == 'OOPT') && (new != NULL))
 						sscanf(inbuf5, "%d", &new->paralways);
 					if ((id != 'OFIL') && (id != 'OFLD'))
-							new = NULL;
+						new = NULL;
 				}
 			}
 		}
@@ -413,7 +412,7 @@ WG_ENTRY *wgrp_add(W_GRP *wgrp, WG_ENTRY *gprev, int class, char *title, char *n
 	entry->paralways = 0;
 	wgrp_eupdate(wgrp, entry);
 
-	return entry;
+	return (entry);
 }
 
 /**-------------------------------------------------------------------------
@@ -489,7 +488,7 @@ void wgrp_eupdate(W_GRP *grp, WG_ENTRY *item) {
 			ticon = icon;
 			break;
 		}
-		if ((icon->class==0 && (item->class==EC_FILE || item->class==EC_DEVICE)) || (icon->class==1 && item->class==EC_FOLDER)) {
+		if ((icon->class == 0 && (item->class == EC_FILE || item->class == EC_DEVICE)) || (icon->class == 1 && item->class == EC_FOLDER)) {
 			if (wild_match1(icon->mask, wename)) {
 				ticon = icon;
 				break;
@@ -873,8 +872,7 @@ void wgrp_esel1(WININFO *win, WG_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 		if (wgrp->text) {
 			/* Darstellung als Text */
 			yg = (n - 1) / wgrp->imx;
-			x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.x + 10
-					- wgrp->offx;
+			x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.x + 10 - wgrp->offx;
 			y = yg * (wgrp->clh + 1) + win->work.y + 2 - wgrp->offy;
 
 			w = wgrp->tlen - wgrp->clw * 2;
@@ -1105,7 +1103,7 @@ WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
 	/* Falls ikonifiziert oder keine Objekte, dann raus */
 	if (win->state & WSICON || wgrp->e_num == 0) {
 		*prev = 0L;
-		return 0L;
+		return (0L);
 	}
 
 	/* Nur innerhalb des Arbeitsbereichs des Fensters suchen */
@@ -1198,7 +1196,7 @@ WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
 	}
 
 	*prev = lprev;
-	return this;
+	return (this);
 }
 
 /**-------------------------------------------------------------------------
@@ -1324,8 +1322,8 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 		if (litem->sel) {
 			obnum[p] = litem->obnum;
 			i = litem->obnum - 1;
-			if (wgrp->text) /* Im Textmodus */
-			{
+			if (wgrp->text) {
+				/* Im Textmodus */
 				/* Koordinaten/Maže holen */
 				yg = i / wgrp->imx;
 				x = (i - yg * wgrp->imx) * wgrp->tlen + wx + 10 - wgrp->offx;
@@ -1485,60 +1483,60 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				if (win) {
 					/* Fenster bekannt -> dann Drag&Drop in Fenster */
 					switch (win->class) {
-						case WCCON: /* Console */
-							drag = 0;
+					case WCCON: /* Console */
+						drag = 0;
+						break;
+					case WCPATH: /* Verzeichnisfenster */
+						gitem = 0L;
+						iwin = win; /* Fenster merken */
+						if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, wgrp->text ? rub_ticon : rub_icon)) {
+							item = 0L;
 							break;
-						case WCPATH: /* Verzeichnisfenster */
-							gitem = 0L;
-							iwin = win; /* Fenster merken */
-							if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, wgrp->text ? rub_ticon : rub_icon)) {
-								item = 0L;
-								break;
-							}
+						}
 						item = wpath_efind(win, lmx, lmy); /* Objekt ermitteln */
-						if(item) {
+						if (item) {
 							if (desk.sel.devices || desk.sel.printer)
 								drag = 0;
 							switch(item->class) {
-								case EC_FILE: /* Datei */
+							case EC_FILE: /* Datei */
 								/* .... aber kein Programm */
-								if(!item->aptype) {
+								if (!item->aptype) {
 									/* Evtl. indirekt angemeldet */
-									if(!app_isdrag(item->name))
-										item=0L; /* Nein */
+									if (!app_isdrag(item->name))
+										item = 0L; /* Nein */
 								}
 								break;
-								case EC_DEVICE: /* Auf Device nur einzelne Datei */
-								if(desk.sel.files>1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash)
-								drag=0; /* item=0L; */
+							case EC_DEVICE: /* Auf Device nur einzelne Datei */
+								if (desk.sel.files>1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash)
+									drag = 0; /* item=0L; */
 								break;
 							}
-						} else if(desk.sel.devices || desk.sel.printer)
-							drag=0;
-						if(!drag)
-							item=0L;
+						} else if (desk.sel.devices || desk.sel.printer)
+							drag = 0;
+						if (!drag)
+							item = 0L;
 						break;
-						case WCGROUP:
-						item=0L;
-						iwin=win; /* Fenster merken */
+					case WCGROUP:
+						item = 0L;
+						iwin = win; /* Fenster merken */
 						if (drag_scroll(lmy, w, h, moved, iwin, n, pxy, wgrp->text ? rub_ticon : rub_icon)) {
 							gitem = 0L;
 							break;
 						}
-						if(desk.sel.devices)
-							drag=0;
+						if (desk.sel.devices)
+							drag = 0;
 						else {
-							gitem=wgrp_efind(win,lmx,lmy,&gprev); /* Objekt ermitteln */
-							if(gitem) {
-								if(!gitem->prevsel) {
+							gitem = wgrp_efind(win, lmx, lmy, &gprev); /* Objekt ermitteln */
+							if (gitem) {
+								if (!gitem->prevsel) {
 									/* Nur wenn Objekt nicht zur Gruppe geh”rt */
-									switch(gitem->class) {
-										case EC_FILE: /* Datei */
+									switch (gitem->class) {
+									case EC_FILE: /* Datei */
 										/* .... aber kein Programm */
-										if(!gitem->aptype) {
+										if (!gitem->aptype) {
 											/* Evtl. indirekt angemeldet */
-											if(!app_isdrag(gitem->name))
-												gitem=0L; /* Nein */
+											if (!app_isdrag(gitem->name))
+												gitem = 0L; /* Nein */
 										}
 										break;
 									}
@@ -1546,7 +1544,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 							}
 						}
 						break;
-						case WCDIAL:
+					case WCDIAL:
 						item = 0L;
 						gitem = 0L;
 						if (desk.sel.numobs > 1 || desk.sel.trash || desk.sel.printer || desk.sel.clip)
@@ -1555,15 +1553,15 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 					}
 				} else {
 					/* Fenster nicht bekannt - eventuell Acc-Fenster ? */
-					item=0L;
-					gitem=0L;
-					accwin=acwin_find(whandle);
+					item = 0L;
+					gitem = 0L;
+					accwin = acwin_find(whandle);
 					/* Es k”nnen nur Dateien, Ordner oder Laufwerke in ein
 					 Accessory-Fenster gelegt werden */
-					if(desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
-						drag=0;
+					if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+						drag = 0;
 					else
-						drag=1;
+						drag = 1;
 				}
 				/* Bisher selektiertes Zielobjekt deselektieren und ggf.
 				 neues Zielobjekt selektieren */
@@ -1627,47 +1625,45 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 						obj = -1;
 					else {
 						switch (desk.dicon[obj].class) {
-							case IDDRIVE:
-							case IDFOLDER:
-							if(desk.sel.trash || desk.sel.clip || desk.sel.printer ||
-							desk.sel.devices) obj=-1;
+						case IDDRIVE:
+						case IDFOLDER:
+							if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+								obj = -1;
 							break;
-							case IDFILE:
-							if(!is_app(desk.dicon[obj].spec.file->name, desk.dicon[obj].spec.file->mode)) {
+						case IDFILE:
+							if (!is_app(desk.dicon[obj].spec.file->name, desk.dicon[obj].spec.file->mode)) {
 								/* Evtl. indirekt angemeldet */
-								if(!app_isdrag(desk.dicon[obj].spec.file->name))
-									obj=-1; /* Nein */
+								if (!app_isdrag(desk.dicon[obj].spec.file->name))
+									obj = -1; /* Nein */
 							}
-							if(desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
-								obj=-1;
+							if (desk.sel.trash || desk.sel.clip || desk.sel.printer || desk.sel.devices)
+								obj = -1;
 							break;
-							case IDCLIP:
-							if(desk.sel.numobs>1 || desk.sel.folders || desk.sel.drives || desk.sel.trash || desk.sel.printer || desk.sel.devices)
-								obj=-1;
+						case IDCLIP:
+							if (desk.sel.numobs > 1 || desk.sel.folders || desk.sel.drives || desk.sel.trash || desk.sel.printer || desk.sel.devices)
+								obj = -1;
 							break;
-							case IDTRASH:
-							if(desk.sel.drives && (desk.sel.files || desk.sel.folders))
-								obj=-1;
+						case IDTRASH:
+							if (desk.sel.drives && (desk.sel.files || desk.sel.folders))
+								obj = -1;
 							break;
-							case IDDEVICE:
-							if(desk.sel.files>1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash || desk.sel.printer || desk.sel.devices)
-								obj=-1;
+						case IDDEVICE:
+							if (desk.sel.files > 1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash || desk.sel.printer || desk.sel.devices)
+								obj = -1;
 							break;
 							case IDPRT:
-							if(desk.sel.files>1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash || desk.sel.devices)
-								obj=-1;
+							if(desk.sel.files > 1 || desk.sel.drives || desk.sel.folders || desk.sel.clip || desk.sel.trash || desk.sel.devices)
+								obj = -1;
 							break;
 						}
-						if(obj==-1)
-							drag=0;
+						if (obj == -1)
+							drag = 0;
 					}
-				}
-				else
-				{
-					if(lmx<tb.desk.x||lmy<tb.desk.y)
-						drag=0;
+				} else {
+					if (lmx < tb.desk.x || lmy < tb.desk.y)
+						drag = 0;
 					else
-						drag=1;
+						drag = 1;
 				}
 				/* Bisher selektiertes Zielobjekt deselektieren und ggf.
 				 neues Zielobjekt selektieren */
@@ -1727,15 +1723,15 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 		litem = litem->next;
 	}
 
-	if (obj != -1) /* Zielobjekt auf dem Desktop ? */
-	{
+	if (obj != -1) {
+		/* Zielobjekt auf dem Desktop ? */
 		dl_ddrag(&desk.dicon[obj], lks);
-	} else /* Kein Zielobjekt auf dem Desktop */
-	{
-		if (whandle) /* Fenster ? */
-		{
-			if (win) /* Eigenes Fenster ? */
-			{
+	} else {
+		/* Kein Zielobjekt auf dem Desktop */
+		if (whandle) {
+			/* Fenster ? */
+			if (win) {
+				/* Eigenes Fenster ? */
 				if (drag) {
 					if (!first) {
 						if (!gitem || item)
@@ -1780,8 +1776,8 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				tx2 = ty2 = 0;
 
 				/* Freies Desktop-Icon suchen */
-				while (
-					desk.dicon[i].class!=IDFREE && i<=MAXICON) i++;
+				while (desk.dicon[i].class != IDFREE && i <= MAXICON)
+					i++;
 
 				litem = wgrp->entry;
 				while (litem && p < n) {
@@ -1793,30 +1789,29 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 					if (litem->sel) {
 						if (i > MAXICON) {
 							/* Kein Icon mehr frei ? */
-							frm_alert(1, rs_frstr[ALDESKFULL], altitle,
-									conf.wdial, 0L);
+							frm_alert(1, rs_frstr[ALDESKFULL], altitle, conf.wdial, 0L);
 							litem = 0L;
 						} else {
 							/* Spezifische Daten bertragen */
 							switch (litem->class) {
-								case EC_FILE:
-								desk.dicon[i].class=IDFILE;
-								desk.dicon[i].spec.file=pmalloc(sizeof(D_FILE));
+							case EC_FILE:
+								desk.dicon[i].class = IDFILE;
+								desk.dicon[i].spec.file = pmalloc(sizeof(D_FILE));
 								if(desk.dicon[i].spec.file) {
-									wgrp_eabs(wgrp,litem,desk.dicon[i].spec.file->name);
+									wgrp_eabs(wgrp, litem,desk.dicon[i].spec.file->name);
 									fsinfo(desk.dicon[i].spec.file->name, &fs);
-									if(!(fs.flags & UNIXATTR) || (Fxattr(0,desk.dicon[i].spec.file->name,&xattr) != 0))
-										xattr.mode=0;
-									desk.dicon[i].spec.file->mode=xattr.mode;
+									if (!(fs.flags & UNIXATTR) || (Fxattr(0, desk.dicon[i].spec.file->name, &xattr) != 0))
+										xattr.mode = 0;
+									desk.dicon[i].spec.file->mode = xattr.mode;
 								}
 								break;
-								case EC_DEVICE:
-								desk.dicon[i].class=IDDEVICE;
-								desk.dicon[i].spec.device=pmalloc(sizeof(D_DEVICE));
-								if(desk.dicon[i].spec.device)
-									wgrp_eabs(wgrp,litem,desk.dicon[i].spec.device->name);
+							case EC_DEVICE:
+								desk.dicon[i].class = IDDEVICE;
+								desk.dicon[i].spec.device = pmalloc(sizeof(D_DEVICE));
+								if (desk.dicon[i].spec.device)
+									wgrp_eabs(wgrp, litem, desk.dicon[i].spec.device->name);
 								break;
-								case EC_FOLDER:
+							case EC_FOLDER:
 								if (wild_match1("[A-Za-z]:\\", litem->name)) {
 									desk.dicon[i].class = IDDRIVE;
 									desk.dicon[i].spec.drive = pmalloc(sizeof(D_DRIVE));
@@ -1824,35 +1819,36 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 										desk.dicon[i].spec.drive->drive = toupper(*litem->name) - 'A';
 									}
 								} else {
-									desk.dicon[i].class=IDFOLDER;
-									desk.dicon[i].spec.folder=pmalloc(sizeof(D_FOLDER));
-									if(desk.dicon[i].spec.folder)
-										wgrp_eabs(wgrp,litem,desk.dicon[i].spec.folder->path);
+									desk.dicon[i].class = IDFOLDER;
+									desk.dicon[i].spec.folder = pmalloc(sizeof(D_FOLDER));
+									if (desk.dicon[i].spec.folder)
+										wgrp_eabs(wgrp, litem, desk.dicon[i].spec.folder->path);
 								}
 								break;
 							}
 							/* War kein Speicher mehr frei ? */
 							if(!desk.dicon[i].spec.data) {
-								desk.dicon[i].class=IDFREE;
-								frm_alert(1,rs_frstr[ALNOMEM],altitle,conf.wdial,0L);
-								litem=0L;
+								desk.dicon[i].class = IDFREE;
+								frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
+								litem=  0L;
 							} else {
 								/* Allgemeine Daten des Icons bertragen */
-								strcpy(desk.dicon[i].title,litem->title);
-								desk.dicon[i].select=1;
-								desk.dicon[i].prevsel=0;
-								if(wgrp->text) {
-									if(px+76>tb.desk.w)
-										px=tb.desk.w-76;
-									if(py+40>tb.desk.h)
-										py=tb.desk.h-40;
-									desk.dicon[i].x=px;
-									desk.dicon[i].y=py;
-									px+=80;pn++;
-									if(px+76>tb.desk.w || pn>=wgrp->imx) {
-										pn=0;
-										px=otx + jumps * 80;
-										py+=48;
+								strcpy(desk.dicon[i].title, litem->title);
+								desk.dicon[i].select = 1;
+								desk.dicon[i].prevsel = 0;
+								if (wgrp->text) {
+									if (px + 76 > tb.desk.w)
+										px = tb.desk.w - 76;
+									if (py + 40 > tb.desk.h)
+										py = tb.desk.h - 40;
+									desk.dicon[i].x = px;
+									desk.dicon[i].y = py;
+									px += 80;
+									pn++;
+									if (px + 76 > tb.desk.w || pn >= wgrp->imx) {
+										pn = 0;
+										px = otx + jumps * 80;
+										py += 48;
 										if ((py + 48) > tb.desk.h) {
 											py = oty;
 											px += 80 * wgrp->imx;
@@ -1860,39 +1856,39 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 										}
 									}
 								} else {
-									iblk=&wgrp->wicon[litem->obnum-1].ciconblk.monoblk;
-									desk.dicon[i].x=pxy[p*18+0]+iblk->ib_wicon/2;
-									desk.dicon[i].y=pxy[p*18+1]-tb.desk.y;
+									iblk = &wgrp->wicon[litem->obnum-1].ciconblk.monoblk;
+									desk.dicon[i].x = pxy[p * 18 + 0] + iblk->ib_wicon / 2;
+									desk.dicon[i].y = pxy[p * 18 + 1] - tb.desk.y;
 								}
 								icon_update(i);
-								objc_offset(rs_trindex[DESKTOP],i,&x,&y);
+								objc_offset(rs_trindex[DESKTOP], i, &x, &y);
 								w=rs_trindex[DESKTOP][i].ob_width;
 								h=rs_trindex[DESKTOP][i].ob_height;
 								/* Gesamtrechteck anpassen */
-								if(x<tx1)
-									tx1=x;
-								if(y<ty1)
-									ty1=y;
-								if(x+w>tx2)
-									tx2=x+w;
-								if(y+h>ty2)
-									ty2=y+h;
+								if (x < tx1)
+									tx1 = x;
+								if (y < ty1)
+									ty1 = y;
+								if (x + w > tx2)
+									tx2 = x + w;
+								if(y + h > ty2)
+									ty2 = y + h;
 
-								wgrp_esel1(desk.sel.win,litem,0,&wrect,&wrd);
+								wgrp_esel1(desk.sel.win, litem, 0, &wrect, &wrd);
 
 								/* N„chstes freies Icon suchen */
-								while(desk.dicon[i].class!=IDFREE && i<=MAXICON)
+								while (desk.dicon[i].class != IDFREE && i<= MAXICON)
 									i++;
 								p++;
 
 								/* Erg„nzen: Ggf. Icon aus der Gruppe entfernen */
 							}
-							if(litem)
-								litem=litem->next;
+							if (litem)
+								litem = litem->next;
 						}
 					} else {
-						if(litem)
-							litem=litem->next;
+						if (litem)
+							litem = litem->next;
 					}
 				}
 
@@ -1903,8 +1899,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 					litem = litem->next;
 				}
 				if (wrd)
-					win_redraw(desk.sel.win, wrect.x, wrect.y, wrect.w,
-							wrect.h);
+					win_redraw(desk.sel.win, wrect.x, wrect.y, wrect.w, wrect.h);
 
 				/* Erg„nzen: Ggf. bercksichtigen, dass Icons aus der Gruppe entfernt wurden */
 
@@ -1930,7 +1925,7 @@ int wgrp_einrect(W_GRP *wgrp, int wx, int wy, WG_ENTRY *ob, RECT *rect) {
 	int px, py, yg, is_in, n;
 
 	if (!wgrp->e_num)
-		return 0;
+		return (0);
 
 	n = ob->obnum;
 
