@@ -15,7 +15,7 @@ crt0.o
 ; -------------------------------------------------------------------
 ; Source(s) for ThingIcon
 ; -------------------------------------------------------------------
-src\thingicn.c (src\rsrc\thingicn.h, include\types.h)
+src\thingicn.c (src\rsrc\thgicnde.h, include\types.h)
 
 ; Color Icon Routines made by Thomas Binder
 ..\cicon\drawcicn.c [ -J- -Z- -T- ]

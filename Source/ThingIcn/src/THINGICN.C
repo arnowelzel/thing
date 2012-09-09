@@ -41,8 +41,8 @@
 #define pfree	free
 #endif
 #include <new_rsc.h>
-#include "rsrc\thingicn.h"
-#include "..\include\types.h"
+#include "rsrc\thgicnde.h"
+#include "..\include\thingicn.h"
 #include <dudolib.h>
 
 /*------------------------------------------------------------------*/
@@ -51,7 +51,7 @@
 /*------------------------------------------------------------------*/
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
-char *aesbuf, *aesapname, *altitle = "ThingIcn", almsg[256], *edas, **edlist;
+char *aesapname, *altitle = "ThingIcn", almsg[256], *edas, **edlist;
 int aesmsg[8], edobj;
 EVENT mevent;
 ICONINFO *edicon;
@@ -68,6 +68,8 @@ RSINFO rinfo;
 /*------------------------------------------------------------------*/
 /*  external variables                                              */
 /*------------------------------------------------------------------*/
+extern BYTE *aesBuffer;
+
 /*------------------------------------------------------------------*/
 /*  local functions                                                 */
 /*------------------------------------------------------------------*/
@@ -75,7 +77,7 @@ RSINFO rinfo;
 /*  local variables                                                 */
 /*------------------------------------------------------------------*/
 /*
- * Kennzeichnet dialoginterne énderungen an den Zuordnungen. Wird
+ * Kennzeichnet dialoginterne Aenderungen an den Zuordnungen. Wird
  * bei OK an glob.change weitergegeben, so dass dann die Menuepunkte
  * zum Sichern, Neuladen freigeschaltet werden koennen.
  */
@@ -83,7 +85,7 @@ static int changed = FALSE;
 
 /*
  * Iconnamen fuer "PARENTDIR" und "CLIPBOARD", duerfen ggf. naemlich
- * auch "_PARENT" und "_CLIPBRD" heiûen (fuer Benutzer von IconCons,
+ * auch "_PARENT" und "_CLIPBRD" heissen (fuer Benutzer von IconCons,
  * das maximal 8 Zeichen im Iconnamen zulaesst).
  */
 static char *parentdir, *clipboard;
@@ -100,162 +102,7 @@ static FIND_STRUCT fstruct;
 /*  local definitions                                               */
 /*------------------------------------------------------------------*/
 #define VERSION	"1.11"
-
-/**
- * app_send
- *
- * Verschickt eine AES-Nachricht an eine Applikation.
- *
- * Eingabe:
- * id: AES-ID der Empfaengerapplikation
- * message: Die zu verschickende Nachricht
- * pointers: Bitvektor, der angibt, welche Parameter Pointer sind.
- *        - PT34: par1 ist Pointer, par2 wird nicht beachtet
- *        - PT45: par2  "     "   , par3   "    "       "
- *        - PT56: par3  "     "   , par4   "    "       "
- *        - PT67: par4  "     "   , par5   "    "       "
- *        NatÅrlich sind Kombinationen wie BV34|BV45 sinnlos!
- * par1 - par5: Die Parameter fuer die Nachricht, die fuer msg[3] bis
- *              msg[7] eingesetzt werden. Siehe auch pointers.
- */
-void app_send(int id, int message, int pointers, long par1, long par2,
-		long par3, long par4, long par5) {
-	aesmsg[0] = message;
-	aesmsg[1] = tb.app_id;
-	aesmsg[2] = 0;
-	aesmsg[3] = (int) par1;
-	aesmsg[4] = (int) par2;
-	aesmsg[5] = (int) par3;
-	aesmsg[6] = (int) par4;
-	aesmsg[7] = (int) par5;
-	if (pointers & PT34)
-		long2int(par1, &aesmsg[3], &aesmsg[4]);
-	if (pointers & PT45)
-		long2int(par2, &aesmsg[4], &aesmsg[5]);
-	if (pointers & PT56)
-		long2int(par3, &aesmsg[5], &aesmsg[6]);
-	if (pointers & PT67)
-		long2int(par4, &aesmsg[6], &aesmsg[7]);
-	appl_write(id, 16, aesmsg);
-}
-
-/**
- * has_wildcards
- *
- * Prueft, ob eine Zeichenkette Wildcards ('*', '?', '[' oder '])
- * enthaelt. Hilfsfunktion fuer wild_match().
- *
- * Eingbabe:
- * s: Zeiger auf zu untersuchenden String
- *
- * Rueckgabe:
- * 1: s enthaelt mindestens ein Wildcard-Zeichen
- * 0: sonst
- */
-static int has_wildcards(char *s) {
-	unsigned char c;
-
-	while ((c = *s++) != 0) {
-		switch (c) {
-		case '[':
-		case ']':
-		case '*':
-		case '?':
-			return (1);
-		}
-	}
-	return (0);
-}
-
-/**
- * wild_match
- *
- * Patternvergleich mit Wildcards.
- *
- * Eingabe:
- * p: Zeiger auf Vergleichsmaske, ggf. mit Wildcards
- * s: Zeiger auf zu vergleichenden String
- *
- * Rueckgabe:
- * 1: s passt auf Maske p
- * 0: sonst
- */
-int wild_match(register char *p, register char *s) {
-	register int scc;
-	int ok, lc;
-	int c, cc;
-	char *t;
-	int l;
-
-	for (;;) {
-		scc = *s++ & 0177;
-		switch (c = *p++) {
-		case '[':
-			ok = 0;
-			lc = 077777;
-			while ((cc = *p++) != 0) {
-				if (cc == ']') {
-					if (ok)
-						break;
-					return (0);
-				}
-				if (cc == '-') {
-					if (lc <= scc && scc <= *p++)
-						ok++;
-				} else if (scc == (lc = cc))
-					ok++;
-			}
-			if (cc == 0)
-				if (ok)
-					p--;
-				else
-					return (0);
-			continue;
-
-		case '*':
-			if (!*p)
-				return (1);
-			s--;
-			if (!has_wildcards(p)) {
-				l = 0;
-				while (*s++)
-					l++;
-				s--;
-				t = p;
-				while (*t++) {
-					s--;
-					l--;
-				}
-				if (l >= 0) {
-					while (*p) {
-						if (*p++ != *s++)
-							return (0);
-					}
-					return (1);
-				} else
-					return (0);
-			}
-			do {
-				if (wild_match(p, s))
-					return (1);
-			} while (*s++);
-			return (0);
-
-		case 0:
-			return (scc == 0);
-
-		case '?':
-			if (scc == 0)
-				return (0);
-			continue;
-
-		default:
-			if (c != scc)
-				return (0);
-			continue;
-		}
-	}
-}
+#define STGUIDEHELPFILE "thingicn.hyp"
 
 /**
  * add_comment
@@ -288,76 +135,21 @@ int add_comment(char *line) {
 }
 
 /**
- * long2int
- *
- * Wandelt einen long in zwei ints
- *
- * Eingabe:
- * lword: Zu wandelnder 32-Bit-Wert
- * hi: Zeiger auf die Adresse fuer die oberen 16 Bit
- * lo: Zeiger auf die Adresse fuer die unteren 16 Bit
- */
-void long2int(long lword, int *hi, int *lo) {
-	*hi = (int) (lword >> 16L);
-	*lo = (int) (lword & 0xffffL);
-}
-
-/**
- * int2long
- *
- * Wandelt zwei unsigned ints in ein unsigned long.
- *
- * Eingabe:
- * hi: Obere 16 Bit fuer den unsigned long.
- * lo: Untere 16 Bit fuer den unsigned long.
- *
- * Rueckgabe:
- * lo + hi * 65536UL
- */
-unsigned long int2long(unsigned int hi, unsigned int lo) {
-	return ((unsigned long) lo + ((unsigned long) hi << 16UL));
-}
-
-/**
- show_help()
-
- Anzeige eines Hilfetextes mit ST-Guide
- -------------------------------------------------------------------------*/
-void show_help(char *helpfile, char *ref) {
-	int ap_id;
-
-	/* ST-Guide vorhanden ? */
-	ap_id = appl_find("ST-GUIDE");
-	if (ap_id < 0) {
-		frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
-		return;
-	}
-
-	strcpy(aesbuf, "*:\\");
-	strcat(aesbuf, helpfile);
-	if (ref) {
-		strcat(aesbuf, " ");
-		strcat(aesbuf, ref);
-	}
-	app_send(ap_id, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
-}
-
-/**
  mn_istate()
 
- Disablen eines MenÅeintrags
+ Disablen eines Menueeintrags
  -------------------------------------------------------------------------*/
 void mn_istate(int item, int enable) {
 	if (enable)
-		rinfo.rs_trindex[MAINMENU][item].ob_state &= ~DISABLED;
+		unsetObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 	else
-		rinfo.rs_trindex[MAINMENU][item].ob_state |= DISABLED;
+		setObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 }
 
 /**
  mn_disable()
 
- Deaktivieren der MenÅeintrÑge bei Fensterdialogen
+ Deaktivieren der Menueeintraege bei Fensterdialogen
  -------------------------------------------------------------------------*/
 void mn_disable(void) {
 	wind_update (BEG_UPDATE);
@@ -368,7 +160,7 @@ void mn_disable(void) {
 	mn_istate(MQUIT, 0);
 	mn_istate(MFINDFILE, 0);
 	mn_istate(MFINDICON, 0);
-	wind_update (END_UPDATE);
+	wind_update(END_UPDATE);
 }
 
 /**
@@ -386,34 +178,12 @@ void mn_update(void) {
 	mn_istate(MEDITICON, !!glob.focus);
 	mn_istate(MFINDFILE, !!glob.numassign);
 	mn_istate(MFINDICON, !!glob.numicon);
-	wind_update (END_UPDATE);
+	wind_update(END_UPDATE);
 }
 
 /**
- av_...()
-
- AV-Protokoll
- -------------------------------------------------------------------------*/
-void av_wopen(int handle) {
-	if (glob.avid < 0)
-		return;
-
-	app_send(glob.avid, AV_ACCWINDOPEN, 0, handle, 0, 0, 0, 0);
-}
-
-void av_wclose(int handle) {
-	if (glob.avid < 0)
-		return;
-
-	app_send(glob.avid, AV_ACCWINDCLOSED, 0, handle, 0, 0, 0, 0);
-}
-
-/**
- dl_about()
-
- Ueber ThingIcn
- -------------------------------------------------------------------------*/
-/* Initialisiert und Oeffnet den Dialog 'Ueber ThingIcn' */
+ * Initialisiert und Oeffnet den Dialog 'Ueber ThingIcn'
+ */
 void di_about(void) {
 	if (fi_about.open) {
 		frm_restore(&fi_about);
@@ -422,27 +192,27 @@ void di_about(void) {
 	frm_start(&fi_about, 1, 1, 0);
 
 	if (fi_about.state == FST_WIN)
-		av_wopen(fi_about.win.handle);
+		avcWindowOpen(glob.avid, fi_about.win.handle);
 }
 
-#pragma warn -par
 void de_about(int mode, int ret) {
+	UNUSED(ret);
+
 	if (!mode) {
 		switch (fi_about.exit_obj) {
 		case ABOK:
 			if (fi_about.state == FST_WIN)
-				av_wclose(fi_about.win.handle);
+				avcWindowClose(glob.avid, fi_about.win.handle);
 
 			frm_end(&fi_about);
 			break;
 		}
 	} else {
 		if (fi_about.state == FST_WIN)
-			av_wclose(fi_about.win.handle);
+			avcWindowClose(glob.avid, fi_about.win.handle);
 		frm_end(&fi_about);
 	}
 }
-#pragma warn .par
 
 /**
  save()
@@ -482,8 +252,7 @@ int save(void) {
 					strcpy(wc2, aslist[max].wildcard);
 					strupr(wc1);
 					strupr(wc2);
-					if (((*wc1 == '*') && (*wc2 != '*'))
-							|| wild_match(wc1, wc2)) {
+					if (((*wc1 == '*') && (*wc2 != '*')) || patternMatching(wc1, wc2)) {
 						max = j;
 					}
 				}
@@ -506,7 +275,7 @@ int save(void) {
 	now = time(NULL);
 	i = 1;
 	do {
-		if (tree[i].ob_state & SELECTED) {
+		if (isObjectSelected(tree, i)) {
 			strftime(buf, 128, tree[i].ob_spec.free_string, localtime(&now));
 			fprintf(handle, "%s\n", buf);
 		} else
@@ -522,13 +291,13 @@ int save(void) {
 		if (new) {
 			new = 0;
 			switch (aslist[i].class) {
-				case 0:
+			case 0:
 				fprintf(handle, "IFIL ");
 				break;
-				case 1:
+			case 1:
 				fprintf(handle, "IFLD ");
 				break;
-				case 2:
+			case 2:
 				fprintf(handle, "IDRV ");
 				break;
 			}
@@ -560,10 +329,12 @@ int save(void) {
 		Fdelete(glob.bname);
 		mw_change(glob.change = FALSE);
 		if (glob.tid >= 0)
-			app_send(glob.tid, THING_MSG, 0, AT_ILOAD, 0, 0, 0, 0);
+			appl_send(glob.tid, THING_MSG, 0, AT_ILOAD, 0, 0, 0, 0);
 	}
-save_exit: if (glob.numassign)
+save_exit:
+	if (glob.numassign)
 		pfree(aslist);
+
 	return (ret);
 }
 
@@ -586,7 +357,10 @@ void revert(void) {
 		while (icon->as)
 			as_remove(icon, icon->as);
 	}
-	glob.numassign = glob.multiple = glob.missing = glob.illegal = 0;
+	glob.numassign =
+	glob.multiple =
+	glob.missing =
+	glob.illegal = 0;
 
 	/* Kommentare verwerfen */
 	for (p = glob.comments; p != NULL;) {
@@ -624,7 +398,7 @@ void dl_nextwin(void) {
 		magx_switch(tb.app_id, 0);
 	} else {
 		if (glob.avid >= 0 && (glob.avflags & 0x0001))
-			app_send(glob.avid, AV_SENDKEY, 0, K_CTRL, 0x1107, 0, 0, 0);
+			appl_send(glob.avid, AV_SENDKEY, 0, K_CTRL, 0x1107, 0, 0, 0);
 	}
 }
 
@@ -723,7 +497,7 @@ void dl_edit(void) {
 
 	frm_start(&fi_asedit, 1, 1, 0);
 	if (fi_asedit.state == FST_WIN)
-		av_wopen(fi_asedit.win.handle);
+		avcWindowOpen(glob.avid, fi_asedit.win.handle);
 }
 
 void dl_freeas(ASINFO *as) {
@@ -805,17 +579,17 @@ void dl_selinit(int i) {
 	tree = rinfo.rs_trindex[ASEDIT];
 
 	if (edlist[i][0] == rinfo.rs_frstr[TXCLASS][1]) {
-		tree[AEFILE].ob_state &= ~SELECTED;
-		tree[AEFOLDER].ob_state |= SELECTED;
-		tree[AEDRIVE].ob_state &= ~SELECTED;
+		unsetObjectSelected(tree, AEFILE);
+		setObjectSelected(tree, AEFOLDER);
+		unsetObjectSelected(tree, AEDRIVE);
 	} else if (edlist[i][0] == rinfo.rs_frstr[TXCLASS][2]) {
-		tree[AEFILE].ob_state &= ~SELECTED;
-		tree[AEFOLDER].ob_state &= ~SELECTED;
-		tree[AEDRIVE].ob_state |= SELECTED;
+		unsetObjectSelected(tree, AEFILE);
+		unsetObjectSelected(tree, AEFOLDER);
+		setObjectSelected(tree, AEDRIVE);
 	} else {
-		tree[AEFILE].ob_state |= SELECTED;
-		tree[AEFOLDER].ob_state &= ~SELECTED;
-		tree[AEDRIVE].ob_state &= ~SELECTED;
+		setObjectSelected(tree, AEFILE);
+		unsetObjectSelected(tree, AEFOLDER);
+		unsetObjectSelected(tree, AEDRIVE);
 	}
 
 	if (*edlist[i]) {
@@ -839,13 +613,7 @@ void dl_selinit(int i) {
 
 void de_edit(int mode, int ret) {
 	int done, exob;
-#ifdef OLD_SLIDER_HANDLING
-	int mx, my, mb, ks,
-	sx, sy, sd;
-	int csel;
-#else
 	int d;
-#endif
 	int sel;
 	int class;
 	int ok;
@@ -863,12 +631,7 @@ void de_edit(int mode, int ret) {
 	sel = li_asedit.sel;
 
 	if (!mode) {
-#ifdef OLD_SLIDER_HANDLING
-		graf_mkstate(&mx, &my, &mb, &ks);
-		objc_offset(tree, AESLIDE, &sx, &sy);
-#else
 		if (!lst_handle(&li_asedit, ret, &d)) {
-#endif
 			exob = fi_asedit.exit_obj;
 			switch (exob) {
 			case AEOK:
@@ -925,22 +688,22 @@ void de_edit(int mode, int ret) {
 						strcpy(edlist[i - 1], edlist[i]);
 					sel = -1;
 				} else {
-					if (tree[AEFILE].ob_state & SELECTED)
+					if (isObjectSelected(tree, AEFILE))
 						class = 0;
-					else if (tree[AEFOLDER].ob_state & SELECTED)
+					else if (isObjectSelected(tree, AEFOLDER))
 						class = 1;
 					else
 						class = 2;
 					ok = 1;
 					switch (class) {
-						case 0:
-						case 1:
-							if (strpbrk(wild, ", "))
-								ok = 0;
-							break;
-						case 2:
-							if (wild[1] || !isalnum(*wild))
-								ok = 0;
+					case 0:
+					case 1:
+						if (strpbrk(wild, ", "))
+							ok = 0;
+						break;
+					case 2:
+						if (wild[1] || !isalnum(*wild))
+							ok = 0;
 					}
 					if (!ok) {
 						frm_alert(1, rinfo.rs_frstr[ALILLEGAL], altitle, 1, 0L);
@@ -1000,76 +763,9 @@ void de_edit(int mode, int ret) {
 				fi_asedit.exit_obj = exob;
 				frm_norm(&fi_asedit);
 				break;
-#ifdef OLD_SLIDER_HANDLING
-				case AEUP:
-				lst_up(&li_asedit);
-				break;
-				case AEDOWN:
-				lst_down(&li_asedit);
-				break;
-				case AESLIDE:
-				lst_slide(&li_asedit);
-				break;
-				case AEBOX:
-				if (fi_asedit.state == FST_WIN)
-				{
-					wind_update(BEG_UPDATE);
-					wind_update(BEG_MCTRL);
-				}
-				if (my < sy)
-				sd = -li_asedit.view;
-				else
-				sd = li_asedit.view;
-				do
-				{
-					lst_move(&li_asedit, sd);
-					graf_mkstate(&mx, &my, &mb, &ks);
-				}
-				while (mb & 1);
-				if (fi_asedit.state == FST_WIN)
-				{
-					wind_update(END_UPDATE);
-					wind_update(END_MCTRL);
-				}
-				break;
-				case -1: /* Sondertasten */
-				if (fi_asedit.state == FST_WIN)
-				{
-					wind_update(BEG_UPDATE);
-					wind_update(BEG_MCTRL);
-				}
-				lst_key(&li_asedit, fi_asedit.normkey & ~NKF_CTRL);
-				if (fi_asedit.state == FST_WIN)
-				{
-					wind_update(END_UPDATE);
-					wind_update(END_MCTRL);
-				}
-				break;
-				default:
-				if (fi_asedit.exit_obj >= AELIST + 1 && fi_asedit.exit_obj <= AELIST + li_asedit.view)
-				{
-					csel = fi_asedit.exit_obj - AELIST - 1 + li_asedit.offset;
-					if (li_asedit.num && csel < li_asedit.num)
-					{
-						if (fi_asedit.state == FST_WIN)
-						{
-							wind_update(BEG_UPDATE);
-							wind_update(BEG_MCTRL);
-						}
-						lst_select(&li_asedit, csel);
-						if (fi_asedit.state == FST_WIN)
-						{
-							wind_update(END_UPDATE);
-							wind_update(END_MCTRL);
-						}
-					}
-				}
-				break;
-#endif
 			}
-#ifndef OLD_SLIDER_HANDLING
 		}
-#endif
+
 		if (sel != li_asedit.sel)
 			dl_selinit(li_asedit.sel);
 	} else
@@ -1077,7 +773,7 @@ void de_edit(int mode, int ret) {
 
 	if (done) {
 		if (fi_asedit.state == FST_WIN)
-			av_wclose(fi_asedit.win.handle);
+			avcWindowClose(glob.avid, fi_asedit.win.handle);
 		frm_end(&fi_asedit);
 		if (edlist)
 			pfree(edlist);
@@ -1161,7 +857,7 @@ void dl_find(int icon) {
 	fi_find.userinfo = icon ? "%mfindic" : "%mfind";
 	frm_start(&fi_find, 1, 1, 0);
 	if (fi_find.state == FST_WIN)
-		av_wopen(fi_find.win.handle);
+		avcWindowOpen(glob.avid, fi_find.win.handle);
 }
 
 /**
@@ -1177,15 +873,8 @@ void dl_find(int icon) {
 void de_find(int mode, int ret) {
 	OBJECT *tree;
 	int done,
-#ifdef OLD_SLIDER_HANDLING
-			mx, my, mb, ks,
-			sx, sy,
-			sd,
-			csel,
-#else
-			dclick,
-#endif
-			exob, sel, i;
+		dclick,
+		exob, sel, i;
 	char *p, tmp[33];
 	ICONINFO *icon;
 
@@ -1195,15 +884,10 @@ void de_find(int mode, int ret) {
 	sel = li_find.sel;
 
 	if (!mode) {
-#ifdef OLD_SLIDER_HANDLING
-		graf_mkstate(&mx, &my, &mb, &ks);
-		objc_offset(tree, FISLIDE, &sx, &sy);
-#else
 		if (lst_handle(&li_find, ret, &dclick)) {
 			if (dclick)
 				done = FIOK;
 		} else {
-#endif
 			exob = fi_find.exit_obj;
 			switch (exob) {
 			case FIOK:
@@ -1237,79 +921,9 @@ void de_find(int mode, int ret) {
 				} else
 					lst_select(&li_find, sel);
 				break;
-#ifdef OLD_SLIDER_HANDLING
-				case FIUP:
-				lst_up(&li_find);
-				break;
-				case FIDOWN:
-				lst_down(&li_find);
-				break;
-				case FISLIDE:
-				lst_slide(&li_find);
-				break;
-				case FIBOX:
-				if (fi_find.state == FST_WIN)
-				{
-					wind_update(BEG_UPDATE);
-					wind_update(BEG_MCTRL);
-				}
-				if (my < sy)
-				sd = -li_find.view;
-				else
-				sd = li_find.view;
-				do
-				{
-					lst_move(&li_find, sd);
-					graf_mkstate(&mx, &my, &mb, &ks);
-				}
-				while (mb & 1);
-				if (fi_find.state == FST_WIN)
-				{
-					wind_update(END_UPDATE);
-					wind_update(END_MCTRL);
-				}
-				break;
-				case -1: /* Sondertasten */
-				if (fi_find.state == FST_WIN)
-				{
-					wind_update(BEG_UPDATE);
-					wind_update(BEG_MCTRL);
-				}
-				lst_key(&li_find, fi_find.normkey & ~NKF_CTRL);
-				if (fi_find.state == FST_WIN)
-				{
-					wind_update(END_UPDATE);
-					wind_update(END_MCTRL);
-				}
-				break;
-				default:
-				if (fi_find.exit_obj >= FILIST + 1 &&
-						fi_find.exit_obj <= FILIST + li_find.view)
-				{
-					csel = fi_find.exit_obj - FILIST - 1 + li_find.offset;
-					if (csel < li_find.num)
-					{
-						if (fi_find.state == FST_WIN)
-						{
-							wind_update(BEG_UPDATE);
-							wind_update(BEG_MCTRL);
-						}
-						lst_select(&li_find, csel);
-						if (fi_find.state == FST_WIN)
-						{
-							wind_update(END_UPDATE);
-							wind_update(END_MCTRL);
-						}
-						if ((sel == csel) || (ret & 0x8000))
-						done = FIOK;
-					}
-				}
-				break;
-#endif
 			}
-#ifndef OLD_SLIDER_HANDLING
 		}
-#endif
+
 		if (sel != li_find.sel) {
 			frm_edstring(&fi_find, FITEXT, fstruct.listp[li_find.sel]);
 			frm_redraw(&fi_find, FITEXT);
@@ -1317,7 +931,7 @@ void de_find(int mode, int ret) {
 	} else
 		done = 1;
 
-	/* Ggf. Dialog schlieûen und Speicher freigeben */
+	/* Ggf. Dialog schliessen und Speicher freigeben */
 	if (done) {
 		if (done == FIOK) {
 			fi_find.exit_obj = FIOK;
@@ -1356,7 +970,7 @@ void de_find(int mode, int ret) {
 		if (done != -1)
 			frm_norm(&fi_find);
 		if (fi_find.state == FST_WIN)
-			av_wclose(fi_find.win.handle);
+			avcWindowClose(glob.avid, fi_find.win.handle);
 		frm_end(&fi_find);
 		pfree(fstruct.listp);
 	}
@@ -1396,7 +1010,7 @@ void drag(int obj, int mx, int my) {
 
 		/* Beim AV-Server anfragen, was sich an der Zielposition *
 		 * befindet */
-		app_send(glob.avid, AV_WHAT_IZIT, 0, mx, my, 0, 0, 0);
+		appl_send(glob.avid, AV_WHAT_IZIT, 0, mx, my, 0, 0, 0);
 	}
 	else
 		mybeep();
@@ -1427,8 +1041,8 @@ void drag_on_window(int handle, int mx, int my, char *buf) {
 	ASINFO *as, *q;
 
 	graf_mkstate(&d, &d, &d, &ks);
-	aesbuf[MAX_AVLEN - 1] = 0;
-	strncpy(aesbuf, buf, MAX_AVLEN - 1);
+	aesBuffer[MAX_AVLEN - 1] = 0;
+	strncpy(aesBuffer, buf, MAX_AVLEN - 1);
 	if (handle != glob.rwin->handle) {
 		if (!fi_asedit.open || (handle != fi_asedit.win.handle)) {
 			mybeep();
@@ -1449,7 +1063,7 @@ void drag_on_window(int handle, int mx, int my, char *buf) {
 		for (q = icon->as; q != NULL; q = q->next)
 			assigns++;
 	}
-	buf = aesbuf;
+	buf = aesBuffer;
 	while (get_buf_entry(buf, fname, &buf)) {
 		class = 0; /* Datei */
 		p = strrchr(fname, '\\');
@@ -1580,118 +1194,86 @@ void key_clr(void) {
 }
 
 /**
- ddnak()
-
- Drag&Drop-Protokoll abweisen
- -------------------------------------------------------------------------*/
-void ddnak(EVENT * mevent) {
-	char *pipename = "U:\\PIPE\\DRAGDROP.AA";
-	long fd;
-	char c;
-
-	pipename[18] = mevent->ev_mmgpbuf[7] & 0x00ff;
-	pipename[17] = (mevent->ev_mmgpbuf[7] & 0xff00) >> 8;
-	fd = Fopen(pipename, FO_RW);
-	if (fd >= 0L) {
-		c = 1; /* DD_NAK */
-		Fwrite((int) fd, 1, &c);
-		Fclose((int) fd);
-	}
-}
-
-/**
  handle_menu()
 
- Verarbeiten einer MenÅauswahl
+ Verarbeiten einer Menueauswahl
  Wird auch von handle_key() bei Shortcuts aufgerufen
  -------------------------------------------------------------------------*/
 void handle_menu(int title, int item, int ks) {
-	OBJECT *tree;
+	BOOLEAN stguide;
+	OBJECT *objectTree;
 
-	tree = rinfo.rs_trindex[MAINMENU];
-	if ((tree[item].ob_state & DISABLED) || (tree[title].ob_state & DISABLED)) {
+	objectTree = rinfo.rs_trindex[MAINMENU];
+	if (isObjectDisabled(objectTree, item) || isObjectDisabled(objectTree, title)) {
 		return;
 	}
 
-	mn_tnormal(tree, title, 0);
+	mn_tnormal(objectTree, title, 0);
 	mn_disable();
-	mn_tnormal(tree, title, 1);
+	mn_tnormal(objectTree, title, 1);
 
-	/* Hilfetext anzeigen, falls [Control] gedrÅckt */
+	/* Hilfetext anzeigen, falls [Control] gedrueckt */
 	if (ks & K_CTRL) {
 		switch (item) {
 		case MABOUT:
-			show_help("thingicn.hyp", "%I");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%I");
 			break;
-
 		case MSAVE:
-			show_help("thingicn.hyp", "%msave");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%msave");
 			break;
-
 		case MREVERT:
-			show_help("thingicn.hyp", "%mrevert");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mrevert");
 			break;
-
 		case MNEXTWIN:
-			show_help("thingicn.hyp", "%mnwin");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mnwin");
 			break;
-
 		case MQUIT:
-			show_help("thingicn.hyp", "%mquit");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mquit");
 			break;
-
 		case MEDITICON:
-			show_help("thingicn.hyp", "%medit");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%medit");
 			break;
-
 		case MFINDFILE:
-			show_help("thingicn.hyp", "%mfind");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mfind");
 			break;
-
 		case MFINDICON:
-			show_help("thingicn.hyp", "%mfindic");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%mfindic");
 			break;
-
 		default:
-			show_help("thingicn.hyp", "%I");
+			stguide = showSTGuideHelp(STGUIDEHELPFILE, "%I");
 			break;
 		}
+		if (!stguide)
+			frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 	} else {
 		switch (item) {
 		case MABOUT:
 			fi_about.init();
 			break;
-
 		case MSAVE:
 			save();
 			break;
-
 		case MREVERT:
 			revert();
 			break;
-
 		case MNEXTWIN:
 			dl_nextwin();
 			break;
-
 		case MQUIT:
 			dl_quit();
 			break;
-
 		case MEDITICON:
 			dl_edit();
 			break;
-
 		case MFINDFILE:
 			dl_find(0);
 			break;
-
 		case MFINDICON:
 			dl_find(1);
 			break;
 		}
 	}
-	mn_tnormal(tree, title, 1);
+	mn_tnormal(objectTree, title, 1);
 	mn_update();
 }
 
@@ -1706,14 +1288,15 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	int top;
 	int owner;
 
+	UNUSED(ks);
+
 	win = win_getwinfo(handle);
 	if (!win)
 		return;
 
 	fi = 0L;
-	switch (win->class)
-	{
-		case WCDIAL:
+	switch (win->class) {
+	case WCDIAL:
 		fi = (FORMINFO *)win->user;
 		break;
 	}
@@ -1742,7 +1325,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			win_newtop(tb.topwin);
 			mn_update();
 
-			/* Workaround fÅr MagiC */
+			/* Workaround fuer MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
 				if (wind_get(top, WF_OWNER, &owner))
 					magx_switch(owner, 0);
@@ -1764,7 +1347,6 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	case WM_NEWTOP:
 	case WM_ONTOP:
 		win_newtop(win);
-		/* 	  magx_switch(tb.app_id, 0); */
 		mn_update();
 		break;
 
@@ -1800,57 +1382,57 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 
 		case WM_ARROWED:
 			switch (f1) {
-				case WA_UPPAGE:
-					win_slide(win, S_REL, 0, -2);
-					break;
+			case WA_UPPAGE:
+				win_slide(win, S_REL, 0, -2);
+				break;
 
-				case WA_DNPAGE:
-					win_slide(win, S_REL, 0, 2);
-					break;
+			case WA_DNPAGE:
+				win_slide(win, S_REL, 0, 2);
+				break;
 
-				case WA_UPLINE:
-					win_slide(win, S_REL, 0, -1);
-					break;
+			case WA_UPLINE:
+				win_slide(win, S_REL, 0, -1);
+				break;
 
-				case WA_DNLINE:
-					win_slide(win, S_REL, 0, 1);
-					break;
+			case WA_DNLINE:
+				win_slide(win, S_REL, 0, 1);
+				break;
 
-				case WA_LFPAGE:
-					win_slide(win, S_REL, -2, 0);
-					break;
+			case WA_LFPAGE:
+				win_slide(win, S_REL, -2, 0);
+				break;
 
-				case WA_RTPAGE:
-					win_slide(win, S_REL, 2, 0);
-					break;
+			case WA_RTPAGE:
+				win_slide(win, S_REL, 2, 0);
+				break;
 
-				case WA_LFLINE:
-					win_slide(win, S_REL, -1, 0);
-					break;
+			case WA_LFLINE:
+				win_slide(win, S_REL, -1, 0);
+				break;
 
-				case WA_RTLINE:
-					win_slide(win, S_REL, 1, 0);
-					break;
+			case WA_RTLINE:
+				win_slide(win, S_REL, 1, 0);
+				break;
 			}
 			break;
 
-		case WM_HSLID:
+	case WM_HSLID:
 		win_slide(win, S_ABS, f1, -1);
 		break;
 
-		case WM_VSLID:
+	case WM_VSLID:
 		win_slide(win, S_ABS, -1, f1);
 		break;
 
-		case WM_SIZED:
-			if (f3 > win->full.w)
-				f3 = win->full.w;
-			if (f4 > win->full.h)
-				f4 = win->full.h;
-			win_size(win, f1, f2, f3, f4);
-			break;
+	case WM_SIZED:
+		if (f3 > win->full.w)
+			f3 = win->full.w;
+		if (f4 > win->full.h)
+			f4 = win->full.h;
+		win_size(win, f1, f2, f3, f4);
+		break;
 
-		case WM_MOVED:
+	case WM_MOVED:
 		win_size(win, f1, f2, f3, f4);
 		break;
 	}
@@ -1866,6 +1448,8 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 	int obj, focus;
 	int x, y, lmx, lmy, lmk, lks, dx, dy;
 
+	UNUSED(ks);
+
 	/* Mausklick im Hauptfenster? */
 	win = win_getwinfo(wind_find(mx, my));
 	if (win != glob.rwin)
@@ -1875,7 +1459,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 		return;
 	}
 
-	/* Maustaste immer noch gedrÅckt? */
+	/* Maustaste immer noch gedrueckt? */
 	wind_update (BEG_MCTRL);
 	evnt_timer(100, 0);
 	graf_mkstate(&lmx, &lmy, &lmk, &lks);
@@ -1890,7 +1474,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 				focus = glob.focus;
 				ic_sel(obj);
 
-				/* Maustaste immer noch gedrÅckt - Drag&Drop */
+				/* Maustaste immer noch gedrueckt - Drag&Drop */
 				if (lmk & 3) {
 #ifdef DRAGDROP
 					/* Drag&Drop */
@@ -1911,7 +1495,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 		break;
 
 	case 2: /* Rechte Maustaste */
-		if (lmk & 3) /* GedrÅckte Maustaste - *
+		if (lmk & 3) /* Gedrueckte Maustaste - *
 		 * 'Realtime'-Scroll */
 		{
 			x = lmx;
@@ -1964,17 +1548,18 @@ void handle_key(int ks, int kr) {
 	if (key & NKF_LSH || key & NKF_RSH)
 		key |= NKF_SHIFT; /* Shift-Status */
 
-	/* PrÅfen, ob MenÅ-Shortcut vorliegt */
+	/* Pruefen, ob Menue-Shortcut vorliegt */
 	if (menu_key(rinfo.rs_trindex[MAINMENU], key, &title, &item)) {
-		/* Shortcut vorhanden, MenÅhandling ausfÅhren */
+		/* Shortcut vorhanden, Menuehandling ausfuehren */
 		handle_menu(title, item, 0);
 	} else
 	/* Kein Shortcut, normale Verarbeitung */
 	{
-		skey = 0; /* Flag fÅr AV_SENDKEY */
+		skey = 0; /* Flag fuer AV_SENDKEY */
 		if (key == (NKF_FUNC | NK_HELP)) {
 			if (!tb.topfi)
-				show_help("thingicn.hyp", "%I");
+				if (!showSTGuideHelp(STGUIDEHELPFILE, "%I"))
+					frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 		} else {
 			if (!(glob.rwin->state & WSICON) && tb.topwin == glob.rwin) {
 				if (!glob.focus) {
@@ -2071,7 +1656,7 @@ void handle_key(int ks, int kr) {
 		if (skey) /* Ggf. AV_SENDKEY */
 		{
 			if (glob.avid >= 0 && (glob.avflags & 0x0001))
-				app_send(glob.avid, AV_SENDKEY, 0, ks, kr, 0, 0, 0);
+				appl_send(glob.avid, AV_SENDKEY, 0, ks, kr, 0, 0, 0);
 		}
 	}
 }
@@ -2079,8 +1664,8 @@ void handle_key(int ks, int kr) {
 /**
  handle_fmsg()
 
- Wird von der GEM-Toolbox fÅr die Bearbeitung einer unbekannten
- AES-Message wÑhrend eines modalen Fensterdialogs aufgerufen
+ Wird von der GEM-Toolbox fuer die Bearbeitung einer unbekannten
+ AES-Message waehrend eines modalen Fensterdialogs aufgerufen
  -------------------------------------------------------------------------*/
 void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
 	aesmsg[1] = tb.app_id;
@@ -2146,7 +1731,8 @@ void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
 	if (mevent->ev_mwich & MU_KEYBD && fi) {
 		if (fi->normkey == (NKF_FUNC | NK_HELP) && fi->userinfo) {
 			if (fi->state == FST_WIN)
-				show_help("thingicn.hyp", fi->userinfo);
+				if (!showSTGuideHelp(STGUIDEHELPFILE, fi->userinfo))
+					frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 			else
 				frm_alert(1, rinfo.rs_frstr[ALNOWDIAL], altitle, 1, 0L);
 		}
@@ -2156,12 +1742,11 @@ void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
 /**
  w_...()
 
- Routinen fÅr das Hauptfenster
+ Routinen fuer das Hauptfenster
  -------------------------------------------------------------------------*/
 void w_draw(WININFO * win) {
 	if (win->state & WSOPEN) {
-		app_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y,
-				win->work.w, win->work.h);
+		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y, win->work.w, win->work.h);
 	}
 }
 
@@ -2235,9 +1820,12 @@ void w_update(struct wininfo *win) {
 }
 
 void w_prepare(struct wininfo *win) {
+	UNUSED(win);
 }
 
 void w_redraw(struct wininfo *win, RECT * area) {
+	UNUSED(win);
+
 	objc_draw(glob.rtree, ROOT, MAX_DEPTH, area->x, area->y, area->w, area->h);
 }
 
@@ -2247,7 +1835,7 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 
 	switch (mode) {
 	case S_INIT:
-		/* Grîûe der Slider */
+		/* Grîsse der Slider */
 		hsize = (long) win->work.w * 1000L / (long) glob.rtree->ob_width;
 		vsize = (long) win->work.h * 1000L / (long) glob.rtree->ob_height;
 		/* Offset anpassen */
@@ -2272,13 +1860,11 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 		}
 		/* Slider-Positionen berechnen */
 		if (glob.rtree->ob_width > win->work.w)
-			hpos = (long) glob.offx * 1000L
-					/ (long) (glob.rtree->ob_width - win->work.w);
+			hpos = (long) glob.offx * 1000L / (long) (glob.rtree->ob_width - win->work.w);
 		else
 			hpos = 0;
 		if (glob.rtree->ob_height > win->work.h)
-			vpos = (long) glob.offy * 1000L
-					/ (long) (glob.rtree->ob_height - win->work.h);
+			vpos = (long) glob.offy * 1000L / (long) (glob.rtree->ob_height - win->work.h);
 		else
 			vpos = 0;
 		/* Slider setzen */
@@ -2293,16 +1879,14 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 		/* Offset umrechnen */
 		if (h != -1) {
 			if (glob.rtree->ob_width > win->work.w)
-				offx = (int) ((long) (glob.rtree->ob_width - win->work.w)
-						* (long) h / 1000L);
+				offx = (int) ((long) (glob.rtree->ob_width - win->work.w) * (long) h / 1000L);
 			else
 				offx = 0;
 		} else
 			offx = glob.offx;
 		if (v != -1) {
 			if (glob.rtree->ob_height > win->work.h)
-				offy = (int) ((long) (glob.rtree->ob_height - win->work.h)
-						* (long) v / 1000L);
+				offy = (int) ((long) (glob.rtree->ob_height - win->work.h) * (long) v / 1000L);
 			else
 				offy = 0;
 		} else
@@ -2456,7 +2040,7 @@ void ic_fdraw(void) {
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
-		/* Nur durchfÅhren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
+		/* Nur durchfuehren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
 		if (rc_intersect(&area, &box)) {
 			cxy[0] = box.x;
 			cxy[1] = box.y;
@@ -2465,7 +2049,7 @@ void ic_fdraw(void) {
 			vs_clip(tb.vdi_handle, 1, cxy);
 			v_pline(tb.vdi_handle, 5, pxy);
 		}
-		/* NÑchstes Rechteck holen */
+		/* Naechstes Rechteck holen */
 		wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 	vs_clip(tb.vdi_handle, 0, cxy);
@@ -2482,8 +2066,8 @@ void ic_fdraw(void) {
 void ic_sel(int obj) {
 	int x, y, w, h;
 
-	if (obj != glob.focus) /* Anderes, als bisher? */
-	{
+	if (obj != glob.focus) {
+		/* Anderes, als bisher? */
 		if (glob.fdraw) {
 			ic_fdraw();
 			glob.fdraw = 0;
@@ -2626,36 +2210,31 @@ ICONINFO *as_findic(char *name) {
  * wildcard: Zu suchende Wildcard
  * class: Zu suchende Zuordnungsklasse
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0L: Kein passendes Icon gefunden
  * sonst: Zeiger auf ICONINFO-Struktur des gefundenen Icons
  */
-ICONINFO *as_findas(char *wildcard, int class)
-{
+ICONINFO *as_findas(char *wildcard, int class) {
 	ICONINFO *icon;
 	ASINFO *as;
 	int i;
 
-	for (icon = 0L, i = 0; i < glob.numicon; i++)
-	{
-		for (as = glob.icon[i].as; as != 0L; as = as->next)
-		{
-			if ((class == as->class) &&
-					!strcasecmp(as->wildcard, wildcard))
-			{
+	for (icon = 0L, i = 0; i < glob.numicon; i++) {
+		for (as = glob.icon[i].as; as != 0L; as = as->next) {
+			if ((class == as->class) && !strcasecmp(as->wildcard, wildcard)) {
 				icon = &glob.icon[i];
 			}
 		}
 		if (icon != 0L)
-		break;
+			break;
 	}
-	return(icon);
+	return (icon);
 }
 
 /**
  mw_...()
 
- Funktionen fÅr das Hauptfenster
+ Funktionen fuer das Hauptfenster
  -------------------------------------------------------------------------*/
 /* Infozeile aktualisieren */
 void mw_info(void) {
@@ -2678,7 +2257,7 @@ int mw_init(void) {
 	int ret, w, h, i;
 	OBJECT *obj;
 
-	/* Platz fÅr Zuweisungen reservieren */
+	/* Platz fuer Zuweisungen reservieren */
 	glob.icon = pmalloc(sizeof(ICONINFO) * (long) glob.numicon);
 	if (!glob.icon) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
@@ -2691,8 +2270,7 @@ int mw_init(void) {
 		if (obj->ob_type == G_ICON) {
 			glob.icon[i].name = obj->ob_spec.iconblk->ib_ptext;
 		} else {
-			glob.icon[i].name =
-					((DRAW_CICON *) obj->ob_spec.userblk->ub_parm)->original->monoblk.ib_ptext;
+			glob.icon[i].name = ((DRAW_CICON *) obj->ob_spec.userblk->ub_parm)->original->monoblk.ib_ptext;
 		}
 		glob.icon[i].as = 0L;
 	}
@@ -2714,8 +2292,7 @@ int mw_init(void) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
 		return (0);
 	}
-	glob.rwin->flags = NAME | INFO | CLOSER | MOVER | FULLER | SIZER | UPARROW
-			| DNARROW | VSLIDE; /* |LFARROW|RTARROW|HSLIDE; */
+	glob.rwin->flags = NAME | INFO | CLOSER | MOVER | FULLER | SIZER | UPARROW | DNARROW | VSLIDE; /* |LFARROW|RTARROW|HSLIDE; */
 	if (tb.sys & SY_MAGX)
 		glob.rwin->flags |= BACKDROP;
 	if (tb.sys & SY_ICONIFY)
@@ -2769,9 +2346,8 @@ int mw_init(void) {
 		if (glob.my < 1)
 			glob.my = 1;
 		ic_tree();
-		win_open(glob.rwin,
-				1 | (glob.autoplace * 0x8000) | (glob.interactive * 0x4000));
-		av_wopen(glob.rwin->handle);
+		win_open(glob.rwin, 1 | (glob.autoplace * 0x8000) | (glob.interactive * 0x4000));
+		avcWindowOpen(glob.avid, glob.rwin->handle);
 		return (1);
 	} else {
 		pfree(glob.rwin);
@@ -2782,11 +2358,10 @@ int mw_init(void) {
 
 int loadAssignments(void) {
 	int i, j, l,
-	class,
-	tcol;
+	class, tcol;
 	FILE *fh;
 	char inbuf[1024];
-	char iname[MAX_FLEN], imask[MAX_FLEN];
+	char iconName[MAX_FLEN], imask[MAX_FLEN];
 	unsigned long *id;
 	char *p, *t, tchar;
 	ICONINFO *icon;
@@ -2825,8 +2400,8 @@ int loadAssignments(void) {
 				}
 
 				/* Icon ermitteln */
-				p = get_text(inbuf, iname, MAX_FLEN - 1);
-				icon = as_findic(iname);
+				p = get_text(inbuf, iconName, MAX_FLEN - 1);
+				icon = as_findic(iconName);
 
 				/* Alles weitere nur, wenn Icon existiert */
 				if (icon) {
@@ -2855,7 +2430,7 @@ int loadAssignments(void) {
 						}
 					}
 
-					/* Icon-Zuordnungen einfÅgen */
+					/* Icon-Zuordnungen einfuegen */
 					i = 0;
 					while (p[i]) {
 						j = 0;
@@ -2882,7 +2457,7 @@ int loadAssignments(void) {
 								frm_alert(1, almsg, altitle, 1, 0L);
 								glob.multiple++;
 							} else {
-								/* Zuordnung einfÅgen */
+								/* Zuordnung einfuegen */
 								as = as_add(icon);
 								if (as) {
 									as->class = class;
@@ -2893,7 +2468,7 @@ int loadAssignments(void) {
 								} else {
 									/*
 									 * Fehlerbehandlung: 
-									 * Kein Platz mehr fÅr Zuordnung
+									 * Kein Platz mehr fuer Zuordnung
 									 */
 									fclose(fh);
 									frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
@@ -2908,7 +2483,7 @@ int loadAssignments(void) {
 						fclose(fh);
 						return (0);
 					}
-					sprintf(almsg, rinfo.rs_frstr[ALICONMISS], iname);
+					sprintf(almsg, rinfo.rs_frstr[ALICONMISS], iconName);
 					frm_alert(1, almsg, altitle, 1, 0L);
 					glob.missing++;
 				}
@@ -2932,7 +2507,7 @@ void mw_exit(void) {
 	ICONINFO *icon;
 
 	if (glob.rwin) {
-		av_wclose(glob.rwin->handle);
+		avcWindowClose(glob.avid, glob.rwin->handle);
 		win_close(glob.rwin);
 		pfree(glob.rwin);
 	}
@@ -2946,13 +2521,14 @@ void mw_exit(void) {
 	}
 }
 
+#if 0
 /**
  get_text()
 
- Wird von mw_init() verwendet um Strings, die von AnfÅhrungszeichen
+ Wird von mw_init() verwendet um Strings, die von Anfuehrungszeichen
  umschlossen sind, einzulesen.
  Als Ergebnis wird ein Zeiger auf die erste Position hinter dem
- zweiten AnfÅhrungszeichen (einschlieûlich einer Leerstelle
+ zweiten Anfuehrungszeichen (einschliesslich einer Leerstelle
  Zwischenraum) geliefert.
  -------------------------------------------------------------------------*/
 char *get_text(char *str, char *buf, int maxlen) {
@@ -3013,11 +2589,12 @@ char *get_text(char *str, char *buf, int maxlen) {
 
 	return &str[i];
 }
+#endif
 
 /**
  put_text()
 
- GegenstÅck zu get_text() -
+ Gegenstueck zu get_text() -
  Konvertiert einen String und schreibt diesen in die angegebene Datei
  -------------------------------------------------------------------------*/
 void put_text(FILE *fh, char *str) {
@@ -3054,31 +2631,32 @@ void put_text(FILE *fh, char *str) {
 	fprintf(fh, "\042%s\042", outbuf);
 }
 
+
 /**
  * get_buf_entry
  *
- * Ermittelt den nÑchsten Filenamen aus einem Puffer, dessen EintrÑge
+ * Ermittelt den naechsten Filenamen aus einem Puffer, dessen Eintraege
  * durch Leerzeichen getrennt und ggf. von Quotes (') umschlossen
- * sind. Der ermittelte Filename enthÑlt keine Quotes mehr.
+ * sind. Der ermittelte Filename enthaelt keine Quotes mehr.
  *
  * Eingabe:
- * buf: Zeiger auf den Puffer, muû bzw. darf nur beim ersten Aufruf
- *      fÅr buf angegeben werden, danach muû fÅr buf ein Nullzeiger
- *      Åbergeben werden, damit get_buf_entry den nÑchsten Eintrag
+ * buf: Zeiger auf den Puffer, muss bzw. darf nur beim ersten Aufruf
+ *      fuer buf angegeben werden, danach muss fuer buf ein Nullzeiger
+ *      uebergeben werden, damit get_buf_entry den naechsten Eintrag
  *      ermitteln kann
- * name: Hierhin wird der nÑchste Filename kopiert. Da dieser mit
+ * name: Hierhin wird der naechste Filename kopiert. Da dieser mit
  *       komplettem Pfad versehen sein kann, sollte name ausreichend
  *       Platz bieten.
- * newpos: Wenn ungleich NULL, wird hier der Zeiger auf die nÑchste
- *         Leseposition abgelegt, so daû man get_buf_entry auch
+ * newpos: Wenn ungleich NULL, wird hier der Zeiger auf die naechste
+ *         Leseposition abgelegt, so dass man get_buf_entry auch
  *         wechselseitig mit zwei oder mehr Puffern verwenden kann.
  *         Der Wert wird nur gesetzt, wenn ein Eintrag gelesen werden
  *         konnte, der Returncode also 1 ist.
  *
- * RÅckgabe:
- * 0: Kein weiterer (gÅltiger) Filename mehr in buf (ein Filename ist
- *    z.B. ungÅltig, wenn er falsch gequotet wurde)
- * 1: name enthÑlt den nÑchsten Filenamen
+ * Rueckgabe:
+ * 0: Kein weiterer (gueltiger) Filename mehr in buf (ein Filename ist
+ *    z.B. ungueltig, wenn er falsch gequotet wurde)
+ * 1: name enthaelt den naechsten Filenamen
  */
 int get_buf_entry(char *buf, char *name, char **newpos) {
 	static char *bufpos;
@@ -3090,20 +2668,20 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 	else
 		pos = bufpos;
 
-	/* Eventuell war der letzte Filename ungÅltig, dann abbrechen */
+	/* Eventuell war der letzte Filename ungueltig, dann abbrechen */
 	if (pos == 0L)
 		return (0);
 
-	/* Erstmal fÅhrende Leerzeichen Åberlesen */
+	/* Erstmal fuehrende Leerzeichen ueberlesen */
 	for (; *pos == ' '; pos++)
 		;
-	/* Gibt es Åberhaupt noch einen Filenamen? */
+	/* Gibt es ueberhaupt noch einen Filenamen? */
 	if (!*pos)
 		return (0);
 
 	if (*pos != '\'') {
 		/*
-		 * Wenn der Filename nicht mit einem Quote beginnt, bis zum nÑchsten
+		 * Wenn der Filename nicht mit einem Quote beginnt, bis zum naechsten
 		 * Leerzeichen kopieren
 		 */
 		for (; *pos && (*pos != ' '); *name++ = *pos++)
@@ -3112,12 +2690,12 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 		/* Sonst den Filenamen "entquoten" */
 		closed = 0;
 		for (pos++;;) {
-			/* Bei einem Nullbyte abbrechen (gibt ungÅltigen Filenamen) */
+			/* Bei einem Nullbyte abbrechen (gibt ungueltigen Filenamen) */
 			if (!*pos)
 				break;
 			if (*pos == '\'') {
 				/*
-				 * Ist das aktuelle Zeichen ein Quote, gibt es folgende FÑlle zu
+				 * Ist das aktuelle Zeichen ein Quote, gibt es folgende Faelle zu
 				 * unterscheiden:
 				 * 1. Danach folgt ein Leerzeichen oder das Bufferende, dann ist der
 				 *    Filename an dieser Stelle korrekt beendet
@@ -3145,7 +2723,7 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 	}
 	/*
 	 * Den Filenamen mit einem Nullbyte abschliessen und die Position im
-	 * Puffer fÅr den nÑchsten Aufruf merken
+	 * Puffer fuer den naechsten Aufruf merken
 	 */
 	*name = 0;
 	bufpos = pos;
@@ -3155,26 +2733,24 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
 }
 
 /**
- * is_stdicon
- *
- * PrÅft, ob ein Icon eines der Standardicons "APPL", "DEVICE",
+ * Prueft, ob ein Icon eines der Standardicons "APPL", "DEVICE",
  * "FILE" und "GROUP" ist.
  *
  * Eingabe:
- * icon: Zeiger auf das zu prÅfende Icon
+ * icon: Zeiger auf das zu pruefende Icon
  *
- * RÅckgabe:
+ * Rueckgabe:
  * 0: Icon ist keines der genannten Standardicons
  * sonst: Icon ist "APPL", "DEVICE", "FILE" oder "GROUP"
  */
-int is_stdicon(ICONINFO *icon) {
+int isDefaultIcon(ICONINFO *icon) {
 	if (strcmp(icon->name, "APPL")
 			&& strcmp(icon->name, "DEVICE")
 			&& strcmp(icon->name, "FILE")
 			&& strcmp(icon->name, "GROUP")) {
-		return (0);
+		return (FALSE);
 	} else
-		return (1);
+		return (TRUE);
 }
 
 /**
@@ -3185,10 +2761,10 @@ int is_stdicon(ICONINFO *icon) {
 int main_init(void) {
 	int i, l, x, y, w, h;
 	int illtype, type;
-	char *p, aname[9];
+	char *p, aname[9], rsrcName[13];
 	OBJECT *tree;
 
-	aesbuf = 0L;
+	aesBuffer = 0L;
 	aesapname = 0L;
 	glob.menu = glob.change = 0;
 	glob.numassign = glob.numicon = glob.multiple = 0;
@@ -3242,11 +2818,13 @@ int main_init(void) {
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	if (!rsc_load("thingicn.rsc", &rinfo)) {
-		frm_alert(1, "[3][THINGICN.RSC nicht gefunden!|"
-				"THINGICN.RSC not found!][ OK ]",
-				altitle, 1, 0L);
-		return (0);
+	sprintf(rsrcName, "%s%s\\thgicn%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	if (!rsc_load(rsrcName, &rinfo)) {
+		sprintf(rsrcName, "%s%s\\thgicnen.rsc", tb.homepath, PNAME_RSC);
+		if (!rsc_load(rsrcName, &rinfo)) {
+			frm_alert(1, "[3][THINGICN.RSC nicht gefunden!|THINGICN.RSC not found!][ OK ]", altitle, 1, 0L);
+			return (FALSE);
+		}
 	}
 	for (i = 0; i < NUM_TREE; i++) {
 		if (i == MAINMENU)
@@ -3269,7 +2847,7 @@ int main_init(void) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
 		return (0);
 	}
-	aesbuf = &aesapname[9];
+	aesBuffer = &aesapname[9];
 	/* Sonst initialisieren */
 	strcpy(aesapname, "THINGICN");
 
@@ -3409,7 +2987,7 @@ int main_init(void) {
 			}
 			glob.avid = appl_find(aname);
 			if (glob.avid >= 0) {
-				app_send(glob.avid, AV_PROTOKOLL, PT67, 18, 0, 0, (long) aesapname, 0);
+				appl_send(glob.avid, AV_PROTOKOLL, PT67, 18, 0, 0, (long) aesapname, 0);
 			}
 		}
 		glob.tid = appl_find("THING   ");
@@ -3459,14 +3037,14 @@ void main_loop(void) {
 		mevent.ev_mm1y = mevent.ev_mmoy;
 
 		/*
-		 * Bei Bedarf vor der Message-Auswertung énderung des aktiven
-		 * Fenster berÅcksichtigen
+		 * Bei Bedarf vor der Message-Auswertung Aenderung des aktiven
+		 * Fenster beruecksichtigen
 		 */
 		if (!(tb.sys & SY_MULTI || tb.sys & SY_WINX)) {
 			get_twin(&top);
 
 			/*
-			 * Falls aktives Fenster sich geÑndert hat, dann MenÅs
+			 * Falls aktives Fenster sich geaendert hat, dann Menues
 			 * updaten
 			 */
 			if (tb.topwin) {
@@ -3505,7 +3083,7 @@ void main_loop(void) {
 				}
 			}
 		}
-		/* Falls kein Timer fÅr Cursorblinken, dann hier den Cursor *
+		/* Falls kein Timer fuer Cursorblinken, dann hier den Cursor *
 		 * abschalten */
 		if ((mevent.ev_mwich & (MU_MESAG | MU_KEYBD | MU_BUTTON)) != 0) {
 			if (glob.focus && glob.fdraw) {
@@ -3526,13 +3104,13 @@ void main_loop(void) {
 				ddnak(&mevent);
 				break;
 			case VA_DRAGACCWIND:
-				drag_on_window(msg[3], msg[4], msg[5], (char *) int2long(msg[6], msg[7]));
+				drag_on_window(msg[3], msg[4], msg[5], (char *) int2long(&msg[6], &msg[7]));
 				break;
 			case VA_START:
 				mybeep();
 				magx_switch(tb.app_id, 0);
 				break;
-				/* MenÅauswahl */
+				/* Menueauswahl */
 			case MN_SELECTED:
 				handle_menu(msg[3], msg[4], mevent.ev_mmokstate);
 				break;
@@ -3570,7 +3148,8 @@ void main_loop(void) {
 			if (!tb.topfi->cont) {
 				/* HELP-Button? */
 				if ((tb.topfi->help_obj != -1) && (tb.topfi->exit_obj == tb.topfi->help_obj)) {
-					show_help("thingicn.hyp", tb.topfi->userinfo);
+					if (!showSTGuideHelp(STGUIDEHELPFILE, tb.topfi->userinfo))
+						frm_alert(1, rinfo.rs_frstr[ALNOGUIDE], altitle, 1, 0L);
 					frm_norm(tb.topfi);
 					evdone = 1;
 				} else {
@@ -3583,7 +3162,7 @@ void main_loop(void) {
 		} else
 			evdone = 0;
 
-		/* Jetzt die vom Handler Åbriggelassenen Events bearbeiten */
+		/* Jetzt die vom Handler uebriggelassenen Events bearbeiten */
 		if (!evdone && !tb.sm_nowdial) {
 			/* Tastatur */
 			if (mevent.ev_mwich & MU_KEYBD)
@@ -3618,7 +3197,7 @@ void main_exit(void) {
 
 	/* Beim AV-Server abmelden */
 	if (glob.avid != -1)
-		app_send(glob.avid, AV_EXIT, 0, tb.app_id, 0, 0, 0, 0);
+		appl_send(glob.avid, AV_EXIT, 0, tb.app_id, 0, 0, 0, 0);
 
 	/* Sonstige Aufraeumarbeiten */
 	if (glob.menu)
