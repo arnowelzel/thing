@@ -58,13 +58,11 @@
 #define NIL			-1
 #endif
 
-#ifndef __AHCC__
 #ifndef min(a, b)
 #define min(a, b)  ((a) < (b) ? (a) : (b))
 #endif
 #ifndef max(a, b)
 #define max(a, b)  ((a) > (b) ? (a) : (b))
-#endif
 #endif
 
 #ifdef __GNUC__
@@ -109,8 +107,7 @@
  * WICHTIG: alle Variablen sind privater Natur, d.h. es darf nur ueber
  * Funktionen darauf zugegriffen werden.
  */
-typedef struct
-{
+typedef struct {
 	WORD	vdi_handle,				/* das VDI-Handle fuer die WS der Userdefs */
 			char_w,					/* Breite eines Buchstabens in Pixeln */
 			char_h,					/* Hoehe eines Buchstabens in Pixeln */
@@ -136,8 +133,7 @@ extern USERDEF *userdef;
 #define IMGSIZE_16X8	2
 #define IMGSIZE_NONE	3
 
-typedef struct
-{
+typedef struct {
 	LONG		magic;				/* 'DIRK' ist Magic value */
 #ifdef __GNUC__
 	U_OB_SPEC	ob_spec;			/* alter Wert von ob_spec */
@@ -172,8 +168,7 @@ typedef struct
  * Die lineare Liste, in der alle tastaturbedienbaren Objekte aufge-
  * fuehrt sind.
  */
-typedef struct dial
-{
+typedef struct dial {
 	BYTE		key[20];			/* Klartext der gedrueckten Taste */
 	WORD		object,				/* Nummer des zugehoerigen Objekts */
 				title;
@@ -185,16 +180,14 @@ typedef struct dial
  * Die lineare Liste, in der alle Karteikarten eines Dialoges
  * aufgefuehrt sind.
  */
-#define MAXOBJECTS	200
+#define MAXOBJECTS	256
 
-typedef struct card
-{
+typedef struct card {
 	BOOLEAN		top;				/* TRUE, wenn aktiv */
 	WORD		head,				/* Kartenreiter + */
 				body;				/* Karte, die zusammen gehoeren */
-	OBJECT		*head_tree,
-				*body_tree;
-	WORD		state_list[MAXOBJECTS];
+	OBJECT		*objectTree;
+	WORD		savedObjectFlags[MAXOBJECTS];
 	void		(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h);
 	struct card *next;				/* Zeiger auf naechste Karteikarte */
 } CARD;
@@ -263,17 +256,19 @@ void v_xgtext(WORD x, WORD y, WORD text_effects, UBPARM *ubparm, PARMBLK *parmbl
 void clipping(PARMBLK *parmblock, BOOLEAN useClipping);
 
 /* Module 'objhelp.c' */
+WORD getObjectParent(OBJECT *objectTree, WORD objectIdx);
 BYTE *getObjectText(OBJECT *objectTree, WORD objectIdx);
 WORD setObjectText(OBJECT *objectTree, WORD objectIdx, BYTE *text);
 BOOLEAN getObjectFlags(OBJECT *objectTree, WORD objectIdx, BOOLEAN objectFlags);
 void setObjectFlags(OBJECT *objectTree, WORD objectIdx, WORD objectFlags, BOOLEAN set);
 BOOLEAN getObjectState(OBJECT *objectTree, WORD objectIdx, BOOLEAN objectState);
 BOOLEAN isObjectSelected(OBJECT *objectTree, WORD objectIdx);
+BOOLEAN isObjectDisabled(OBJECT *objectTree, WORD objectIdx);
 void setObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState, BOOLEAN set);
-#if 0
-void setObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState);
-void unsetObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState);
-#endif
+void setObjectSelected(OBJECT *objectTree, WORD objectIdx);
+void unsetObjectSelected(OBJECT *objectTree, WORD objectIdx);
+void setObjectDisabled(OBJECT *objectTree, WORD objectIdx);
+void unsetObjectDisabled(OBJECT *objectTree, WORD objectIdx);
 
 /* Module 'backgrd.c' */
 BOOLEAN getBackgroundBorder(void);
@@ -293,13 +288,13 @@ WORD find_object(DIALKEYS *dialkeys, char *keystring);
 void get_menue_item(DIALKEYS *dialkeys, char *keystring, WORD *title, WORD *item);
 
 /* Module 'card.c' */
-int cardAdd(CARD **card, OBJECT *head_tree, int head, OBJECT *body_tree, int body);
-void cardRemove(CARD *card);
+int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx);
 void cardRemoveAll(CARD *card);
 void setCardRedraw(CARD *card, void(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h));
 void cardDisable(CARD *card, WORD objectHeadIdx);
 void cardEnable(CARD *card, WORD objectHeadIdx);
 CARD *getActiveCard(CARD *card);
+int getActiveCardBodyIdx(CARD *card);
 void setActiveCard(CARD *card, int objectHeadIdx, BOOLEAN redraw);
 
 #ifdef _USR_EDITFIELD_
