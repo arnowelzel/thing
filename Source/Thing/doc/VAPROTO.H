@@ -60,7 +60,7 @@
 #define VA_ACC_QUOTING(a) ((a) & 0x10)
 #define VA_SERVER_QUOTING(a) ((a) & 0x40)
 
-/* Objekttypen fÅr VA_THAT_IZIT */
+/* Objekttypen fuer VA_THAT_IZIT */
 
 #define	VA_OB_UNKNOWN   0
 #define VA_OB_TRASHCAN  1
@@ -70,5 +70,7 @@
 #define VA_OB_FOLDER    5
 #define VA_OB_DRIVE     6
 #define VA_OB_WINDOW    7
+#define VA_OB_NOTEPAD   8
+#define VA_OB_NOTE      9
 
 #endif
