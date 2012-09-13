@@ -106,6 +106,8 @@ void di_ainfo1(void) {
 	if (tb.sys & SY_MAGX) {
 		if (getcookie('MgMc', &dummy))
 			strcpy(ios, "MagiC Mac");
+		else if (getCookie('MgMx', &dummy))
+			strcpy(ios, "MagiC Mac X");
 		else if (getcookie('MgPC', &dummy))
 			strcpy(ios, "MagiC PC");
 		else {
