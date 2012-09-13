@@ -76,9 +76,6 @@ dudolib.lib
 ; NKCC made by Harald Siegmund
 nkcc_tos.o
 
-; Device Locking made by Hans-Juergen Richstein
-devlock.lib
-
 ; MiNTLib
 mintflt.lib
 mintlib.lib
@@ -88,6 +85,9 @@ pcstdlib.lib
 ;pcextlib.lib
 pctoslib.lib
 pcgemlib.lib
+
+; Device Locking made by Hans-Juergen Richstein
+devlock.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
 ;memdebug.lib
