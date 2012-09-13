@@ -78,9 +78,6 @@ nkcc_tos.o
 ;MALLOC.O           ; memory management
 src\vclsvwk.c
 
-; Device Locking made by Hans-Juergen Richstein
-devlock.lib
-
 ; MiNTLib
 mintflt.lib
 mintlib.lib
@@ -90,6 +87,9 @@ pcstdlib.lib
 ;pcextlib.lib
 pctoslib.lib
 pcgemlib.lib
+
+; Device Locking made by Hans-Juergen Richstein
+devlock.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
 ;memdebug.lib
