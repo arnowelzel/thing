@@ -63,7 +63,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
+#ifdef MEMDEBUG
 #include <memdebug.h>
+#endif
 #ifdef WITH_NVDI5
 #include "..\nvdi5\include\vdicol.h"
 #endif
