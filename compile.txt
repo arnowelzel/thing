@@ -19,13 +19,15 @@ copy some additional files to your PureC directory:
 
 Stuff in directory "external":
 
-- copy "portab.h" to PureC include directory
-- copy "magx.h" to PureC include directory
+- copy "external/portab.h" to PureC include directory
+- copy "external/magx.h" to PureC include directory
+- copy "thing/doc/vaproto.h" to PureC include directory
 - extract archive "devlock.zip":
 	copy "devlock.h" to PureC include directory
 	copy "devlock.lib" to PureC lib directory
 - extract archive "frdm115d.lzh":
 	copy "source/fdmproto.h" to PureC include directory
+	copy "source/slectric.h" to PureC include directory
 - extract archive "nkcc.zip":
 	copy "headers/nkcc.h" to PureC include directory
 	copy "lib/nkcc_tos.o" to PureC lib directory
