@@ -40,7 +40,9 @@
 
 #include "new_rsc.h"
 #include <stddef.h>
+#ifdef MEMDEBUG
 #include <memdebug.h>
+#endif
 #ifdef USE_PMALLOC
 #include <malloc.h>
 
