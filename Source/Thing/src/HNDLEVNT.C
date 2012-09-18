@@ -865,7 +865,8 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		case WCGROUP:
 			wgrp_change(win);
 			mn_update();
-			break;
+		default:
+			win_size(win, f1, f2, f3, f4);
 		}
 #if 0
 		/* Bei Console auf Zeichengroesse snappen */
