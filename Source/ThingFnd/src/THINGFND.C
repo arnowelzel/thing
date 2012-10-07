@@ -1550,10 +1550,10 @@ int main_init(void) {
 #ifdef USE_PMALLOC
 	pminit();
 #endif
-	if (!init_cicon())
+	if (!tool_init("thingfnd.app"))
 		return (0);
 
-	if (!tool_init("thingfnd.app"))
+	if (!init_cicon())
 		return (0);
 
 #if 0
@@ -1880,8 +1880,8 @@ void main_exit(void) {
 
 	rsc_free(&rinfo);
 
-	tool_exit();
 	exit_cicon();
+	tool_exit();
 }
 
 /*------------------------------------------------------------------*/
