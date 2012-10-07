@@ -1319,10 +1319,10 @@ BOOLEAN main_init(void) {
 #ifdef USE_PMALLOC
 	pminit();
 #endif
-	if (!init_cicon())
+	if (!tool_init("thingfnd.app"))
 		return (FALSE);
 
-	if (!tool_init("thingfnd.app"))
+	if (!init_cicon())
 		return (FALSE);
 
 	/* Startverzeichnis mit abschliessendem '\' versehen */
@@ -1647,8 +1647,8 @@ void main_exit(void) {
 	rsc_free(&rinfo);
 
 	/* cleanup of Thing Toolbox stuff */
-	tool_exit();
 	exit_cicon();
+	tool_exit();
 }
 
 /*------------------------------------------------------------------*/
