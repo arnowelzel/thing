@@ -21,49 +21,38 @@
  * @license    LGPL
  */
 
-#ifdef __MINT__
-#include <sysvars.h>		/* fuer getSystemLanguage() */
-#endif
+#include <portab.h>
+#include <string.h>
 #include "..\include\thingtbx.h"
 
-/*
- * Diese Routine ermittelt die Landessprache des Desktops. Als
- * erstes wird der Systemheader ausgewertet. Wenn der Test auf
- * den _AKP-Cookie erfolgreich ist, wird dessen Einstellung ge-
- * nommen und zum Schluss wird noch die Desktopsprache von MTOS
- * ueberprueft, da sie die Ausschlaggebende waere.
- *
- * @return
- */
-WORD getSystemLanguage(void) {
-	WORD language, du;
-	LONG oldStack = 0, ret;
-#ifdef __MINT__
-	OSHEADER *syshdr;
-#else
-	SYSHDR *syshdr;
-#endif
 
-	if (tb.sys & SY_AGI) {
-		appl_getinfo(3, &language, &du, &du, &du);
-		return (language);
-	} else if (getCookie('_AKP', &ret) == TRUE) {
-		return (language = (WORD)(ret >> 8));
-	} else {
-		if (!Super((VOID *) 1l))
-			oldStack = Super(0l);
-#ifdef __MINT__
-		syshdr = *(OSHEADER **) 0x4f2;
-		syshdr = syshdr->os_beg;
-		language = syshdr->os_conf >> 1;
-#else
-		syshdr = *(SYSHDR **) 0x4f2;
-		syshdr = syshdr->os_base;
-		language = syshdr->os_palmode >> 1;
-#endif
-		if (oldStack)
-			Super((VOID *) oldStack);
+WORD getSystemLanguage(BYTE *sysLanguageCode)
+{
+	WORD out[4];
+	LONG value;
+   
+	value = 0;
 
-		return (language);
+	if (appl_getinfo(3, &out[0], &out[1], &out[2], &out[3]) == 1)
+		value = (LONG) out[0];
+  else
+  {
+		if (!getCookie('_AKP', &value))
+			value >>= 7;
 	}
+
+	switch ( (int) value )
+	{
+		case 0:
+	   strcpy ( sysLanguageCode, "en" );
+		break;
+		case 1:
+	   strcpy ( sysLanguageCode, "de" );
+		break;
+		case 2:
+	   strcpy ( sysLanguageCode, "fr" );
+		break;
+	}
+
+	return 1;
 }

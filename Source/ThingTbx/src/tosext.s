@@ -20,28 +20,5 @@
 ; @author     Arno Welzel, Thomas Binder
 ; @license    LGPL
 ;
- 
-; TOSEXT.S
-; Ergaenzungen zur PCTOSLIB.LIB (Dxreaddir() u.A.)
 
-	globl	Dxreaddir
-
-	text
-
-;
-; Dxreaddir() - GEMDOS #322
-;
-; long Dxreaddir(int ln,long dirh,char *buf,XATTR *xattr,long *xr)
-;
-Dxreaddir:
-	movem.l	a2,-(sp)
-	move.l	8(sp),-(sp)	; xr
-	move.l	a1,-(sp)	; xattr
-	move.l	a0,-(sp)	; buf
-	move.l	d1,-(sp)	; dirh
-	move.w	d0,-(sp)	; ln
-	move.w	#322,-(sp)	; Dxreaddir()
-	trap	#1          ; GEMDOS
-	lea	20(sp),sp      ; Stack korrigieren
-	movem.l	(sp)+,a2
-	rts			; Ergebnis ist in d0
+; with the MiNTLib PL49 we dont need this
