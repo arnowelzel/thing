@@ -25,5 +25,4 @@ src\help.c (include\thingtbx.h)[ -A- -Y ]
 src\string.c (include\thingtbx.h)[ -A- -Y ]
 src\system.c (include\thingtbx.h)[ -Y ]
 src\toolbox.c (include\thingtbx.h, src\toolbox.rsh, src\toolbox.rh)[ -A- -Y ]
-src\tosext.s
 src\toolmcod.s
