@@ -3,7 +3,7 @@
 
 app\Thing.app
 
-.C [ -J -Z -M -P -Y -G ]
+.C [ -J -Z -M -P -Y -G]
 ;.C [ -T ]
 .C [ -DDIRCH ]
 ;.C [ -DTB_EXTENSIONS ]
@@ -82,8 +82,6 @@ mintlib.lib
 
 ; PureC Lib
 pcstdlib.lib
-;pcextlib.lib
-pctoslib.lib
 pcgemlib.lib
 
 ; Device Locking made by Hans-Juergen Richstein

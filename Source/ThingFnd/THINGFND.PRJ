@@ -46,8 +46,6 @@ mintflt.lib
 
 ; PureC Lib
 pcstdlib.lib
-pcextlib.lib
-pctoslib.lib
 pcgemlib.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)

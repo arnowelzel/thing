@@ -19,6 +19,4 @@ src\thingimg.c (include\thingimg.h)
 ; PureC Lib
 pcstdlib.lib
 pcgemlib.lib
-pcfltlib.lib
-pcextlib.lib
 pctoslib.lib
