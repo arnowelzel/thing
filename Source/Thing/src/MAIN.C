@@ -442,7 +442,9 @@ DEBUGLOG((1, "..3\n"));
 	strcat(glob.cpath, PNAME_CON);
 	strcat(glob.cpath, "\\");
 
-/*	sprintf(glob.cpath, "%s%s\\", glob.cpath, PNAME_CON);*/
+#ifdef _DEBUG
+  sprintf(almsg, "MAIN: glob.cpath=%s", glob.cpath); debugMain(almsg);
+#endif
 
 	/* Externes THINGIMG.PRG laden */
 
@@ -1349,6 +1351,10 @@ void main_exit(void) {
 	int i, d, ks;
 	UGNAME *j, *hlp;
 	ICONDESK *p;
+
+#ifdef _DEBUG
+	debugMain("MAIN: ... exit start");
+#endif
 
 	/* Ggf. Einstellungen sichern */
 	graf_mkstate(&d, &d, &d, &ks);
