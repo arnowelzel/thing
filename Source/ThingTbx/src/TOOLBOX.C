@@ -58,7 +58,6 @@ BYTE *aesBuffer;
 /* Maximale Schachtelungstiefe bei Screen2Buffer */
 #define MAX_BUFFERS	10
 
-#define Dgetcwd(a, b, c) gemdos(0x13b, (char *)(a), (int)(b), (int)(c))
 static WORD d_getcwd(char *buf, WORD drive, WORD len);
 static void lst_arrow(LISTINFO *li, int object, int dir);
 
