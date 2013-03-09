@@ -106,7 +106,7 @@
 #define void WORD                             /* DR_C doesn't know void      */
 #endif /* DR_C */
 
-#if LASER_C | LATICE_C | TURBO_C
+#if LASER_C | LATICE_C
 #define vqt_font_info vqt_fontinfo            /* Wrong GEM binding           */
 #define graf_mbox graf_movebox                /* Wrong GEM binding           */
 #define graf_rubbox graf_rubberbox            /* Wrong GEM binding           */
