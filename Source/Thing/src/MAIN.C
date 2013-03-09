@@ -45,8 +45,6 @@
 #undef LINOUT
 #define LINOUT
 
-#define Salert(x)	gemdos(0x13c, (char *)x);
-
 extern char *version_str(char *langver, int vers);
 
 /*
