@@ -3954,7 +3954,6 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 			case NKF_FUNC | NK_UP:
 			case NKF_FUNC | NKF_SHIFT | NK_DOWN:
 			case NKF_FUNC | NKF_SHIFT | NK_UP:
-			case NKF_FUNC | NK_DOWN:
 			case NKF_FUNC | NK_CLRHOME:
 			case NKF_FUNC | NKF_SHIFT | NK_CLRHOME:
 				if (fi->keyflag == 1 || fi->normkey & NKF_CTRL) {
