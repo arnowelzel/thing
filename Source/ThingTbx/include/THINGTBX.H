@@ -492,11 +492,4 @@ int win_update(int mode);
 extern SYSHDR *get_oshdr(void);
 extern void get_twin(int *handle);
 
-/*-------------------------------------------------------------------------
- * 'tosext.s'
- *-------------------------------------------------------------------------*/
-long Dxreaddir(int ln,long dirh,char *buf,XATTR *xattr,long *xr);
-#define Dreadlabel(path, label, len)	gemdos(338, (char *)(path), (char *)(label), (int)(len))
-#define Dwritelabel(path, label)		gemdos(339, (char *)(path), (char *)(label))
-
 #endif
