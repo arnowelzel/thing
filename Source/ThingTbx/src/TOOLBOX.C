@@ -61,8 +61,6 @@ BYTE *aesBuffer;
 static WORD d_getcwd(char *buf, WORD drive, WORD len);
 static void lst_arrow(LISTINFO *li, int object, int dir);
 
-TOOLINFO tb;
-
 static int is_disabled(char *p);
 
 /* Lokale Variablen */
