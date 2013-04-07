@@ -37,8 +37,8 @@ WORD getSystemLanguage(BYTE *sysLanguageCode)
 		value = (LONG) out[0];
   else
   {
-		if (!getCookie('_AKP', &value))
-			value >>= 7;
+		if (getCookie('_AKP', &value))
+			value >>= 8;
 	}
 
 	switch ( (int) value )
