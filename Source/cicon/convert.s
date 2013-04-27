@@ -40,19 +40,19 @@ module convert_data
 
 ; Assign some registers to names of variables to ease the reading of
 ; the code
-	equ		dest, a0
-	equ		plane_used, a1
-	equ		spos1, a2
-	equ		spos2, a3
-	equ		spos3, a4
-	equ		spos4, a5
-	equ		pixel_mult, a6
-	equ		s1, d0
-	equ		s2, d1
-	equ		s3, d2
-	equ		s4, d3
-	equ		pixel, d4
-	equ		k, d5
+	dest       equ a0
+	plane_used equ a1
+	spos1      equ a2
+	spos2      equ a3
+	spos3      equ a4
+	spos4      equ a5
+	pixel_mult equ a6
+	s1         equ d0
+	s2         equ d1
+	s3         equ d2
+	s4         equ d3
+	pixel      equ d4
+	k          equ d5
 
 ; Save registers, get stack parameters and initialise pointers to the
 ; 4 planes in the source area
