@@ -31,6 +31,7 @@ Stuff in directory "external":
 - extract archive "nkcc.zip":
 	copy "headers/nkcc.h" to PureC include directory
 	copy "lib/nkcc_tos.o" to PureC lib directory
+	  If you use AHCC then use the nkcc_tos.o from the AHCC directory
 - extract archive "t2g_r8_d.lzh": (german/english archive of TOS2GEM)
 	copy "tos2gem/tos2gem.h" to PureC include directory
 - extract archive "xhdi_130.zip" and copy all into "Thing/Source/xhdi"
