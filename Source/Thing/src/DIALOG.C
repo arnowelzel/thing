@@ -943,9 +943,21 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 		strcat(tree[DIFREE].ob_spec.tedinfo->te_ptext, u1);
 		strcat(tree[DISIZE].ob_spec.tedinfo->te_ptext, u1);
 	}
+#ifdef __AHCC__
+   {
+      double temp;
+      temp = used / 1024.0 + 0.5;
+      prlong((unsigned long) temp, tree[DIUSEDKB].ob_spec.tedinfo->te_ptext + 1);
+      temp = _free / 1024.0 + 0.5;
+      prlong((unsigned long) temp, tree[DIFREEKB].ob_spec.tedinfo->te_ptext + 1);
+      temp = total / 1024.0 + 0.5;
+		prlong((unsigned long) temp, tree[DISIZEKB].ob_spec.tedinfo->te_ptext + 1);
+   }
+#else
 	prlong((unsigned long) (used / 1024.0 + 0.5), tree[DIUSEDKB].ob_spec.tedinfo->te_ptext + 1);
 	prlong((unsigned long) (_free / 1024.0 + 0.5), tree[DIFREEKB].ob_spec.tedinfo->te_ptext + 1);
 	prlong((unsigned long) (total / 1024.0 + 0.5), tree[DISIZEKB].ob_spec.tedinfo->te_ptext + 1);
+#endif
 	strcat(tree[DIUSEDKB].ob_spec.tedinfo->te_ptext, u2);
 	strcat(tree[DIFREEKB].ob_spec.tedinfo->te_ptext, u2);
 	strcat(tree[DISIZEKB].ob_spec.tedinfo->te_ptext, u2);
