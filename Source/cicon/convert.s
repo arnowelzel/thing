@@ -77,12 +77,20 @@ module convert_data
 l1:
 	move.w	d5,d6
 	add.w	d6,d6
+if __AHCC__
+	clr.w	(a1,d6.w)
+else
 	clr.w	(plane_used,d6.w)
+endif
 	move.l	d5,d0
 	move.l	d4,d1
 	jsr		_lmul
 	add.w	d6,d6
+if __AHCC__
+	move.l	d0,(a6,d6.w)
+else
 	move.l	d0,(pixel_mult,d6.w)
+endif
 	dbra	d5,l1
 	movem.l	(sp)+,a0-a1
 
@@ -91,11 +99,17 @@ l1:
 	beq.s	empty_planes
 l2:
 ; Read one word from each of the four source planes
+if __AHCC__
+	move.w	(a2)+,s1
+	move.w	(a3)+,s2
+	move.w	(a4)+,s3
+	move.w	(a5)+,s4
+else
 	move.w	(spos1)+,s1
 	move.w	(spos2)+,s2
 	move.w	(spos3)+,s3
 	move.w	(spos4)+,s4
-
+endif
 ; Loop over all 16 bits of the four words
 	move.w	#32768,k
 l3:
@@ -103,26 +117,57 @@ l3:
 ; in the four words. This looks a bit tricky, but works very well.
 	clr.w	pixel
 	add.w	s4,s4
+if __AHCC__
+	addx.w	d4,d4
+else
 	addx.w	pixel,pixel
+endif
 	add.w	s3,s3
+if __AHCC__
+	addx.w	d4,d4
+else
 	addx.w	pixel,pixel
+endif
 	add.w	s2,s2
+if __AHCC__
+	addx.w	d4,d4
+else
 	addx.w	pixel,pixel
+endif
 	add.w	s1,s1
+if __AHCC__
+	addx.w	d4,d4
+else
 	addx.w	pixel,pixel
+endif
 
 ; Mark the pixel used in plane_used and set the correct pixel in the
 ; corresponding destination bitmap
 	move.w	pixel,d7
 	add.w	d7,d7
+if __AHCC__
+	move.w	#1,(a1,d7.w)
+else
 	move.w	#1,(plane_used,d7.w)
+endif
 	add.w	d7,d7
+if __AHCC__
+	move.l	(a6,d7.w),d6
+else
 	move.l	(pixel_mult,d7.w),d6
+endif
 	add.l	d6,d6
+if __AHCC__
+	add.l	d6,a0
+	or.w	d5,(a0)
+	sub.l	d6,a0
+	lsr.w	#1,d5
+else
 	add.l	d6,dest
 	or.w	k,(dest)
 	sub.l	d6,dest
 	lsr.w	#1,k
+endif
 	bne.s	l3
 
 	addq.l	#2,dest
