@@ -31,7 +31,6 @@ Stuff in directory "external":
 - extract archive "nkcc.zip":
 	copy "headers/nkcc.h" to PureC include directory
 	copy "lib/nkcc_tos.o" to PureC lib directory
-	  If you use AHCC then use the nkcc_tos.o from the AHCC directory
 - extract archive "t2g_r8_d.lzh": (german/english archive of TOS2GEM)
 	copy "tos2gem/tos2gem.h" to PureC include directory
 - extract archive "xhdi_130.zip" and copy all into "Thing/Source/xhdi"
@@ -57,6 +56,13 @@ Stuff in directory "source":
 
 The included ColorIcon stuff in "cicon" is a special version for Thing
 only. So be sure to use this one and not the original archive.
+
+
+PureC notes:
+- set in 'Options/Assembler' at 'Define macro' the macro '__AHCC_=0'.
+
+AHCC notes
+- copy the 'INCLUDE\AHCC_RT.H' to the include directory.
 
 Step 2:
 -----------------------------------------------------------------------
