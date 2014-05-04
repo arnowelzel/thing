@@ -59,7 +59,7 @@ only. So be sure to use this one and not the original archive.
 
 
 PureC notes:
-- set in 'Options/Assembler' at 'Define macro' the macro '__AHCC_=0'.
+- set in 'Options/Assembler' at 'Define macro' the macro '__AHCC__=0'.
 
 AHCC notes
 - copy the 'INCLUDE\AHCC_RT.H' to the include directory.
