@@ -1350,9 +1350,9 @@ BOOLEAN main_init(void) {
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	sprintf(rsrcName, "%s%s\\thgfnd%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	sprintf(rsrcName, "%s%s\\THINGFND\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
 	if (!rsc_load(rsrcName, &rinfo)) {
-		sprintf(rsrcName, "%s%s\\thgfnden.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\THINGFND\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
 			frm_alert(1, "[3][THINGFND.RSC nicht gefunden!|THINGFND.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);

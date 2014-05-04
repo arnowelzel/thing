@@ -471,9 +471,12 @@ DEBUGLOG((1, "..3\n"));
 		wind_delete(i);
 
 	/* Resource laden */
-	sprintf(rsrcName, "%s%s\\thing_%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	sprintf(rsrcName, "%s%s\\thing\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
+#ifdef _DEBUG
+  sprintf(almsg, "MAIN: rsrcName: %s", rsrcName); debugMain(almsg);
+#endif
 	if (!rsc_load(rsrcName, &rinfo)) {
-		sprintf(rsrcName, "%s%s\\thing_en.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\thing\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
 			frm_alert(1, "[3][THING.RSC nicht gefunden!|THING.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);
@@ -481,9 +484,9 @@ DEBUGLOG((1, "..3\n"));
 	}
 	rs_trindex = rinfo.rs_trindex;
 
-	sprintf(rsrcName, "%s%s\\thgtxt%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	sprintf(rsrcName, "%s%s\\thgtxt\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
 	if (!rsc_load(rsrcName, &rinfo2)) {
-		sprintf(rsrcName, "%s%s\\thgtxten.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\thgtxt\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo2)) {
 			frm_alert(1, "[3][THINGTXT.RSC nicht gefunden!|THINGTXT.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);

@@ -2818,9 +2818,9 @@ int main_init(void) {
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	sprintf(rsrcName, "%s%s\\thgicn%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCode);
+	sprintf(rsrcName, "%s%s\\THINGICN\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
 	if (!rsc_load(rsrcName, &rinfo)) {
-		sprintf(rsrcName, "%s%s\\thgicnen.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\THINGICN\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
 			frm_alert(1, "[3][THINGICN.RSC nicht gefunden!|THINGICN.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);

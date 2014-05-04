@@ -275,6 +275,7 @@ typedef struct {
 	long sys; /* Verschiedene Systemeigenschaften */
 	int sysLanguageId; /* System-Sprache */
 	char sysLanguageCode[3]; /* System-Sprache ('de', 'en', ...) */
+	char sysLanguageCodeLong[10]; /* System-Sprache ('german', 'english', ...) */
 	char apname[13]; /* Dateiname der Applikation */
 	char homepath[256]; /* Startverzeichnis der Applikation */
 	int mform, mbusy; /* Aktuelle Mausform, Busy-Flag */
@@ -396,7 +397,7 @@ char *get_text(char *str, char *buf, int maxlen);
 /*-------------------------------------------------------------------------
  * 'system.c'
  *-------------------------------------------------------------------------*/
-WORD getSystemLanguage(BYTE *sysLanguageCode);
+WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong);
 
 /*-------------------------------------------------------------------------
  * 'toolbox.c'

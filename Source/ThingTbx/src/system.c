@@ -26,7 +26,7 @@
 #include "..\include\thingtbx.h"
 
 
-WORD getSystemLanguage(BYTE *sysLanguageCode)
+WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 {
 	WORD out[4];
 	LONG value;
@@ -45,12 +45,23 @@ WORD getSystemLanguage(BYTE *sysLanguageCode)
 	{
 		case 0:
 	   strcpy ( sysLanguageCode, "en" );
+	     strcpy ( sysLanguageCodeLong, "english" );
 		break;
 		case 1:
-	   strcpy ( sysLanguageCode, "de" );
+	     strcpy ( sysLanguageCode, "de" );
+	     strcpy ( sysLanguageCodeLong, "german" );
 		break;
 		case 2:
-	   strcpy ( sysLanguageCode, "fr" );
+	     strcpy ( sysLanguageCode, "fr" );
+	     strcpy ( sysLanguageCodeLong, "french" );
+		break;
+		case 5:
+	     strcpy ( sysLanguageCode, "it" );
+	     strcpy ( sysLanguageCodeLong, "italy" );
+		break;
+		default:
+		  strcpy ( sysLanguageCode, "en" );
+	     strcpy ( sysLanguageCodeLong, "english" );
 		break;
 	}
 

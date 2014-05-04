@@ -809,7 +809,7 @@ int tool_init(char *apname) {
 	}
 
 	/* Systemsprache ermitteln */
-	tb.sysLanguageId = getSystemLanguage(tb.sysLanguageCode);
+	tb.sysLanguageId = getSystemLanguage(tb.sysLanguageCode, tb.sysLanguageCodeLong);
 
 	/* AES-Fonts ermitteln */
 	tb.fn_id = tb.fs_id = 1;
