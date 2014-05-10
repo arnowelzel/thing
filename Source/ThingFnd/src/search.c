@@ -43,50 +43,6 @@ typedef struct {
 	_DTA dta, *old;
 } GNF;
 
-typedef struct xattr {
-	unsigned short mode;
-	/* file types */
-#define S_IFMT	0170000		/* mask to select file type */
-#define S_IFCHR	0020000		/* BIOS special file */
-#define S_IFDIR	0040000		/* directory file */
-#define S_IFREG 0100000		/* regular file */
-#define S_IFIFO 0120000		/* FIFO */
-#define S_IMEM	0140000		/* memory region or process */
-#define S_IFLNK	0160000		/* symbolic link */
-
-	/* special bits: setuid, setgid, sticky bit */
-#define S_ISUID	04000
-#define S_ISGID 02000
-#define S_ISVTX	01000
-
-	/* file access modes for user, group, and other*/
-#define S_IRUSR	0400
-#define S_IWUSR 0200
-#define S_IXUSR 0100
-#define S_IRGRP 0040
-#define S_IWGRP	0020
-#define S_IXGRP	0010
-#define S_IROTH	0004
-#define S_IWOTH	0002
-#define S_IXOTH	0001
-#define DEFAULT_DIRMODE (0777)
-#define DEFAULT_MODE	(0666)
-	long index;
-	unsigned short dev;
-	unsigned short reserved1;
-	unsigned short nlink;
-	unsigned short uid;
-	unsigned short gid;
-	long size;
-	long blksize, nblocks;
-	unsigned short mtime, mdate;
-	unsigned short atime, adate;
-	unsigned short ctime, cdate;
-	short attr;
-	short reserved2;
-	long reserved3[2];
-} XATTR;
-
 static long do_search(char *searchpath, long *hits, int depth, int follow,
 		char *filemask, int fm_case, int fm_dirs, unsigned int mindate,
 		unsigned int maxdate, long minsize, long maxsize, char *contentmask,
