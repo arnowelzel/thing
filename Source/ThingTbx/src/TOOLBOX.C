@@ -43,6 +43,18 @@
 /*  global functions                                                */
 /*------------------------------------------------------------------*/
 /*------------------------------------------------------------------*/
+/*  local definitions                                               */
+/*------------------------------------------------------------------*/
+/* AES-Font Cookie-Struktur */
+typedef struct {
+	LONG af_magic;		/* AES-Font ID (AFnt) */
+	WORD version;		/* Highbyte Cookieversion (BCD-Format) */
+	/* Lowbyte Programmversion (BCD-Format) */
+	WORD installed;		/* Flag fuer Fonts angemeldet */
+	WORD cdecl (*afnt_getinfo)(WORD af_gtype, WORD *af_gout1, WORD *af_gout2, WORD *af_gout3, WORD *af_gout4);
+} AFNT;
+
+/*------------------------------------------------------------------*/
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
 BYTE *aesBuffer;
@@ -204,7 +216,8 @@ unsigned int normkey(int ks, int kr) {
  *
  * @param cookie
  * @param *p_value
- * @return
+ * @return 0 = not found
+ *         1 = found
  */
 static long getCookiePointer(void) {
 	return (*(long *) 0x5a0L);
@@ -726,7 +739,7 @@ int tool_init(char *apname) {
 	tb.fi = tb.topfi = 0L;
 
 	/* Desktop-Ausmasse */
-	wind_get(0, WF_WORKXYWH, &tb.desk.x, &tb.desk.y, &tb.desk.w, &tb.desk.h);
+	new_wind_get(0, WF_WORKXYWH, &tb.desk.x, &tb.desk.y, &tb.desk.w, &tb.desk.h);
 
 	/* Message-Handler ec. fuer modale Dialoge */
 	tb.msg_handler = 0L;
@@ -821,11 +834,11 @@ int tool_init(char *apname) {
 
 	if ((tb.sys & SY_MTOS) || (tb.sys & SY_MAGX) || (appl_find("?AGI\0\0\0\0") >= 0)) {
 		tb.sys |= SY_AGI;
-		if (appl_getinfo(0, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(0, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			tb.fn_size = out[0];
 			tb.fn_id = out[1];
 		}
-		if (appl_getinfo(1, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(1, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			tb.fs_size = out[0];
 			tb.fs_id = out[1];
 		}
@@ -837,7 +850,7 @@ int tool_init(char *apname) {
 
 	/* Auf Farbicons pruefen */
 	if (tb.sys & SY_AGI) {
-		if (appl_getinfo(2, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(2, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[2] == 1)
 				tb.sys |= SY_CICON; /* Farbicons vorhanden */
 			if (out[3] == 1)
@@ -862,7 +875,7 @@ int tool_init(char *apname) {
 	/* Weitere AES-Features testen */
 	if (tb.sys & SY_AGI) {
 		/* Shutdown-Support testen */
-		if (appl_getinfo(12, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(12, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			/* Falls vorhanden, dann auch gleich anmelden */
 			if (out[0] & 0x0008) {
 				tb.sys |= SY_SHUT;
@@ -871,7 +884,7 @@ int tool_init(char *apname) {
 		}
 
 		/* Auf Iconify testen */
-		if (appl_getinfo(11, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(11, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			/* WF_ICONIFY vorhanden und Iconifier? */
 			if ((out[0] & 0x0080) && (out[3] & 0x0001))
 				tb.sys |= SY_ICONIFY;
@@ -886,13 +899,13 @@ int tool_init(char *apname) {
 		}
 
 		/* Ermitteln, ob appl_search() vorhanden */
-		if (appl_getinfo(4, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(4, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[2] == 1)
 				tb.sys |= SY_ASEARCH;
 		}
 
 		/* MultiTOS-Popup- bzw. Submenues vorhanden? */
-		if (appl_getinfo(9, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_xgetinfo(9, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[0] && out[1])
 				tb.sys |= SY_POPUP;
 		}
@@ -1020,7 +1033,7 @@ void obj_cdraw(int *pxy, int whandle) {
 		area.h = tb.desk.h;
 
 		wind_update(BEG_UPDATE);
-		wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 		/* Rechteckliste abarbeiten */
 		while (box.w && box.h) {
@@ -1035,7 +1048,7 @@ void obj_cdraw(int *pxy, int whandle) {
 			}
 
 			/* Naechstes freies Rechteck holen */
-			wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+			new_wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 		}
 		wind_update(END_UPDATE);
 	} else {
@@ -3122,7 +3135,7 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
  -------------------------------------------------------------------------*/
 void frm_end(FORMINFO *fi) {
 	FORMINFO *prev, *next;
-	int handle;
+	int handle, dummy;
 
 	/* Mauszeiger wieder als Pfeil */
 	tb.mform = ARROW;
@@ -3199,7 +3212,7 @@ void frm_end(FORMINFO *fi) {
 		tb.topfi = 0L;
 
 	/* Aktives Fenster ermitteln */
-	wind_get(0, WF_TOP, &handle);
+	new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 	tb.topwin = win_getwinfo(handle);
 	win_newtop(tb.topwin);
 }
@@ -4037,7 +4050,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
  Komplette Abwicklung eines Dialogs - analog zu form_do()
  -------------------------------------------------------------------------*/
 int frm_dial(FORMINFO *fi, EVENT *mevent) {
-	int done, ret, handle;
+	int done, ret, handle, dummy;
 	WININFO *win;
 
 	done = 0;
@@ -4055,7 +4068,7 @@ int frm_dial(FORMINFO *fi, EVENT *mevent) {
 
 		/* Unter Single-TOS ggf. neues Top-Window ermitteln */
 		if (!(tb.sys & SY_MULTI) && !(tb.sys & SY_WINX)) {
-			wind_get(0, WF_TOP, &handle);
+			new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 			win = win_getwinfo(handle);
 			win_newtop(win);
 		}
@@ -4863,7 +4876,7 @@ static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
 			ok = 1;
 			wid = above;
 			while (wid > 0) {
-				wind_get(wid, WF_CURRXYWH, &tst2.x, &tst2.y, &tst2.w, &tst2.h);
+				new_wind_get(wid, WF_CURRXYWH, &tst2.x, &tst2.y, &tst2.w, &tst2.h);
 				if (w != NULL)
 					*w = tst2.x + tst2.w - tst1.x;
 				if (rc_intersect(&tst1, &tst2))
@@ -5127,10 +5140,10 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	}
 
 	/* Gr”že des Arbeitsbereiches */
-	wind_get(win->handle, WF_CURRXYWH, &full.x, &full.y, &full.w, &full.h);
+	new_wind_get(win->handle, WF_CURRXYWH, &full.x, &full.y, &full.w, &full.h);
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	new_wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
@@ -5164,7 +5177,7 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 			}
 		}
 		/* N„chstes freies Rechteck holen */
-		wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	/* Falls Dialog dann ggf. Cursor wieder einschalten */
@@ -5199,7 +5212,7 @@ void win_scroll(WININFO *win, int x, int y) {
 		win->prepare(win);
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	new_wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
@@ -5315,7 +5328,7 @@ void win_scroll(WININFO *win, int x, int y) {
 		}
 
 		/* N„chstes freies Rechteck holen */
-		wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	/* Maus einschalten und AES freigeben */
@@ -5330,7 +5343,7 @@ void win_scroll(WININFO *win, int x, int y) {
  -------------------------------------------------------------------------*/
 void win_pupdate(WININFO *win) {
 	/* Gr”sse des Arbeitsbereiches abfragen */
-	wind_get(win->handle, WF_WORKXYWH, &win->work.x, &win->work.y, &win->work.w, &win->work.h);
+	new_wind_get(win->handle, WF_WORKXYWH, &win->work.x, &win->work.y, &win->work.w, &win->work.h);
 
 	/* Window-Update aufrufen, falls vorhanden */
 	if (win->update)
@@ -5397,7 +5410,7 @@ void win_full(WININFO *win) {
 
 	/* Fulled/Actual-Gr”že ermitteln */
 	if (win->state & WSFULL)
-		wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
+		new_wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
 	else /* wind_get(win->handle,WF_FULLXYWH,&x,&y,&w,&h); */
 	{
 		x = win->full.x;
@@ -5716,7 +5729,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 	char *fpath, *fname;
 	EVENT mevent;
 	WININFO *win;
-	int handle;
+	int handle, dummy;
 	int use_mctrl;
 
 	/* Freedom-Daten initialisieren */
@@ -5780,7 +5793,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 
 			/* Unter Single-TOS ggf. neues Top-Window ermitteln */
 			if (!(tb.sys & SY_MULTI) && !(tb.sys & SY_WINX)) {
-				wind_get(0, WF_TOP, &handle);
+				new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
 				win = win_getwinfo(handle);
 				win_newtop(win);
 			}
@@ -6260,6 +6273,27 @@ void _v_opnvwk(int *work_in, int *handle, int *work_out) {
 		}
 	}
 #endif
+}
+
+/**
+ *
+ */
+int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4) {
+	int hasAgi = FALSE;
+	long du;
+	AFNT *afnt;
+
+	hasAgi = ((_GemParBlk.global[0] == 0x399 && getCookie('MagX', &du))
+			|| (_GemParBlk.global[0] == 0x400 && type < 4)
+			|| (_GemParBlk.global[0] > 0x400) || (appl_find("?AGI") >= 0));
+
+	if (hasAgi == TRUE)
+		return (appl_getinfo(type, out1, out2, out3, out4));
+
+	if (getCookie('AFnt', (LONG *) &afnt) && afnt->af_magic == 'AFnt')
+		return (afnt->afnt_getinfo(type, out1, out2, out3, out4));
+
+	return (0);
 }
 
 /**

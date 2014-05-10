@@ -402,6 +402,7 @@ WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong);
 /*-------------------------------------------------------------------------
  * 'toolbox.c'
  *-------------------------------------------------------------------------*/
+int new_wind_get(int win, int cmd, int *out1, int *out2, int *out3, int *out4);
 void mybeep(void);
 int getCookie(long cookie, long *p_value);
 unsigned int normkey(int ks, int kr);
@@ -481,7 +482,7 @@ void grf_ghostbox(int *pxy, int n);
 int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy, int *dx, int *dy);
 
 void _v_opnvwk(int *work_in, int *handle, int *work_out);
-int appl_getinfo(int ap_gtype, int *ap_gout1, int *ap_gout2, int *ap_gout3, int *ap_gout4);
+int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4);
 char *appl_name(int id, char *deflt);
 void appl_send(int id, int message, int pointers, long par1, long par2, long par3, long par4, long par5);
 int calc_small_text_width(char *text);
