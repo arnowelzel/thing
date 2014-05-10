@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include "..\include\dragdrop.h"
 #include "..\include\tcmd.h"
@@ -62,7 +62,7 @@ void handle_menu(int title, int item, int ks) {
 		if (tb.sys & SY_OWNER) {
 			get_twin(&whandle);
 			if (whandle)
-				if (!wind_get(whandle, WF_OWNER, &fontid))
+				if (!new_wind_get(whandle, WF_OWNER, &fontid, &i, &i, &i))
 					fontid = -1;
 		}
 	} else {
@@ -477,7 +477,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 	int top,new;
 	int x, y, w, h;
 	int mx, my, lks, mb, mc;
-	int owner;
+	int owner, dummy;
 	int lshift, rshift;
 	ALICE_WIN *awin;
 	int ofull;
@@ -550,7 +550,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			mn_update();
 			/* Workaround fr MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
-				if (wind_get(top, WF_OWNER, &owner))
+				if (new_wind_get(top, WF_OWNER, &owner, &dummy, &dummy, &dummy))
 					magx_switch(owner, 0);
 			}
 		}
@@ -764,9 +764,9 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		case WCCON:
 			/* Console speziell behandeln */
 			if (win->state & WSFULL)
-				wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
+				new_wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
 			else
-				wind_get(win->handle, WF_FULLXYWH, &x, &y, &w, &h);
+				new_wind_get(win->handle, WF_FULLXYWH, &x, &y, &w, &h);
 			win->curr.x = x;
 			win->curr.y = y;
 			win->curr.w = w;

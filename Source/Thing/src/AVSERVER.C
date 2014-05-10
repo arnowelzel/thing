@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include <setjmp.h>
 #include "..\include\dragdrop.h"
@@ -809,7 +809,7 @@ void avs_drag_on_window(int *msgbuf) {
 				/* Eigentuemer ermitteln */
 				owner = -1;
 				if (tb.sys & SY_OWNER)
-					if (!wind_get(whandle,WF_OWNER,&owner))
+					if (!new_wind_get(whandle,WF_OWNER,&owner, &n, &n, &n))
 						owner = -1;
 				if (owner != -1 && owner != tb.app_id) {
 					/* MultiTOS D&D probieren */

@@ -33,8 +33,8 @@
 #include <stdarg.h>
 #include "..\xhdi\xhdi.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include "..\include\jobid.h"
 
 #undef ORIG_DIRCHECK
@@ -1399,8 +1399,8 @@ long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
 			return (ret);
 		}
 	}
-#define __AHCC__
-  return (-34L);
+#ifdef __AHCC__
+	return (-34L);
 #endif
 }
 

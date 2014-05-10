@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 
 /* Von Thomas Binder */
 

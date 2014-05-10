@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #undef TIMER
 #ifdef TIMER
 #include <time.h>
@@ -56,11 +56,11 @@ void mn_istate(int item, int enable) {
  * @param *objectTree
  */
 static void mn_redraw(OBJECT *objectTree) {
-	int top;
+	int top, dummy;
 
 	wind_update (BEG_MCTRL);
 	if (!(tb.sys & SY_MULTI) || (tb.app_id == menu_bar(0L, -1))) {
-		wind_get(0, WF_TOP, &top);
+		new_wind_get(0, WF_TOP, &top, &dummy, &dummy, &dummy);
 		menu_bar(objectTree, 1);
 		if (top > 0)
 			wind_set(top, WF_TOP);
@@ -124,6 +124,10 @@ void mn_disable(void) {
 void mn_check(void) {
 	int check, text, sortby;
 	OBJECT *objectTree;
+
+#ifdef _DEBUG
+	debugMain("MENU: Start mn_check --->");
+#endif
 
 #ifdef TIMER
 	timer1 = clock();
@@ -191,6 +195,11 @@ void mn_check(void) {
 	timer1 = clock() - timer1;
 	fprintf(stdout, "\033H\n\nmn_check(): %ld \n", (long)timer1);
 #endif
+
+#ifdef _DEBUG
+	debugMain("MENU: <---");
+#endif
+
 }
 
 /**

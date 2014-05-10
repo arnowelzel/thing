@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include <types.h>
 #include <pwd.h>
@@ -757,7 +757,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
  Drag&Drop auf ein Accessory-Fenster bearbeiten
  -------------------------------------------------------------------------*/
 void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
-	int dodrag, owner, ok;
+	int dodrag, owner, ok, dummy;
 	char *name, *path;
 	/* ErgÑnzungen fÅr MT-D&D */
 	int dfh, dret;
@@ -794,7 +794,7 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 				/* EigentÅmer ermitteln */
 				owner = -1;
 				if (tb.sys & SY_OWNER)
-					if (!wind_get(whandle, WF_OWNER, &owner))
+					if (!new_wind_get(whandle, WF_OWNER, &owner, &dummy, &dummy, &dummy))
 						owner = -1;
 				if (owner != -1 && owner != tb.app_id) {
 					/* MultiTOS D&D probieren */

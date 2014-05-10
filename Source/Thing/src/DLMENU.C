@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include "..\include\jobid.h"
 #include <new_rsc.h>
@@ -901,7 +901,7 @@ void de_font(int mode, int ret) {
 	int mx, my, mb, ks, mx1, my1, dx, dy;
 	int tx1, ty1, tx2, ty2;
 	int w;
-	int whandle, owner;
+	int whandle, owner, dummy;
 	ACWIN *acwin;
 	OBJECT *objectTree;
 	int fret;
@@ -1001,7 +1001,7 @@ void de_font(int mode, int ret) {
 					/* Ja, dann Eigentuemer ermitteln */
 					owner = -1;
 					if (tb.sys & SY_OWNER) {
-						if (!wind_get(whandle, WF_OWNER, &owner))
+						if (!new_wind_get(whandle, WF_OWNER, &owner, &dummy, &dummy, &dummy))
 						owner = -1;
 					} else {
 						acwin = acwin_find(whandle);

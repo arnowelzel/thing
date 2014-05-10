@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 
 /*-------------------------------------------------------------------------
@@ -101,9 +101,18 @@ void desk_init(void) {
 void desk_pat(void) {
 	bfobspec *spec;
 
+#ifdef _DEBUG
+	debugMain("DESK: Start desk_pat --->");
+#endif
+
 	spec = (bfobspec *) &desk.iuser.ub_parm;
 	spec->fillpattern = conf.dpattern;
 	spec->interiorcol = conf.dcolor;
+
+#ifdef _DEBUG
+	debugMain("DESK: <---");
+#endif
+
 }
 
 /*-------------------------------------------------------------------------
@@ -126,7 +135,7 @@ void desk_draw(int x, int y, int w, int h) {
 	area.h = h;
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	wind_get(0, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	new_wind_get(0, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
@@ -135,7 +144,7 @@ void desk_draw(int x, int y, int w, int h) {
 			objc_draw(rs_trindex[DESKTOP], ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
 
 		/* N„chstes Rechteck holen */
-		wind_get(0, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(0, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	/* Maus einschalten und AES freigeben */

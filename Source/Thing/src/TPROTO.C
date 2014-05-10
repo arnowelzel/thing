@@ -29,8 +29,8 @@
  =========================================================================*/
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include "..\include\tcmd.h"
 
@@ -232,9 +232,9 @@ void alw_draw(ALICE_WIN *awin, int x, int y, int w, int h) {
 	area.h = h;
 
 	/* Groesse des Arbeitsbereiches und erster Eintrag Rechteckliste */
-	wind_get(0, WF_WORKXYWH, &full.x, &full.y, &full.w, &full.h);
-	wind_get(awin->handle, WF_WORKXYWH, &work.x, &work.y, &work.w, &work.h);
-	wind_get(awin->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	new_wind_get(0, WF_WORKXYWH, &full.x, &full.y, &full.w, &full.h);
+	new_wind_get(awin->handle, WF_WORKXYWH, &work.x, &work.y, &work.w, &work.h);
+	new_wind_get(awin->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 	/* Objektbaum anpassen */
 	awin->tree[0].ob_x = work.x;
@@ -255,7 +255,7 @@ void alw_draw(ALICE_WIN *awin, int x, int y, int w, int h) {
 		}
 
 		/* Naechstes Rechteck holen */
-		wind_get(awin->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(awin->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	/* Maus einschalten und AES freigeben */

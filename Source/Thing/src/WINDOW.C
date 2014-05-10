@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <math.h>
 
 static void wd_ficon(int x, int y, int iw, int ih);
@@ -1555,7 +1555,7 @@ void wf_draw(void) {
 	area = tb.desk;
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	new_wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
 
 	/* Rechteckliste abarbeiten */
 	while (box.w && box.h) {
@@ -1579,7 +1579,7 @@ void wf_draw(void) {
 		}
 
 		/* N„chstes Rechteck holen */
-		wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		new_wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
 	}
 
 	vs_clip(tb.vdi_handle, 0, cxy);

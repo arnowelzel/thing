@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h" 
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 
 #ifdef __MINT__
 extern BASPAG *_base;
@@ -61,6 +61,7 @@ void res_free(void) {
  *
  */
 int res_exit(char *appname) {
+  int dummy;
 	WINOPEN *wopen, *wopen1;
 	WININFO *win;
 	W_PATH *wpath;
@@ -99,8 +100,8 @@ int res_exit(char *appname) {
 				wopen->istop = 1;
 			else
 				wopen->istop = 0;
-			wind_get(win->handle, WF_HSLIDE, &wopen->sh);
-			wind_get(win->handle, WF_VSLIDE, &wopen->sv);
+			new_wind_get(win->handle, WF_HSLIDE, &wopen->sh, &dummy, &dummy, &dummy);
+			new_wind_get(win->handle, WF_VSLIDE, &wopen->sv, &dummy, &dummy, &dummy);
 
 			switch (win->class) {
 			case WCPATH:
@@ -864,7 +865,7 @@ app_start1:
 					if (tb.sys & SY_AGI) {
 						int max_shwr, du;
 
-						if (appl_getinfo(10, &max_shwr, &du, &du, &du)) {
+						if (appl_xgetinfo(10, &max_shwr, &du, &du, &du)) {
 							max_shwr &= 0xff;
 							if (max_shwr >= 3) /* oder wenn shel_write-Modus 3 vorhanden */
 								goto run_acc;
@@ -1250,7 +1251,7 @@ app_start1:
 				fclose(rfh);
 				conf_save(1);
 				if (tb.sys & SY_AGI) {
-					if (appl_getinfo(5, &d, &d, &d, &has_wdef) == 0)
+					if (appl_xgetinfo(5, &d, &d, &d, &has_wdef) == 0)
 						has_wdef = 0;
 				}
 				if (has_wdef)

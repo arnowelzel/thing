@@ -30,8 +30,8 @@
 
 #include "..\include\globdef.h"
 #include "..\include\types.h"
-#include "rsrc\thing_de.h"
-#include "rsrc\thgtxtde.h"
+#include "rsrc\thing.h"
+#include "rsrc\thgtxt.h"
 #include <ctype.h>
 
 /*-------------------------------------------------------------------------
@@ -261,8 +261,8 @@ int conf_save(int tmp) {
 				/* Dialogfenster nicht sichern! */
 				if (win->class != WCDIAL) {
 					/* Angaben bei allen Fenstern */
-					wind_get(win->handle, WF_HSLIDE, &sh);
-					wind_get(win->handle, WF_VSLIDE, &sv);
+					new_wind_get(win->handle, WF_HSLIDE, &sh, &i, &i, &i);
+					new_wind_get(win->handle, WF_VSLIDE, &sv, &i, &i, &i);
 					fprintf(fh, "WOPN %d %d %d %d ", win->class, win == tb.topwin, sh, sv);
 					/* Weitere Angaben je nach Fenstertyp */
 					switch (win->class) {
@@ -868,6 +868,9 @@ int conf_load(void) {
 						int drv, ul, ai;
 
 						sscanf(inbuf5, "%d %d %d", &drv, &ul, &ai);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: DRIV, drv=%i, ul=%i, ai=%i", drv, ul, ai); debugMain(almsg);
+#endif
 						if ((drv >= 0) && (drv < MAXDRIVES)) {
 							desk.dicon[drv + 1].spec.drive->uselabel = ul;
 							desk.dicon[drv + 1].spec.drive->autoinstall = ai;
@@ -876,6 +879,9 @@ int conf_load(void) {
 					/* Fenster */
 					if (id == 'WIXY') {
 						sscanf(inbuf5, "%d %d %d %d %d", &p, &x, &y, &w, &h);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: WIXY, p=%i, x=%i, y=%i, w=%i, h=%i", p, x, y, w, h); debugMain(almsg);
+#endif
 						if (p >= 0 && p <= 15) {
 							lx = (double) tb.desk.w * (double) x / 10000L;
 							x = tb.desk.x + (int) (lx + 0.5);
@@ -904,6 +910,9 @@ int conf_load(void) {
 					/* Console-Fenster */
 					if (id == 'VTXY') {
 						sscanf(inbuf5, "%d %d %d %d", &x, &y, &w, &h);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: VTXY, x=%i, y=%i, w=%i, h=%i", x, y, w, h); debugMain(almsg);
+#endif
 						lx = (double) tb.desk.w * (double) x / 10000L;
 						x = tb.desk.x + (int) (lx + 0.5);
 						ly = (double) tb.desk.h * (double) y / 10000L;
@@ -931,11 +940,23 @@ int conf_load(void) {
 					if (id == 'WOPN') {
 						sscanf(inbuf5, "%d %d %d %d", &x, &y, &w, &h);
 						tx = inbuf5;
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: WOPN, x=%i, y=%i, w=%i, h=%i", x, y, w, h); debugMain(almsg);
+#endif
 						for (i = 0; i < 4; i++)
 							get_buf_entry(tx, buf, &tx);
 						get_buf_entry(tx, wildcard, &tx);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: WOPN + 1 , wildcard=%s", wildcard); debugMain(almsg);
+#endif
 						get_buf_entry(tx, text, &tx);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: WOPN + 2 , text=%s", text); debugMain(almsg);
+#endif
 						sscanf(tx, "%d", &p);
+#ifdef _DEBUG
+							sprintf(almsg, "CLOD: WOPN + 3 , p=%i", p); debugMain(almsg);
+#endif
 						/* Neuen Eintrag an die Open-Liste anh„ngen */
 						wopen = pmalloc(sizeof(WINOPEN));
 						if (!wopen) {
