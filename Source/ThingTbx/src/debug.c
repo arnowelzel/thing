@@ -22,7 +22,7 @@
  */
 
 #ifdef DEBUG
-#include "..\include\thingtbx.h"
+#include "..\..\thing\include\globdef.h"
 #include <stdarg.h>
 
 /**
