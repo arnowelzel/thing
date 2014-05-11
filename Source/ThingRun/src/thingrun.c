@@ -71,7 +71,7 @@ main(int argc, char *argv[]) {
 		multi = 1;
 		strcpy(fname, "thingrun.par");
 		if (!shel_find(fname)) {
-			form_alert(1, rs_frstr[ALINFO]);
+			form_alert(1, rs_fstr[ALINFO]);
 			return 1;
 		}
 		argv[1] = fname;
@@ -84,8 +84,8 @@ main(int argc, char *argv[]) {
 	}
 
 	/* Resourcen initialisieren */
-	for (i = 0; i < NUM_OBS; i++)
-		rsrc_obfix(&rs_object[i], 0);
+	for (i = 0; i < RS_NOBS; i++)
+		rsrc_obfix(&rs_obj[i], 0);
 
 	/* Virtuelle VDI-Workstation oeffnen und Desktop-Groesse ermitteln */
 	vdi_handle = graf_handle(&i, &i, &i, &i);
@@ -100,7 +100,7 @@ main(int argc, char *argv[]) {
 	/* Buffer fuer Kommandozeile reservieren */
 	cmd = malloc(8193L);
 	if (!cmd) {
-		form_alert(1, rs_frstr[ALNOMEM]);
+		form_alert(1, rs_fstr[ALNOMEM]);
 		v_clsvwk(vdi_handle);
 		if (multi)
 			appl_exit();
@@ -241,12 +241,12 @@ main(int argc, char *argv[]) {
 	/* Bildschirm-Darstellung anpassen */
 	if (is_gr) {
 		/* Grafik-Applikation */
-		strcpy(rs_trindex[DESKAPP]->ob_spec.tedinfo->te_ptext, name);
-		rs_trindex[DESKAPP]->ob_x = 0;
-		rs_trindex[DESKAPP]->ob_y = 0;
-		rs_trindex[DESKAPP]->ob_width = dw;
-		rs_trindex[DESKAPP]->ob_height = dy - 1;
-		objc_draw(rs_trindex[DESKAPP], ROOT, MAX_DEPTH, 0, 0, dw, dy - 1);
+		strcpy(rs_tree[DESKAPP]->ob_spec.tedinfo->te_ptext, name);
+		rs_tree[DESKAPP]->ob_x = 0;
+		rs_tree[DESKAPP]->ob_y = 0;
+		rs_tree[DESKAPP]->ob_width = dw;
+		rs_tree[DESKAPP]->ob_height = dy - 1;
+		objc_draw(rs_tree[DESKAPP], ROOT, MAX_DEPTH, 0, 0, dw, dy - 1);
 	} else {
 		/* Text-Applikation */
 		v_hide_c(vdi_handle);
@@ -266,7 +266,7 @@ main(int argc, char *argv[]) {
 	if (!is_gr) {
 		/* Bei Bedarf auf Tastendruck warten */
 		if (toswait) {
-			printf("%s\n", rs_frstr[TXTOSWAIT]);
+			printf("%s\n", rs_fstr[TXTOSWAIT]);
 			fflush(stdout);
 			Cnecin();
 		}
@@ -330,7 +330,7 @@ char *app_argv(char *cmd, char *prog) {
 	/* Buffer reservieren */
 	new = malloc(nlen);
 	if (!new) {
-		form_alert(1, rs_frstr[ALNOMEM]);
+		form_alert(1, rs_fstr[ALNOMEM]);
 		return 0L;
 	}
 

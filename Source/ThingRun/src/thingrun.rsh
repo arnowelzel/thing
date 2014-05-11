@@ -1,18 +1,13 @@
-/* GEM Resource C Source */
+/* erzeugt mit RSM2CS V1.01 Beta von Armin Diedering aus "H:\SRC\THING\THINGRUN\SRC\THINGRUN.RSC" */
+/* nach Sourcen von Holger Weets */
 
 #include <portab.h>
+
 #include <aes.h>
-#include "THINGRUN.H"
 
-#if !defined(WHITEBAK)
-#define WHITEBAK    0x0040
-#endif
-#if !defined(DRAW3D)
-#define DRAW3D      0x0080
-#endif
+static char rs_s0[] = "";
+static char rs_s1[] = "";
 
-#define FLAGS9  0x0200
-#define FLAGS10 0x0400
 #define FLAGS11 0x0800
 #define FLAGS12 0x1000
 #define FLAGS13 0x2000
@@ -27,27 +22,36 @@
 #define STATE14 0x4000
 #define STATE15 0x8000
 
-TEDINFO rs_tedinfo[] =
-{ "AAAAAAAA.AAA",
-  "\0",
-  "\0",
-  IBM  , 0, TE_CNTR , 0x1180, 0, 0, 13, 1
+#define RS_NTED 1
+
+TEDINFO rs_tedinfo[] = {
+	"AAAAAAAA.AAA",
+	rs_s0,
+	rs_s1,
+	IBM, 0, TE_CNTR, 4480, 0, 0, 13, 1
 };
 
-BYTE *rs_frstr[] =
-{ "[0][ThingRun 1.11|Copyright \275 1995 Arno Welzel|Copyright \275 1996-98 T. Binder][  OK  ]",
-  "[3][Es steht nicht mehr gen\201gend|Arbeitsspeicher zur Verf\201gung!| |Not enough memory!][Abbruch / Cancel]",
-  "Programm beendet, Taste dr\201cken / Program terminated, press any key"
+#define RS_NOBS 1
+
+OBJECT rs_obj[] = {
+#define TR0 0
+/* TREE 0 */
+	-1, -1, -1, G_BOXTEXT,			/*** 0 ***/
+	LASTOB,
+	NORMAL,
+	(long) &rs_tedinfo[0],
+	0, 0, 34, 1
 };
 
-OBJECT rs_object[] =
-{ 
-  /******** Tree 0 DESKAPP ****************************************************/
-        -1,       -1,       -1, G_BOXTEXT ,   /* Object 0  */
-  LASTOB, NORMAL, (LONG)&rs_tedinfo[0],
-  0x0000, 0x0000, 0x0022, 0x0001
+OBJECT *rs_tree[] = {
+&rs_obj[TR0]
 };
 
-OBJECT *rs_trindex[] =
-{ &rs_object[0]    /* Tree  0 DESKAPP  */
+#define RS_NFSTR 3
+
+char *rs_fstr[] = {
+	"[0][ThingRun 1.11|Copyright \275 1995 Arno Welzel|Copyright \275 1996-98 T. Binder][  OK  ]",
+	"[3][Es steht nicht mehr gen\201gend|Arbeitsspeicher zur Verf\201gung!| |Not enough memory!][Abbruch / Cancel]",
+	"Programm beendet, Taste dr\201cken / Program terminated, press any key"
 };
+

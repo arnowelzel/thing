@@ -1,20 +1,29 @@
-/* GEM C Source Header Datei */
+/* erzeugt mit RSM2CS V1.01 Beta von Armin Diedering aus "H:\SRC\THING\THINGRUN\SRC\THINGRUN.RSC" */
+/* nach Sourcen von Holger Weets */
 
-EXTERN TEDINFO  rs_tedinfo[];
-EXTERN CICONBLK rs_ciconblk[];
-EXTERN CICON    rs_cicon[];
-EXTERN ICONBLK  rs_iconblk[];
-EXTERN BITBLK   rs_bitblk[];
-EXTERN BYTE     *rs_frstr[];
-EXTERN BITBLK   *rs_frimg[];
-EXTERN OBJECT   rs_object[];
-EXTERN OBJECT   *rs_trindex[];
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define RS_NOBS     1
+#define RS_NTED     1
+#define RS_NICNBLK  0
+#define RS_NCICNBLK 0
+#define RS_NBITBLK  0
+#define RS_NFIMG    0
+#define RS_NFSTR    3
+#define RS_NUSR     0
 
-#define NUM_BB    0
-#define NUM_IB    0
-#define NUM_CIB   0
-#define NUM_TI    1
-#define NUM_FRSTR 3
-#define NUM_FRIMG 0
-#define NUM_OBS   1
-#define NUM_TREE  1
+#define DESKAPP		0
+
+#define ALINFO		0
+
+#define ALNOMEM		1
+
+#define TXTOSWAIT		2
+extern OBJECT    rs_obj[];
+extern TEDINFO   rs_tedinfo[];
+extern OBJECT  * rs_tree[];
+extern char    * rs_fstr[];
+#ifdef __cplusplus
+}
+#endif
