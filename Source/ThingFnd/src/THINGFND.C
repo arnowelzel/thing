@@ -40,7 +40,7 @@
 #define pfree	free
 #endif
 #include <new_rsc.h>
-#include "rsrc\thgfndde.h"
+#include "rsrc\thingfnd.h"
 #include "..\include\thingfnd.h"
 #include <dudolib.h>
 
