@@ -1,9 +1,10 @@
-ResourceMaster v3.65   
+ResourceMaster v4.0 ž   
 #C 0@242@0@0@
-#N 99@32@AZAaza___  _@AZAaza090___  _@@_@
+#N 99@0@AZAaza___  _@AZAaza090___  _@@_@
 #FoHRD@rsm2out@HRD@hrd@@@[HRD-File@0@
+#FoC-Header@rsm2out@C-Header@h@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 20013100@17741@7728@509@
+#M 20013100@17741@7728@510@
 #L 4@german@english@french@italy@
 #S 0@4@ALNOMEM@@@@@
 #S 1@4@ALNOWIN@@@@@

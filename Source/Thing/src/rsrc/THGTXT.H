@@ -1,485 +1,485 @@
-/* Resource Datei Indizes fÅr THGTXTDE */
+ /*  Resource C-Header-File v1.97 fÅr ResourceMaster ab v2.06 by ARDISOFT  */
 
-#define ALNOMEM          0   /* Alert String */
+#define ALNOMEM 0  /* Alert string */
 
-#define ALNOWIN          1   /* Alert String */
+#define ALNOWIN 1  /* Alert string */
 
-#define ALNOPWIN         2   /* Alert String */
+#define ALNOPWIN 2  /* Alert string */
 
-#define ALNEWREZ         3   /* Alert String */
+#define ALNEWREZ 3  /* Alert string */
 
-#define ALDESKFULL       4   /* Alert String */
+#define ALDESKFULL 4  /* Alert string */
 
-#define ALTRASH          5   /* Alert String */
+#define ALTRASH 5  /* Alert string */
 
-#define ALPROPEN         6   /* Alert String */
+#define ALPROPEN 6  /* Alert string */
 
-#define ALNORSC          7   /* Alert String */
+#define ALNORSC 7  /* Alert string */
 
-#define ALDOSAVECONF     8   /* Alert String */
+#define ALDOSAVECONF 8  /* Alert string */
 
-#define ALASKFALLBACK    9   /* Alert String */
+#define ALASKFALLBACK 9  /* Alert string */
 
-#define ALUSENEWCPATH    10  /* Alert String */
+#define ALUSENEWCPATH 10  /* Alert string */
 
-#define ALCOSAVE         11  /* Alert String */
+#define ALCOSAVE 11  /* Alert string */
 
-#define ALQUIT           12  /* Alert String */
+#define ALQUIT 12  /* Alert string */
 
-#define ALFORMERR        13  /* Alert String */
+#define ALFORMERR 13  /* Alert string */
 
-#define ALFORMAT         14  /* Alert String */
+#define ALFORMAT 14  /* Alert string */
 
-#define ALSERIAL         15  /* Alert String */
+#define ALSERIAL 15  /* Alert string */
 
-#define ALSTART          16  /* Alert String */
+#define ALSTART 16  /* Alert string */
 
-#define ALDNAME          17  /* Alert String */
+#define ALDNAME 17  /* Alert string */
 
-#define ALILLPATH        18  /* Alert String */
+#define ALILLPATH 18  /* Alert string */
 
-#define ALILLNAME        19  /* Alert String */
+#define ALILLNAME 19  /* Alert string */
 
-#define ALILLFNAME       20  /* Alert String */
+#define ALILLFNAME 20  /* Alert string */
 
-#define ALILLMASK        21  /* Alert String */
+#define ALILLMASK 21  /* Alert string */
 
-#define ALILLDNAME       22  /* Alert String */
+#define ALILLDNAME 22  /* Alert string */
 
-#define ALILLDEST        23  /* Alert String */
+#define ALILLDEST 23  /* Alert string */
 
-#define ALTOOMANY        24  /* Alert String */
+#define ALTOOMANY 24  /* Alert string */
 
-#define ALACCFAIL        25  /* Alert String */
+#define ALACCFAIL 25  /* Alert string */
 
-#define ALACCLOAD        26  /* Alert String */
+#define ALACCLOAD 26  /* Alert string */
 
-#define ALNOARGV         27  /* Alert String */
+#define ALNOARGV 27  /* Alert string */
 
-#define ALNOPFONT        28  /* Alert String */
+#define ALNOPFONT 28  /* Alert string */
 
-#define ALNOCFONT        29  /* Alert String */
+#define ALNOCFONT 29  /* Alert string */
 
-#define ALNOGUIDE        30  /* Alert String */
+#define ALNOGUIDE 30  /* Alert string */
 
-#define ALAPPDEL         31  /* Alert String */
+#define ALAPPDEL 31  /* Alert string */
 
-#define ALAPPEXT         32  /* Alert String */
+#define ALAPPEXT 32  /* Alert string */
 
-#define ALAPPLABEL       33  /* Alert String */
+#define ALAPPLABEL 33  /* Alert string */
 
-#define ALAPPNEW         34  /* Alert String */
+#define ALAPPNEW 34  /* Alert string */
 
-#define ALAPPEXIST       35  /* Alert String */
+#define ALAPPEXIST 35  /* Alert string */
 
-#define ALAPPMISS        36  /* Alert String */
+#define ALAPPMISS 36  /* Alert string */
 
-#define ALNOLABEL        37  /* Alert String */
+#define ALNOLABEL 37  /* Alert string */
 
-#define ALNOPATH         38  /* Alert String */
+#define ALNOPATH 38  /* Alert string */
 
-#define ALNONAME         39  /* Alert String */
+#define ALNONAME 39  /* Alert string */
 
-#define ALNOVA           40  /* Alert String */
+#define ALNOVA 40  /* Alert string */
 
-#define ALNODRIVE        41  /* Alert String */
+#define ALNODRIVE 41  /* Alert string */
 
-#define ALFLOPEN         42  /* Alert String */
+#define ALFLOPEN 42  /* Alert string */
 
-#define ALFLCREATE       43  /* Alert String */
+#define ALFLCREATE 43  /* Alert string */
 
-#define ALFLREAD         44  /* Alert String */
+#define ALFLREAD 44  /* Alert string */
 
-#define ALFLWRITE        45  /* Alert String */
+#define ALFLWRITE 45  /* Alert string */
 
-#define ALDEVWRITE       46  /* Alert String */
+#define ALDEVWRITE 46  /* Alert string */
 
-#define ALFLRENAME       47  /* Alert String */
+#define ALFLRENAME 47  /* Alert string */
 
-#define ALFLATTR         48  /* Alert String */
+#define ALFLATTR 48  /* Alert string */
 
-#define ALPCREATE        49  /* Alert String */
+#define ALPCREATE 49  /* Alert string */
 
-#define ALCCREATE        50  /* Alert String */
+#define ALCCREATE 50  /* Alert string */
 
-#define ALLCREATE        51  /* Alert String */
+#define ALLCREATE 51  /* Alert string */
 
-#define ALFLDELETE       52  /* Alert String */
+#define ALFLDELETE 52  /* Alert string */
 
-#define ALPREAD          53  /* Alert String */
+#define ALPREAD 53  /* Alert string */
 
-#define ALPDELETE        54  /* Alert String */
+#define ALPDELETE 54  /* Alert string */
 
-#define ALVAILL          55  /* Alert String */
+#define ALVAILL 55  /* Alert string */
 
-#define ALNOPAR          56  /* Alert String */
+#define ALNOPAR 56  /* Alert string */
 
-#define ALNOAPP          57  /* Alert String */
+#define ALNOAPP 57  /* Alert string */
 
-#define ALNOOBJ          58  /* Alert String */
+#define ALNOOBJ 58  /* Alert string */
 
-#define ALDISKFULL       59  /* Alert String */
+#define ALDISKFULL 59  /* Alert string */
 
-#define ALLOADICON       60  /* Alert String */
+#define ALLOADICON 60  /* Alert string */
 
-#define ALNOKOBOLD       61  /* Alert String */
+#define ALNOKOBOLD 61  /* Alert string */
 
-#define ALDOUBLE         62  /* Alert String */
+#define ALDOUBLE 62  /* Alert string */
 
-#define ALCONERR         63  /* Alert String */
+#define ALCONERR 63  /* Alert string */
 
-#define ALCONRUN         64  /* Alert String */
+#define ALCONRUN 64  /* Alert string */
 
-#define ALNOTOS2GEM      65  /* Alert String */
+#define ALNOTOS2GEM 65  /* Alert string */
 
-#define ALBREAK          66  /* Alert String */
+#define ALBREAK 66  /* Alert string */
 
-#define ALAPPFIND        67  /* Alert String */
+#define ALAPPFIND 67  /* Alert string */
 
-#define ALAVEDRAG        68  /* Alert String */
+#define ALAVEDRAG 68  /* Alert string */
 
-#define ALAVEDRAGS       69  /* Alert String */
+#define ALAVEDRAGS 69  /* Alert string */
 
-#define ALAVEDRAGT       70  /* Alert String */
+#define ALAVEDRAGT 70  /* Alert string */
 
-#define ALEACDRAG        71  /* Alert String */
+#define ALEACDRAG 71  /* Alert string */
 
-#define ALWDIAL          72  /* Alert String */
+#define ALWDIAL 72  /* Alert string */
 
-#define ALDEVICE         73  /* Alert String */
+#define ALDEVICE 73  /* Alert string */
 
-#define ALNOOUTPUT       74  /* Alert String */
+#define ALNOOUTPUT 74  /* Alert string */
 
-#define ALDOOUTPUT       75  /* Alert String */
+#define ALDOOUTPUT 75  /* Alert string */
 
-#define ALAVLOST         76  /* Alert String */
+#define ALAVLOST 76  /* Alert string */
 
-#define ALDOLOADCONF     77  /* Alert String */
+#define ALDOLOADCONF 77  /* Alert string */
 
-#define ALNOLOCK         78  /* Alert String */
+#define ALNOLOCK 78  /* Alert string */
 
-#define ALDOPRINT        79  /* Alert String */
+#define ALDOPRINT 79  /* Alert string */
 
-#define ALNOPRINT        80  /* Alert String */
+#define ALNOPRINT 80  /* Alert string */
 
-#define ALNOVIEW         81  /* Alert String */
+#define ALNOVIEW 81  /* Alert string */
 
-#define ALDELENTRY       82  /* Alert String */
+#define ALDELENTRY 82  /* Alert string */
 
-#define ALNOWDIAL        83  /* Alert String */
+#define ALNOWDIAL 83  /* Alert string */
 
-#define ALOPENGROUP      84  /* Alert String */
+#define ALOPENGROUP 84  /* Alert string */
 
-#define ALSAVEGROUP      85  /* Alert String */
+#define ALSAVEGROUP 85  /* Alert string */
 
-#define ALNEWGROUP       86  /* Alert String */
+#define ALNEWGROUP 86  /* Alert string */
 
-#define ALGROUPEXIST     87  /* Alert String */
+#define ALGROUPEXIST 87  /* Alert string */
 
-#define ALGROUPCHANGED   88  /* Alert String */
+#define ALGROUPCHANGED 88  /* Alert string */
 
-#define ALNOSHUT         89  /* Alert String */
+#define ALNOSHUT 89  /* Alert string */
 
-#define ALSHUT           90  /* Alert String */
+#define ALSHUT 90  /* Alert string */
 
-#define ALMISS           91  /* Alert String */
+#define ALMISS 91  /* Alert string */
 
-#define ALFONTSEL        92  /* Alert String */
+#define ALFONTSEL 92  /* Alert string */
 
-#define ALILLIMG         93  /* Alert String */
+#define ALILLIMG 93  /* Alert string */
 
-#define ALIMGERR         94  /* Alert String */
+#define ALIMGERR 94  /* Alert string */
 
-#define ALNOTIMG         95  /* Alert String */
+#define ALNOTIMG 95  /* Alert string */
 
-#define ALILLACT         96  /* Alert String */
+#define ALILLACT 96  /* Alert string */
 
-#define ALRECURS         97  /* Alert String */
+#define ALRECURS 97  /* Alert string */
 
-#define ALFEXIST         98  /* Alert String */
+#define ALFEXIST 98  /* Alert string */
 
-#define ALTOOMUCH        99  /* Alert String */
+#define ALTOOMUCH 99  /* Alert string */
 
-#define ALDELALL         100 /* Alert String */
+#define ALDELALL 100  /* Alert string */
 
-#define ALNOGFONT        101 /* Alert String */
+#define ALNOGFONT 101  /* Alert string */
 
-#define ALICONMISS       102 /* Alert String */
+#define ALICONMISS 102  /* Alert string */
 
-#define ALEXIST          103 /* Alert String */
+#define ALEXIST 103  /* Alert string */
 
-#define ALTOOLONG        104 /* Alert String */
+#define ALTOOLONG 104  /* Alert string */
 
-#define ALQUOTEERR       105 /* Alert String */
+#define ALQUOTEERR 105  /* Alert string */
 
-#define ALNOQUOTE        106 /* Alert String */
+#define ALNOQUOTE 106  /* Alert string */
 
-#define ALNOEJECT        107 /* Alert String */
+#define ALNOEJECT 107  /* Alert string */
 
-#define ALSAME           108 /* Alert String */
+#define ALSAME 108  /* Alert string */
 
-#define ALUID            109 /* Alert String */
+#define ALUID 109  /* Alert string */
 
-#define ALGID            110 /* Alert String */
+#define ALGID 110  /* Alert string */
 
-#define ALCMDLINE        111 /* Alert String */
+#define ALCMDLINE 111  /* Alert string */
 
-#define ALPRIVATEMEM     112 /* Alert String */
+#define ALPRIVATEMEM 112  /* Alert string */
 
-#define ALHOTKEY         113 /* Alert String */
+#define ALHOTKEY 113  /* Alert string */
 
-#define ALDIRIMGERR      114 /* Alert String */
+#define ALDIRIMGERR 114  /* Alert string */
 
-#define ALSTARTERR       115 /* Alert String */
+#define ALSTARTERR 115  /* Alert string */
 
-#define ALDUMMY          116 /* Alert String */
+#define ALDUMMY 116  /* Alert string */
 
-#define ALNEWIMG         117 /* Alert String */
+#define ALNEWIMG 117  /* Alert string */
 
-#define ALPMDETAILS      118 /* Alert String */
+#define ALPMDETAILS 118  /* Alert string */
 
-#define MSFORMAT1        119 /* Freier String */
+#define MSFORMAT1 119  /* Free string */
 
-#define MSFORMAT2        120 /* Freier String */
+#define MSFORMAT2 120  /* Free string */
 
-#define MSDEL1           121 /* Freier String */
+#define MSDEL1 121  /* Free string */
 
-#define MSCOPY1          122 /* Freier String */
+#define MSCOPY1 122  /* Free string */
 
-#define MSMOVE1          123 /* Freier String */
+#define MSMOVE1 123  /* Free string */
 
-#define MSLINK1          124 /* Freier String */
+#define MSLINK1 124  /* Free string */
 
-#define MSDEL2           125 /* Freier String */
+#define MSDEL2 125  /* Free string */
 
-#define TXTRASH          126 /* Freier String */
+#define TXTRASH 126  /* Free string */
 
-#define TXCLIP           127 /* Freier String */
+#define TXCLIP 127  /* Free string */
 
-#define TXPRT            128 /* Freier String */
+#define TXPRT 128  /* Free string */
 
-#define TXFILESYS        129 /* Freier String */
+#define TXFILESYS 129  /* Free string */
 
-#define TXAPSEARCH       130 /* Freier String */
+#define TXAPSEARCH 130  /* Free string */
 
-#define TXCLIPSEARCH     131 /* Freier String */
+#define TXCLIPSEARCH 131  /* Free string */
 
-#define TXFILESEARCH     132 /* Freier String */
+#define TXFILESEARCH 132  /* Free string */
 
-#define TXFOLDSEARCH     133 /* Freier String */
+#define TXFOLDSEARCH 133  /* Free string */
 
-#define TXOBJSEARCH      134 /* Freier String */
+#define TXOBJSEARCH 134  /* Free string */
 
-#define TXKBSEARCH       135 /* Freier String */
+#define TXKBSEARCH 135  /* Free string */
 
-#define TXIMGSEARCH      136 /* Freier String */
+#define TXIMGSEARCH 136  /* Free string */
 
-#define TXNOFILE         137 /* Freier String */
+#define TXNOFILE 137  /* Free string */
 
-#define TXWPNONE         138 /* Freier String */
+#define TXWPNONE 138  /* Free string */
 
-#define TXWPINFO1        139 /* Freier String */
+#define TXWPINFO1 139  /* Free string */
 
-#define TXWPINFO         140 /* Freier String */
+#define TXWPINFO 140  /* Free string */
 
-#define TXWPINFOS1       141 /* Freier String */
+#define TXWPINFOS1 141  /* Free string */
 
-#define TXWPINFOS        142 /* Freier String */
+#define TXWPINFOS 142  /* Free string */
 
-#define MSDFILE          143 /* Freier String */
+#define MSDFILE 143  /* Free string */
 
-#define MSDFOLDER        144 /* Freier String */
+#define MSDFOLDER 144  /* Free string */
 
-#define MSRFILE          145 /* Freier String */
+#define MSRFILE 145  /* Free string */
 
-#define MSRFOLDER        146 /* Freier String */
+#define MSRFOLDER 146  /* Free string */
 
-#define TXCONTITLE       147 /* Freier String */
+#define TXCONTITLE 147  /* Free string */
 
-#define TXFTCONSOLE      148 /* Freier String */
+#define TXFTCONSOLE 148  /* Free string */
 
-#define TXFTPATH         149 /* Freier String */
+#define TXFTPATH 149  /* Free string */
 
-#define TXFTGRP          150 /* Freier String */
+#define TXFTGRP 150  /* Free string */
 
-#define TXFTFONTSEL      151 /* Freier String */
+#define TXFTFONTSEL 151  /* Free string */
 
-#define TXTOSWAIT        152 /* Freier String */
+#define TXTOSWAIT 152  /* Free string */
 
-#define TXTOSTERM        153 /* Freier String */
+#define TXTOSTERM 153  /* Free string */
 
-#define TXSVIEW          154 /* Freier String */
+#define TXSVIEW 154  /* Free string */
 
-#define TXSOPEN          155 /* Freier String */
+#define TXSOPEN 155  /* Free string */
 
-#define TXSPRINT         156 /* Freier String */
+#define TXSPRINT 156  /* Free string */
 
-#define TXNEWGRP         157 /* Freier String */
+#define TXNEWGRP 157  /* Free string */
 
-#define TXMSHUT          158 /* Freier String */
+#define TXMSHUT 158  /* Free string */
 
-#define TXOBJOPEN        159 /* Freier String */
+#define TXOBJOPEN 159  /* Free string */
 
-#define TXNOARGVMEM      160 /* Freier String */
+#define TXNOARGVMEM 160  /* Free string */
 
-#define TXSCSTART        161 /* Freier String */
+#define TXSCSTART 161  /* Free string */
 
-#define TXPARENTSEARCH   162 /* Freier String */
+#define TXPARENTSEARCH 162  /* Free string */
 
-#define TXRUNACC         163 /* Freier String */
+#define TXRUNACC 163  /* Free string */
 
-#define TXINSTALLACC     164 /* Freier String */
+#define TXINSTALLACC 164  /* Free string */
 
-#define TXADATE          165 /* Freier String */
+#define TXADATE 165  /* Free string */
 
-#define TXMDATE          166 /* Freier String */
+#define TXMDATE 166  /* Free string */
 
-#define TXCDATE          167 /* Freier String */
+#define TXCDATE 167  /* Free string */
 
-#define TXPOPDEL         168 /* Freier String */
+#define TXPOPDEL 168  /* Free string */
 
-#define TXPOPREMOVE      169 /* Freier String */
+#define TXPOPREMOVE 169  /* Free string */
 
-#define HMABOUT          170 /* Freier String */
+#define HMABOUT 170  /* Free string */
 
-#define HMNEW            171 /* Freier String */
+#define HMNEW 171  /* Free string */
 
-#define HMOPEN           172 /* Freier String */
+#define HMOPEN 172  /* Free string */
 
-#define HMFIND           173 /* Freier String */
+#define HMFIND 173  /* Free string */
 
-#define HMINFO           174 /* Freier String */
+#define HMINFO 174  /* Free string */
 
-#define HMCLOSE          175 /* Freier String */
+#define HMCLOSE 175  /* Free string */
 
-#define HMSHOW           176 /* Freier String */
+#define HMSHOW 176  /* Free string */
 
-#define HMPRINT          177 /* Freier String */
+#define HMPRINT 177  /* Free string */
 
-#define HMSAVEGROUP      178 /* Freier String */
+#define HMSAVEGROUP 178  /* Free string */
 
-#define HMEJECT          179 /* Freier String */
+#define HMEJECT 179  /* Free string */
 
-#define HMFORMAT         180 /* Freier String */
+#define HMFORMAT 180  /* Free string */
 
-#define HMQUIT           181 /* Freier String */
+#define HMQUIT 181  /* Free string */
 
-#define HMCOPY           182 /* Freier String */
+#define HMCOPY 182  /* Free string */
 
-#define HMCUT            183 /* Freier String */
+#define HMCUT 183  /* Free string */
 
-#define HMPASTE          184 /* Freier String */
+#define HMPASTE 184  /* Free string */
 
-#define HMDELETE         185 /* Freier String */
+#define HMDELETE 185  /* Free string */
 
-#define HMSELECTALL      186 /* Freier String */
+#define HMSELECTALL 186  /* Free string */
 
-#define HMSELECTNONE     187 /* Freier String */
+#define HMSELECTNONE 187  /* Free string */
 
-#define HMTEXT           188 /* Freier String */
+#define HMTEXT 188  /* Free string */
 
-#define HMSYMTEXT        189 /* Freier String */
+#define HMSYMTEXT 189  /* Free string */
 
-#define HMICONS          190 /* Freier String */
+#define HMICONS 190  /* Free string */
 
-#define HMMASK           191 /* Freier String */
+#define HMMASK 191  /* Free string */
 
-#define HMFONT           192 /* Freier String */
+#define HMFONT 192  /* Free string */
 
-#define HMFONTSEL        193 /* Freier String */
+#define HMFONTSEL 193  /* Free string */
 
-#define HMSAVEINDEX      194 /* Freier String */
+#define HMSAVEINDEX 194  /* Free string */
 
-#define HMNEXTWIN        195 /* Freier String */
+#define HMNEXTWIN 195  /* Free string */
 
-#define HMCLOSEWIN       196 /* Freier String */
+#define HMCLOSEWIN 196  /* Free string */
 
-#define HMCLOSEALLWIN    197 /* Freier String */
+#define HMCLOSEALLWIN 197  /* Free string */
 
-#define HMDUPWIN         198 /* Freier String */
+#define HMDUPWIN 198  /* Free string */
 
-#define HMAPPL           199 /* Freier String */
+#define HMAPPL 199  /* Free string */
 
-#define HMFUNC           200 /* Freier String */
+#define HMFUNC 200  /* Free string */
 
-#define HMCONFIG         201 /* Freier String */
+#define HMCONFIG 201  /* Free string */
 
-#define HMDRIVE          202 /* Freier String */
+#define HMDRIVE 202  /* Free string */
 
-#define HMCHANGEREZ      203 /* Freier String */
+#define HMCHANGEREZ 203  /* Free string */
 
-#define HMEDITICONS      204 /* Freier String */
+#define HMEDITICONS 204  /* Free string */
 
-#define HMLOADICONS      205 /* Freier String */
+#define HMLOADICONS 205  /* Free string */
 
-#define HMCONSOLE        206 /* Freier String */
+#define HMCONSOLE 206  /* Free string */
 
-#define HMAUTOSAVE       207 /* Freier String */
+#define HMAUTOSAVE 207  /* Free string */
 
-#define HMSAVECONFIG     208 /* Freier String */
+#define HMSAVECONFIG 208  /* Free string */
 
-#define HMLOADCONFIG     209 /* Freier String */
+#define HMLOADCONFIG 209  /* Free string */
 
-#define HMWAIT           210 /* Freier String */
+#define HMWAIT 210  /* Free string */
 
-#define HMSELAPP         211 /* Freier String */
+#define HMSELAPP 211  /* Free string */
 
-#define HMDIINFO         212 /* Freier String */
+#define HMDIINFO 212  /* Free string */
 
-#define HMTRASHINFO      213 /* Freier String */
+#define HMTRASHINFO 213  /* Free string */
 
-#define HMCLIPINFO       214 /* Freier String */
+#define HMCLIPINFO 214  /* Free string */
 
-#define HMDAPPINFO       215 /* Freier String */
+#define HMDAPPINFO 215  /* Free string */
 
-#define HMDFILEINFO      216 /* Freier String */
+#define HMDFILEINFO 216  /* Free string */
 
-#define HMDPRTINFO       217 /* Freier String */
+#define HMDPRTINFO 217  /* Free string */
 
-#define HMGRPINFO        218 /* Freier String */
+#define HMGRPINFO 218  /* Free string */
 
-#define HMGOBINFO        219 /* Freier String */
+#define HMGOBINFO 219  /* Free string */
 
-#define HMCONFIG0        220 /* Freier String */
+#define HMCONFIG0 220  /* Free string */
 
-#define HMCONFIG1        221 /* Freier String */
+#define HMCONFIG1 221  /* Free string */
 
-#define HMCONFIG2        222 /* Freier String */
+#define HMCONFIG2 222  /* Free string */
 
-#define HMCONFIG3        223 /* Freier String */
+#define HMCONFIG3 223  /* Free string */
 
-#define HMCONFIG4        224 /* Freier String */
+#define HMCONFIG4 224  /* Free string */
 
-#define HMCONFIG5        225 /* Freier String */
+#define HMCONFIG5 225  /* Free string */
 
-#define HMAPP0           226 /* Freier String */
+#define HMAPP0 226  /* Free string */
 
-#define HMAPP1           227 /* Freier String */
+#define HMAPP1 227  /* Free string */
 
-#define HMAPP2           228 /* Freier String */
+#define HMAPP2 228  /* Free string */
 
-#define HMAPP3           229 /* Freier String */
+#define HMAPP3 229  /* Free string */
 
-#define HMSORT           230 /* Freier String */
+#define HMSORT 230  /* Free string */
 
-#define HMRENAME         231 /* Freier String */
+#define HMRENAME 231  /* Free string */
 
-#define HMPAR            232 /* Freier String */
+#define HMPAR 232  /* Free string */
 
-#define HMDEVICE         233 /* Freier String */
+#define HMDEVICE 233  /* Free string */
 
-#define HMSELINFO        234 /* Freier String */
+#define HMSELINFO 234  /* Free string */
 
-#define HMPARENT         235 /* Freier String */
+#define HMPARENT 235  /* Free string */
 
-#define DEFAULTAPPL      236 /* Freier String */
+#define DEFAULTAPPL 236  /* Free string */
 
-#define HMCOPYCONF       237 /* Freier String */
+#define HMCOPYCONF 237  /* Free string */
 
-#define HMDELCONF        238 /* Freier String */
+#define HMDELCONF 238  /* Free string */
 
-#define HMHOTKEYS        239 /* Freier String */
+#define HMHOTKEYS 239  /* Free string */
 
-#define HMHKACTIVE       240 /* Freier String */
+#define HMHKACTIVE 240  /* Free string */
 
-#define HMDEFAULT        241 /* Freier String */
+#define HMDEFAULT 241  /* Free string */
