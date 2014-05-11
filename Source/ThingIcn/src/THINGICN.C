@@ -41,7 +41,7 @@
 #define pfree	free
 #endif
 #include <new_rsc.h>
-#include "rsrc\thgicnde.h"
+#include "rsrc\thingicn.h"
 #include "..\include\thingicn.h"
 #include <dudolib.h>
 
