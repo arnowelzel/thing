@@ -21,13 +21,12 @@
  * @license    LGPL
  */
 
-#include <aes.h>
+#include <gem.h>
 #include <mintbind.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-typedef void *FORMINFO;
 #include "..\include\thingfnd.h"
 
 #define MAX_NAMELEN		MAX_FLEN
@@ -37,24 +36,24 @@ typedef void *FORMINFO;
 typedef struct {
 	long magic;
 	char *path, *full;
-	int fsfirst;
-	int dxreaddir;
+	short fsfirst;
+	short dxreaddir;
 	long dir;
 	_DTA dta, *old;
 } GNF;
 
-static long do_search(char *searchpath, long *hits, int depth, int follow,
-		char *filemask, int fm_case, int fm_dirs, unsigned int mindate,
-		unsigned int maxdate, long minsize, long maxsize, char *contentmask,
-		int cm_case, int cm_binary, int (*update)(char *current, long hits),
+static long do_search(char *searchpath, long *hits, short depth, short follow,
+		char *filemask, short fm_case, short fm_dirs, unsigned short mindate,
+		unsigned short maxdate, long minsize, long maxsize, char *contentmask,
+		short cm_case, short cm_binary, short (*update)(char *current, long hits),
 		FILE *result);
-static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
-		int namelen, XATTR *xattr);
+static short get_next_file(char *dirpath, GNF *handle, short follow, char *name,
+		short namelen, XATTR *xattr);
 static void fill_xattr(char *path, XATTR *xattr, _DTA *the_dta);
-static int file_match(char *filename, char *match, int csense, int binary,
-		int (*update)(char *current, long hits));
+static short file_match(char *filename, char *match, short csense, short binary,
+		short (*update)(char *current, long hits));
 static char *fast_strstr(char *str1, long length, char *str2);
-static void write_entry(int is_dir, FILE *result, char *path);
+static void write_entry(short is_dir, FILE *result, char *path);
 
 /**
  * search_main
@@ -98,14 +97,14 @@ static void write_entry(int is_dir, FILE *result, char *path);
  * 0: OK
  * sonst: (GEMDOS-)Fehlermeldung
  */
-long search_main(long drvbits, char *searchpath, int follow, char *filemask,
-		int fm_case, int fm_dirs, unsigned int mindate, unsigned int maxdate,
-		long minsize, long maxsize, char *contentmask, int cm_case,
-		int cm_binary, int (*update)(char *current, long hits),
+long search_main(long drvbits, char *searchpath, short follow, char *filemask,
+		short fm_case, short fm_dirs, unsigned short mindate, unsigned short maxdate,
+		long minsize, long maxsize, char *contentmask, short cm_case,
+		short cm_binary, short (*update)(char *current, long hits),
 		char *resultfile, char *resulttemplate) {
 	FILE *result, *template;
 	long ret, hits;
-	int i;
+	short i;
 	char helppath[] = "A:\\", linebuf[1024];
 
 	/* Gibt es Åberhaupt etwas zu durchsuchen? */
@@ -198,13 +197,13 @@ long search_main(long drvbits, char *searchpath, int follow, char *filemask,
  * 0: OK
  * sonst: (GEMDOS-)Fehlermeldung, -2^32 bei Abbruch durch update()
  */
-static long do_search(char *searchpath, long *hits, int depth, int follow,
-		char *filemask, int fm_case, int fm_dirs, unsigned int mindate,
-		unsigned int maxdate, long minsize, long maxsize, char *contentmask,
-		int cm_case, int cm_binary, int (*update)(char *current, long hits),
+static long do_search(char *searchpath, long *hits, short depth, short follow,
+		char *filemask, short fm_case, short fm_dirs, unsigned short mindate,
+		unsigned short maxdate, long minsize, long maxsize, char *contentmask,
+		short cm_case, short cm_binary, short (*update)(char *current, long hits),
 		FILE *result) {
 	char namebuf[MAX_NAMELEN + 5], path[4 * (MAX_NAMELEN + 1) + 1], *p;
-	int ok, compare, match;
+	short ok, compare, match;
 	long ret;
 	GNF handle;
 	XATTR xattr;
@@ -220,9 +219,9 @@ static long do_search(char *searchpath, long *hits, int depth, int follow,
 		return (0x80000000L);
 
 	match = 0;
-	for (ok = get_next_file(searchpath, &handle, follow, namebuf, (int) sizeof(namebuf), &xattr);
+	for (ok = get_next_file(searchpath, &handle, follow, namebuf, (short) sizeof(namebuf), &xattr);
 			ok;
-			ok = get_next_file(NULL, &handle, follow, namebuf, (int) sizeof(namebuf), &xattr)) {
+			ok = get_next_file(NULL, &handle, follow, namebuf, (short) sizeof(namebuf), &xattr)) {
 		if ((strlen(searchpath) + strlen(namebuf) + 2) > sizeof(path)) {
 			get_next_file(NULL, &handle, follow, NULL, 0, NULL);
 			return (-69);
@@ -303,8 +302,8 @@ static long do_search(char *searchpath, long *hits, int depth, int follow,
  * 1: Alles OK, Inhalt von name und xattr gÅltig
  * 0: Fehler aufgetreten oder keine weitere Datei mehr
  */
-static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
-		int namelen, XATTR *xattr) {
+static short get_next_file(char *dirpath, GNF *handle, short follow, char *name,
+		short namelen, XATTR *xattr) {
 	long err, xerr;
 
 	if (namelen < 17)
@@ -380,7 +379,7 @@ static int get_next_file(char *dirpath, GNF *handle, int follow, char *name,
 	} else {
 		if (handle->dxreaddir) {
 /*fprintf(stderr, "\n7.1 (namelen %d; dir: %ld, name: %s)", namelen, handle->dir, name);*/
-			err = Dxreaddir(namelen, handle->dir, name, xattr, &xerr);
+			err = Dxreaddir(namelen, handle->dir, name, (long *)xattr, &xerr);
 			if (err == -32L)
 				handle->dxreaddir = 0;
 			else if (err || xerr) {
@@ -440,7 +439,7 @@ static void fill_xattr(char *path, XATTR *xattr, _DTA *the_dta) {
 	if (path[1] == ':')
 		xattr->dev = (path[1] & ~32) - 'A';
 	else
-		xattr->dev = (int) Dgetdrv();
+		xattr->dev = (short) Dgetdrv();
 	xattr->nlink = 1;
 	xattr->uid = xattr->gid = 0;
 	xattr->size = the_dta->dta_size;
@@ -465,11 +464,11 @@ static void fill_xattr(char *path, XATTR *xattr, _DTA *the_dta) {
 /* Return nonzero if `string' matches Unix-style wildcard pattern
  `pattern'; zero if not.  */
 
-int wild_match(char *string, char *pattern) {
-	int prev; /* Previous character in character class.  */
-	int matched; /* If 1, character class has been matched.  */
-	int reverse; /* If 1, character class is inverted.  */
-	int esc; /* If 1, next character loses special meaning inside [] */
+short wild_match(char *string, char *pattern) {
+	short prev; /* Previous character in character class.  */
+	short matched; /* If 1, character class has been matched.  */
+	short reverse; /* If 1, character class is inverted.  */
+	short esc; /* If 1, next character loses special meaning inside [] */
 
 	for (; *pattern; string++, pattern++) {
 		switch (*pattern) {
@@ -550,11 +549,11 @@ int wild_match(char *string, char *pattern) {
  * 0: Fehler aufgetreten oder kein Treffer
  * -1: Benutzer hat in der Update-Funktion abgebrochen
  */
-static int file_match(char *filename, char *match, int csense, int binary,
-		int (*update)(char *current, long hits)) {
+static short file_match(char *filename, char *match, short csense, short binary,
+		short (*update)(char *current, long hits)) {
 	char *buffer, *help, *last, *p, c;
 	long size, read, i, err;
-	int handle, found, abort, just_strstr = 0;
+	short handle, found, abort, just_strstr = 0;
 
 	if (!binary) {
 		for (p = match; *p == '*'; p++)
@@ -594,7 +593,7 @@ static int file_match(char *filename, char *match, int csense, int binary,
 		free(buffer);
 		return (0);
 	}
-	handle = (int) err;
+	handle = (short) err;
 	found = abort = 0;
 	if (binary) {
 		size = SEARCH_BUF - 1;
@@ -722,12 +721,12 @@ static char *fast_strstr(char *str1, long length, char *str2) {
  * result: Zeiger auf Handle der Ergebnisgruppe
  * path: Kompletter Pfad des gefundenen Objekts
  */
-static void write_entry(int is_dir, FILE *result, char *path) {
+static void write_entry(short is_dir, FILE *result, char *path) {
 	char title[MAX_TITLELEN + 1], *p;
-	int l;
+	short l;
 
 	fprintf(result, is_dir ? "OFLD \"" : "OFIL \"");
-	if ((l = (int) strlen(path)) > MAX_TITLELEN) {
+	if ((l = (short) strlen(path)) > MAX_TITLELEN) {
 		strncpy(title, path, 10);
 		strcpy(title + 10, "...");
 		strcat(title, &path[l - MAX_TITLELEN + 13]);
@@ -735,7 +734,7 @@ static void write_entry(int is_dir, FILE *result, char *path) {
 		strcpy(title, path);
 	for (p = title; *p; p++) {
 		if ((*p == '\"') || (*p == '@') || ((unsigned char) *p < ' '))
-			fprintf(result, "%02d", (int) *p);
+			fprintf(result, "%02d", (short) *p);
 		else
 			fprintf(result, "%c", *p);
 	}

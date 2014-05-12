@@ -32,7 +32,7 @@
  * @param
  * @param
  */
-void debugLog(int init, const char *format, ...) {
+void debugLog(short init, const char *format, ...) {
 	FILE *fh;
 	va_list va;
 	char logfileName[MAX_PLEN];

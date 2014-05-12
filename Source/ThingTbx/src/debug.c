@@ -22,7 +22,7 @@
  */
 
 #ifdef DEBUG
-#include "..\..\thing\include\globdef.h"
+#include "..\include\thingtbx.h"
 #include <stdarg.h>
 
 /**
@@ -31,7 +31,7 @@
  * @param
  * @param
  */
-void debugLog(int init, char *logFile, const char *format, ...) {
+void debugLog(short init, char *logFile, const char *format, ...) {
 	FILE *fh;
 	va_list va;
 	char logfileName[256];

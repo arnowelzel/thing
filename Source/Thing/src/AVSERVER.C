@@ -34,6 +34,7 @@
 #include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include <setjmp.h>
+#include <signal.h>
 #include "..\include\dragdrop.h"
 
 /* Lokale Prototypen */
@@ -47,7 +48,7 @@ jmp_buf check;
  *
  * @return
  */
-int av_init(void) {
+short av_init(void) {
 	/* Speicher reservieren */
 	if (tb.sys & SY_XALLOC)
 		aesbuf = Mxalloc(MAX_AVLEN + 9, 0x23); /* Global, TT preferred */
@@ -81,10 +82,10 @@ void av_exit(void) {
  Auf AV_...-Anfragen reagieren
  -------------------------------------------------------------------------*/
 /* AV_PROTOKOLL */
-void avs_protokoll(int *msgbuf) {
+void avs_protokoll(short *msgbuf) {
 	char *name;
 	AVINFO *avinfo;
-	int ability;
+	short ability;
 
 	name = (char *) int2long(&msgbuf[6], &msgbuf[7]);
 	if (name == 0L)
@@ -136,7 +137,7 @@ void avs_protokoll(int *msgbuf) {
  *
  * @param *msgbuf
  */
-void avs_getstatus(int *msgbuf) {
+void avs_getstatus(short *msgbuf) {
 	AVINFO *avinfo;
 	ACSTATE *accstate;
 	char *state;
@@ -163,7 +164,7 @@ void avs_getstatus(int *msgbuf) {
  *
  * @param *msgbuf
  */
-void avs_status(int *msgbuf) {
+void avs_status(short *msgbuf) {
 	AVINFO *avinfo;
 	char *state;
 
@@ -178,14 +179,14 @@ void avs_status(int *msgbuf) {
 /**
  *  AV_SENDKEY
  */
-void avs_sendkey(int *msgbuf) {
+void avs_sendkey(short *msgbuf) {
 	handle_key(msgbuf[3], msgbuf[4]);
 }
 
 /**
  *  AV_ASKFILEFONT
  */
-void avs_askfilefont(int *msgbuf) {
+void avs_askfilefont(short *msgbuf) {
 	AVINFO *aptr;
 
 	/* Abfrage vermerken, damit bei Bedarf VA_FONTCHANGED geschickt wird */
@@ -197,7 +198,7 @@ void avs_askfilefont(int *msgbuf) {
 }
 
 /* AV_ASKCONFONT */
-void avs_askconfont(int *msgbuf) {
+void avs_askconfont(short *msgbuf) {
 	AVINFO *aptr;
 
 	/* Abfrage vermerken, damit bei Bedarf VA_FONTCHANGED geschickt wird */
@@ -209,9 +210,9 @@ void avs_askconfont(int *msgbuf) {
 }
 
 /* AV_OPENWIND */
-void avs_openwind(int *msgbuf) {
+void avs_openwind(short *msgbuf) {
 	char *path, *wildcard;
-	int ret;
+	short ret;
 
 	path = (char *) int2long(&msgbuf[3], &msgbuf[4]);
 	wildcard = (char *) int2long(&msgbuf[5], &msgbuf[6]);
@@ -233,9 +234,9 @@ void avs_openwind(int *msgbuf) {
 }
 
 /* AV_STARTPROG */
-void avs_startprog(int *msgbuf) {
+void avs_startprog(short *msgbuf) {
 	char *prg, *cmd, *tmp;
-	int ret, l, magic;
+	short ret, l, magic;
 
 	prg = (char *) int2long(&msgbuf[3], &msgbuf[4]);
 	cmd = (char *) int2long(&msgbuf[5], &msgbuf[6]);
@@ -252,7 +253,7 @@ void avs_startprog(int *msgbuf) {
 	ret = 1;
 	tmp = 0L;
 	/* Angegebener Programmname mit zulaessiger Laenge? */
-	if ((int) strlen(prg) < MAX_PLEN) {
+	if ((short) strlen(prg) < MAX_PLEN) {
 		tmp = pmalloc(MAX_AVLEN);
 		if (tmp) {
 			strcpy(tmp, prg);
@@ -260,7 +261,7 @@ void avs_startprog(int *msgbuf) {
 
 			if (cmd) {
 				/* Laenge insgesamt ok? */
-				l = (int) strlen(tmp) + (int) strlen(cmd) + 2;
+				l = (short) strlen(tmp) + (short) strlen(cmd) + 2;
 				if (l < MAX_AVLEN) {
 					strcat(tmp, " ");
 					strcat(tmp, cmd);
@@ -283,7 +284,7 @@ void avs_startprog(int *msgbuf) {
 }
 
 /* AV_ACCWINDOPEN */
-void avs_accwindopen(int *msgbuf) {
+void avs_accwindopen(short *msgbuf) {
 	acwin_add(msgbuf[1], msgbuf[3]);
 
 	mn_check();
@@ -291,7 +292,7 @@ void avs_accwindopen(int *msgbuf) {
 }
 
 /* AV_ACCWINDCLOSED */
-void avs_accwindclosed(int *msgbuf) {
+void avs_accwindclosed(short *msgbuf) {
 	ACWIN *accwin;
 
 	accwin = acwin_find(msgbuf[3]);
@@ -303,10 +304,10 @@ void avs_accwindclosed(int *msgbuf) {
 }
 
 /* AV_PATH_UPDATE */
-void avs_path_update(int *msgbuf) {
+void avs_path_update(short *msgbuf) {
 	W_PATH *wpath;
 	char *path;
-	int l, i;
+	short l, i;
 
 	path = (char *) int2long(&msgbuf[3], &msgbuf[4]);
 	if (path == 0L)
@@ -315,7 +316,7 @@ void avs_path_update(int *msgbuf) {
 	if (!avp_checkbuf(msgbuf[1], AV_PATH_UPDATE, "AV_PATH_UPDATE", path, 0))
 		return;
 
-	l = (int) strlen(path);
+	l = (short) strlen(path);
 
 	for (i = 0; i < MAX_PWIN; i++) {
 		if (glob.win[i].state & WSOPEN) {
@@ -323,7 +324,7 @@ void avs_path_update(int *msgbuf) {
 			if (!strncmp(path, wpath->path, (long) l)) {
 				wpath->offx = wpath->offy = 0;
 				wpath_update(&glob.win[i]);
-				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 			}
 		}
 	}
@@ -333,8 +334,8 @@ void avs_path_update(int *msgbuf) {
 }
 
 /* AV_COPY_DRAGGED */
-void avs_copy_dragged(int *msgbuf) {
-	int ks, ret, id;
+void avs_copy_dragged(short *msgbuf) {
+	short ks, ret, id;
 	char *path, lpath[MAX_PLEN];
 
 	id = msgbuf[1];
@@ -347,7 +348,7 @@ void avs_copy_dragged(int *msgbuf) {
 		return;
 
 	strcpy(lpath, path);
-	if (lpath[(int) strlen(lpath) - 1] != '\\')
+	if (lpath[(short) strlen(lpath) - 1] != '\\')
 		strcat(lpath, "\\");
 	ret = dl_copy(lpath, ks, aesbuf);
 
@@ -358,12 +359,12 @@ void avs_copy_dragged(int *msgbuf) {
 }
 
 /* AV_WHAT_IZIT */
-void avs_what_izit(int *msgbuf) {
-	int whandle;
+void avs_what_izit(short *msgbuf) {
+	short whandle;
 	WININFO *win;
 	WP_ENTRY *item;
 	WG_ENTRY *gitem, *gprev;
-	int l, obj;
+	short l, obj;
 	ACWIN *accwin;
 
 	aesmsg[0] = VA_THAT_IZIT;
@@ -399,7 +400,7 @@ void avs_what_izit(int *msgbuf) {
 					case EC_PARENT:
 						aesmsg[4] = VA_OB_FOLDER;
 						if (item->class == EC_PARENT) {
-							l = (int)strlen(aesbuf) - 2;
+							l = (short)strlen(aesbuf) - 2;
 							while (aesbuf[l] != '\\')
 								l--;
 							aesbuf[l + 1] = 0;
@@ -506,15 +507,15 @@ void avs_what_izit(int *msgbuf) {
 
 /* Unterfunktion zu avs_drag_on_window(): Buffer bei der
  ersten Leerstelle abschneiden */
-int av_cutbuf(char *buf) {
-	int i;
+short av_cutbuf(char *buf) {
+	short i;
 
 	if (!get_buf_entry(buf, buf, 0L)) {
 		frm_alert(1, rs_frstr[ALQUOTEERR], altitle, conf.wdial, 0L);
 		return (-1);
 	}
 
-	i = (int) strlen(buf);
+	i = (short) strlen(buf);
 	if (buf[i - 1] == '\\')
 		return 0;
 	else
@@ -522,11 +523,11 @@ int av_cutbuf(char *buf) {
 }
 
 /* AV_DRAG_ON_WINDOW */
-void avs_drag_on_window(int *msgbuf) {
-	int x, y, j, n, done;
-	int id, ks, drag;
+void avs_drag_on_window(short *msgbuf) {
+	short x, y, j, n, done, d;
+	short id, ks, drag;
 	char *buf, *help;
-	int whandle;
+	short whandle;
 	ACWIN *accwin;
 	WININFO *win;
 	W_PATH *wpath;
@@ -534,21 +535,21 @@ void avs_drag_on_window(int *msgbuf) {
 	W_GRP *wgrp;
 	WG_ENTRY *gitem, *gprev;
 	FORMINFO *fi;
-	int icon, obj;
-	int aptype;
+	short icon, obj;
+	short aptype;
 	APPLINFO appl, *aptr;
 	char aname[MAX_FLEN], apath[MAX_PLEN];
 	char name[MAX_PLEN];
 	char *bptr;
 	FILESYS filesys;
-	int ix, iy, iw, ih, sx, sy, ry;
-	int tx1, ty1, tx2, ty2;
-	int l, rex;
-	int ftype;
-	int first;
+	short ix, iy, iw, ih, sx, sy, ry;
+	short tx1, ty1, tx2, ty2;
+	short l, rex;
+	short ftype;
+	short first;
 	/* Ergaenzungen fuer MT-D&D */
-	int owner, ok;
-	int dfh, dret;
+	short owner, ok;
+	short dfh, dret;
 	char dext[32];
 	long dsize;
 	unsigned long dtype;
@@ -639,7 +640,7 @@ void avs_drag_on_window(int *msgbuf) {
 								strcpy(glob.cmd,wpath->path);
 								strcat(glob.cmd,pitem->name);
 								strcat(glob.cmd," ");
-								if ((int)strlen(glob.cmd) + (int)strlen(buf) < MAX_CLEN) {
+								if ((short)strlen(glob.cmd) + (short)strlen(buf) < MAX_CLEN) {
 									strcat(glob.cmd, buf);
 									drag = app_start(aptr, glob.cmd, wpath->path, &rex);
 								}
@@ -672,7 +673,7 @@ void avs_drag_on_window(int *msgbuf) {
 						break;
 						case EC_PARENT: /* Parent -> Kopieren */
 						strcpy(apath, wpath->path);
-						l = (int)strlen(apath) - 2;
+						l = (short)strlen(apath) - 2;
 						while (apath[l] != '\\')
 							l--;
 						apath[l + 1] = 0;
@@ -708,7 +709,7 @@ void avs_drag_on_window(int *msgbuf) {
 								{
 									strcpy(glob.cmd,name);
 									strcat(glob.cmd," ");
-									if((int)strlen(glob.cmd)+(int)strlen(buf)<MAX_CLEN)
+									if((short)strlen(glob.cmd)+(short)strlen(buf)<MAX_CLEN)
 									{
 										strcat(glob.cmd,buf);
 										drag=app_start(aptr,glob.cmd,wpath->path,&rex);
@@ -750,7 +751,7 @@ void avs_drag_on_window(int *msgbuf) {
 					bptr = buf;
 					while(get_buf_entry(bptr, name, &bptr))
 					{
-						j = (int)strlen(name);
+						j = (short)strlen(name);
 						if(name[j-1]=='\\') /* Ordner */
 						{
 							name[j - 1] = 0;
@@ -778,7 +779,7 @@ void avs_drag_on_window(int *msgbuf) {
 						}
 					}
 					wgrp_tree(win);
-					win_redraw(win,tb.desk.x,tb.desk.y,tb.desk.w,tb.desk.h);
+					win_redraw(win,tb.desk.g_x,tb.desk.g_y,tb.desk.g_w,tb.desk.g_h);
 					win_slide(win,S_INIT,0,0);
 					wgrp_change(win);
 				}
@@ -809,7 +810,7 @@ void avs_drag_on_window(int *msgbuf) {
 				/* Eigentuemer ermitteln */
 				owner = -1;
 				if (tb.sys & SY_OWNER)
-					if (!new_wind_get(whandle,WF_OWNER,&owner, &n, &n, &n))
+					if (!wind_get(whandle,WF_OWNER,&owner, &d, &d, &d))
 						owner = -1;
 				if (owner != -1 && owner != tb.app_id) {
 					/* MultiTOS D&D probieren */
@@ -899,7 +900,7 @@ void avs_drag_on_window(int *msgbuf) {
 					if (aptr) {
 						strcpy(glob.cmd, p->spec.file->name);
 						strcat(glob.cmd, " ");
-						if ((int)strlen(glob.cmd) + (int)strlen(buf) < MAX_CLEN) {
+						if ((short)strlen(glob.cmd) + (short)strlen(buf) < MAX_CLEN) {
 							strcat(glob.cmd, buf);
 							drag = app_start(aptr, glob.cmd, apath, &rex);
 						} else {
@@ -926,14 +927,14 @@ void avs_drag_on_window(int *msgbuf) {
 			ICONDESK *p;
 			/* Startposition */
 			sx = x;
-			sy = y - 20 - tb.desk.y;
+			sy = y - 20 - tb.desk.g_y;
 			if (sy < 0)
 				sy = 0;
 			ry = sy;
 
 			/* Position/Masse des Gesamtrechtecks fuer Desktop-Redraw */
-			tx1 = tb.desk.x + tb.desk.w;
-			ty1 = tb.desk.y + tb.desk.h;
+			tx1 = tb.desk.g_x + tb.desk.g_w;
+			ty1 = tb.desk.g_y + tb.desk.g_h;
 			tx2 =
 			ty2 = 0;
 
@@ -957,7 +958,7 @@ void avs_drag_on_window(int *msgbuf) {
 				}
 				else /* Neues Icon erzeugen */
 				{
-					j = (int)strlen(name);
+					j = (short)strlen(name);
 					full2comp(name, apath, aname);
 					if (name[j-1] != '\\') /* Datei */
 					{
@@ -1009,7 +1010,7 @@ void avs_drag_on_window(int *msgbuf) {
 
 						/* Naechste Position */
 						sy += 48;
-						if ((sy + 20) > tb.desk.h) {
+						if ((sy + 20) > tb.desk.g_h) {
 							sy = ry;
 							sx += 80;
 						}
@@ -1040,7 +1041,7 @@ void avs_drag_on_window(int *msgbuf) {
 /**
  *  AV_EXIT
  */
-void avs_exit(int *msgbuf) {
+void avs_exit(short *msgbuf) {
 	avp_exit(msgbuf[3]);
 
 	mn_check();
@@ -1050,13 +1051,13 @@ void avs_exit(int *msgbuf) {
 /**
  *  AV_XWIND
  */
-void avs_xwind(int *msgbuf) {
+void avs_xwind(short *msgbuf) {
 	char *path, *wildcard;
-	int i, j, open, select, ret;
+	short i, j, open, select, ret;
 	W_PATH *wpath;
 	WP_ENTRY *item;
-	int wrd,found,new;
-	RECT wrect;
+	short wrd,found,new;
+	GRECT wrect;
 	WININFO *pwin;
 
 	select = 0;
@@ -1099,7 +1100,7 @@ void avs_xwind(int *msgbuf) {
 						strcpy(wpath->index.wildcard, wildcard);
 					wpath->rel = 0;
 					wpath_update(pwin);
-					win_redraw(pwin, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(pwin, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 				}
 			}
 		}
@@ -1154,7 +1155,7 @@ void avs_xwind(int *msgbuf) {
 				if (!new) {
 					if (wpath->tree)
 						wpath->tree->ob_type = G_IBOX;
-					win_redraw(pwin, wrect.x, wrect.y, wrect.w, wrect.h);
+					win_redraw(pwin, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 					if (wpath->tree)
 						wpath->tree->ob_type = G_BOX;
 					wpath_showsel(pwin, 1);
@@ -1174,7 +1175,7 @@ void avs_xwind(int *msgbuf) {
 /**
  *  VA_START
  */
-void avs_vastart(int *msgbuf) {
+void avs_vastart(short *msgbuf) {
 	char *cmd;
 	AVINFO *av;
 
@@ -1207,8 +1208,8 @@ void avs_vastart(int *msgbuf) {
 /**
  *  AV_VIEW
  */
-void avs_view(int *msgbuf) {
-	int ret;
+void avs_view(short *msgbuf) {
+	short ret;
 	char *name;
 
 	name = (char *) int2long(&msgbuf[3], &msgbuf[4]);
@@ -1225,16 +1226,16 @@ void avs_view(int *msgbuf) {
 /**
  *  AV_FILEINFO
  */
-void avs_fileinfo(int *msgbuf) {
-	int id, ret, done, j, cont, doit, donext;
+void avs_fileinfo(short *msgbuf) {
+	short id, ret, done, j, cont, doit, donext;
 	char *src, *lsrc, *ldst;
 	WP_ENTRY item;
 	FILESYS filesys;
 	char *full, *file, *path;
 	XATTR xattr;
-	DTA dta;
+	_DTA dta;
 	char *bptr;
-	int drv;
+	short drv;
 
 	id = msgbuf[1];
 	ret = 1;
@@ -1266,7 +1267,7 @@ void avs_fileinfo(int *msgbuf) {
 		while (!done && get_buf_entry(bptr, full, &bptr)) {
 			while (*bptr == ' ')
 				bptr++;
-			j = (int) strlen(full);
+			j = (short) strlen(full);
 			/* Pruefen, ob weitere Eintraege vorliegen */
 			donext = *bptr;
 			done = !donext;
@@ -1296,15 +1297,15 @@ void avs_fileinfo(int *msgbuf) {
 
 				if (drv == -1) {
 					if ((ret = file_exists(full, 0, &xattr)) == 0) {
-						dta.d_time = xattr.mtime;
-						dta.d_date = xattr.mdate;
-						dta.d_length = xattr.size;
-						dta.d_attrib = xattr.attr;
+						dta.dta_time = xattr.mtime;
+						dta.dta_date = xattr.mdate;
+						dta.dta_size = xattr.size;
+						dta.dta_attribute = xattr.attr;
 						item.mode = xattr.mode;
-						item.date = dta.d_date;
-						item.time = dta.d_time;
-						item.size = dta.d_length;
-						item.attr = dta.d_attrib;
+						item.date = dta.dta_date;
+						item.time = dta.dta_time;
+						item.size = dta.dta_size;
+						item.attr = dta.dta_attribute;
 					} else {
 						mybeep();
 						ret = -33;
@@ -1366,8 +1367,8 @@ void avs_fileinfo(int *msgbuf) {
 /**
  *  AV_COPYFILE, AV_DELFILE
  */
-void avs_copyfile(int *msgbuf, int del) {
-	int id, ret, ks, crepl;
+void avs_copyfile(short *msgbuf, short del) {
+	short id, ret, ks, crepl;
 	char *src, *dst;
 	char ldst[MAX_PLEN], *lsrc;
 
@@ -1429,7 +1430,7 @@ void avs_copyfile(int *msgbuf, int del) {
 
  AV-Accessory/Applikation hinzufuegen/loeschen
  -------------------------------------------------------------------------*/
-AVINFO *avp_add(char *name, int id, int state) {
+AVINFO *avp_add(char *name, short id, short state) {
 	AVINFO *avinfo, *aptr;
 
 	/* Speicher reservieren */
@@ -1488,7 +1489,7 @@ void avp_remove(AVINFO *avinfo) {
 
  AV-Infos einer Applikation abfragen
  -------------------------------------------------------------------------*/
-AVINFO *avp_get(int id) {
+AVINFO *avp_get(short id) {
 	AVINFO *aptr;
 
 	aptr = glob.avinfo;
@@ -1506,7 +1507,7 @@ AVINFO *avp_get(int id) {
 
  Alle Informationen einer AV-Applikation aus den Listen loeschen
  -------------------------------------------------------------------------*/
-void avp_exit(int id) {
+void avp_exit(short id) {
 	ACWIN *aptr, *aptr1;
 	AVINFO *avptr;
 
@@ -1535,9 +1536,9 @@ void avp_exit(int id) {
  Prueft, ob die Applikation mit der angegebenen ID noch aktiv ist, und
  entfernt ggf. die Anmeldungen falls dies nicht der Fall ist.
  -------------------------------------------------------------------------*/
-int avp_check(int id) {
+short avp_check(short id) {
 	AVINFO *aptr;
-	int avid, whandle;
+	short avid, whandle;
 
 	aptr = avp_get(id);
 	/* Applikation als AV-Client angemeldet? */
@@ -1566,7 +1567,7 @@ int avp_check(int id) {
 
  Fenster hinzufuegen/loeschen
  -------------------------------------------------------------------------*/
-ACWIN *acwin_add(int id, int handle) {
+ACWIN *acwin_add(short id, short handle) {
 	ACWIN *accwin, *aptr;
 
 	/* Speicher reservieren */
@@ -1623,7 +1624,7 @@ void acwin_remove(ACWIN *accwin) {
 
  Accessory-Fenster anhand des GEM-Handles ermitteln
  -------------------------------------------------------------------------*/
-ACWIN *acwin_find(int handle) {
+ACWIN *acwin_find(short handle) {
 	ACWIN *aptr;
 
 	if (!glob.accwin)
@@ -1644,7 +1645,7 @@ ACWIN *acwin_find(int handle) {
  Status-Informationen hinzufÅgen/lîschen
  -------------------------------------------------------------------------*/
 ACSTATE *astate_add(char *name, char *state) {
-	int add;
+	short add;
 	ACSTATE *accstate, *aptr;
 
 	/* Infos schon vorhanden? */
@@ -1741,7 +1742,7 @@ ACSTATE *astate_get(char *name) {
  * 0: Client unterstuetzt kein Quoting
  * sonst: Client versteht Quoting von Filenamen
  */
-int avp_can_quote(int ap_id) {
+short avp_can_quote(short ap_id) {
 	AVINFO *aptr;
 
 	if ((aptr = avp_get(ap_id)) != NULL)
@@ -1767,13 +1768,13 @@ int avp_can_quote(int ap_id) {
  * 0: Puffer nicht OK, Alert wurde angezeigt
  * sonst: Alles klar, go ahead
  */
-int avp_checkbuf(int id, int msg, char *tmsg, char *buf, int write) {
-	int ok;
+short avp_checkbuf(short id, short msg, char *tmsg, char *buf, short write) {
+	short ok;
 	long old_sigbus;
 	char *name, d, *origbuf;
 	AVINFO *ainfo;
 
-	old_sigbus = (long) Psignal(SIGBUS, handle_sigbus);
+	old_sigbus = (long) Psignal(SIGBUS, (long) handle_sigbus);
 	if (old_sigbus == -32L)
 		return (1);
 	origbuf = buf;
@@ -1800,7 +1801,7 @@ int avp_checkbuf(int id, int msg, char *tmsg, char *buf, int write) {
 				break;
 		}
 	}
-	Psignal(SIGBUS, (void *) old_sigbus);
+	Psignal(SIGBUS, (long) old_sigbus);
 	return (ok);
 }
 

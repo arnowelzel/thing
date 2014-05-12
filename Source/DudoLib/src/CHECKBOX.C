@@ -42,7 +42,7 @@ static void drawCross(PARMBLK *parmblock);
  * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
  */
 WORD cdecl checkbox(PARMBLK *parmblock) {
-	WORD pxy[6], cppxy[8], color_index[] = { BLACK, WHITE }, text_effects, du;
+	WORD pxy[6], cppxy[8], color_index[] = { G_BLACK, G_WHITE }, text_effects, du;
 	MFDB screen, checkbox = { NULL, 16, 0, 1, 0, 1 };
 	UBPARM *ubparm;
 
@@ -56,7 +56,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		 * Damit keine Reste von DISABLED mehr da sind, muessen wir
 		 * das komplette Objekt neuzeichnen.
 		 */
-		if (parmblock->pb_prevstate & DISABLED || parmblock->pb_currstate & DISABLED) {
+		if (parmblock->pb_prevstate & OS_DISABLED || parmblock->pb_currstate & OS_DISABLED) {
 			clearObject(parmblock);
 		}
 	}
@@ -78,7 +78,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		cppxy[7] = cppxy[5] + parmblock->pb_h - 1;
 	}
 
-	if ((parmblock->pb_currstate & DISABLED) == FALSE || get3dLook() == FALSE || userdef->img_size == IMGSIZE_NONE) {
+	if ((parmblock->pb_currstate & OS_DISABLED) == FALSE || get3dLook() == FALSE || userdef->img_size == IMGSIZE_NONE) {
 		/* RO->LO->LU */
 		pxy[0] = parmblock->pb_x + userdef->img_width - 2;
 		pxy[1] = parmblock->pb_y + 1;
@@ -86,7 +86,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		pxy[3] = pxy[1];
 		pxy[4] = pxy[2];
 		pxy[5] = parmblock->pb_y + parmblock->pb_h - 2;
-		vsl_color(userdef->vdi_handle, BLACK);
+		vsl_color(userdef->vdi_handle, G_BLACK);
 		v_pline(userdef->vdi_handle, 3, pxy);
 
 		/* RO->RU->LU */
@@ -95,8 +95,8 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		pxy[3] = parmblock->pb_y + parmblock->pb_h - 2;
 		pxy[4] = parmblock->pb_x + 2;
 		pxy[5] = pxy[3];
-		if (get3dLook() == TRUE && (parmblock->pb_currstate & DISABLED) == FALSE)
-			vsl_color(userdef->vdi_handle, WHITE);
+		if (get3dLook() == TRUE && (parmblock->pb_currstate & OS_DISABLED) == FALSE)
+			vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 3, pxy);
 
 		/* Kreuz loeschen */
@@ -106,7 +106,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 		pxy[3] = parmblock->pb_y + parmblock->pb_h - 3;
 
 		if (get3dLook() == FALSE)
-			vsf_color(userdef->vdi_handle, WHITE);
+			vsf_color(userdef->vdi_handle, G_WHITE);
 		else
 			vsf_color(userdef->vdi_handle, userdef->backgrd_color);
 		vsf_interior(userdef->vdi_handle, FIS_SOLID);
@@ -117,33 +117,33 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 
 	if (get3dLook() == FALSE) {
 		if (userdef->img_size == IMGSIZE_NONE) {
-			if (parmblock->pb_currstate & SELECTED)
-				vsl_color(userdef->vdi_handle, BLACK);
+			if (parmblock->pb_currstate & OS_SELECTED)
+				vsl_color(userdef->vdi_handle, G_BLACK);
 			else
-				vsl_color(userdef->vdi_handle, WHITE);
+				vsl_color(userdef->vdi_handle, G_WHITE);
 
 			drawCross(parmblock);
-		} else if (parmblock->pb_currstate & SELECTED) {
+		} else if (parmblock->pb_currstate & OS_SELECTED) {
 			checkbox.fd_addr = (void *) CheckBoxSelected;
 			vrt_cpyfm(userdef->vdi_handle, MD_TRANS, cppxy, &checkbox, &screen, color_index);
 		}
 
 		vswr_mode(userdef->vdi_handle, MD_TRANS);
-		vst_color(userdef->vdi_handle, BLACK);
+		vst_color(userdef->vdi_handle, G_BLACK);
 		text_effects = TF_NORMAL;
 		v_xgtext(parmblock->pb_x + userdef->img_width + userdef->spaceChar_w, parmblock->pb_y, text_effects, ubparm, parmblock);
 
 		clipping(parmblock, FALSE);
 
-		return (parmblock->pb_currstate & ~SELECTED);
+		return (parmblock->pb_currstate & ~OS_SELECTED);
 
 	} else {
-		if (parmblock->pb_currstate & SELECTED) {
+		if (parmblock->pb_currstate & OS_SELECTED) {
 			if (userdef->img_size == IMGSIZE_NONE) {
-				vsl_color(userdef->vdi_handle, BLACK);
+				vsl_color(userdef->vdi_handle, G_BLACK);
 				drawCross(parmblock);
 			} else {
-				if (parmblock->pb_currstate & DISABLED)
+				if (parmblock->pb_currstate & OS_DISABLED)
 					checkbox.fd_addr = (void *) CheckBoxSelectedDisabled;
 				else
 					checkbox.fd_addr = (void *) CheckBoxSelected;
@@ -153,14 +153,14 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 			if (userdef->img_size == IMGSIZE_NONE) {
 				vsl_color(userdef->vdi_handle, userdef->backgrd_color);
 				drawCross(parmblock);
-			} else if (parmblock->pb_currstate & DISABLED) {
+			} else if (parmblock->pb_currstate & OS_DISABLED) {
 				checkbox.fd_addr = (void *) CheckBoxNormalDisabled;
 				vrt_cpyfm(userdef->vdi_handle, MD_TRANS, cppxy, &checkbox, &screen, color_index);
 			}
 		}
 
 		vswr_mode(userdef->vdi_handle, MD_TRANS);
-		if (parmblock->pb_currstate & DISABLED)
+		if (parmblock->pb_currstate & OS_DISABLED)
 			text_effects = TF_LIGHTENED;
 		else
 			text_effects = TF_NORMAL;

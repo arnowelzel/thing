@@ -40,9 +40,9 @@
 
  Einstellungen laden/sichern
  -------------------------------------------------------------------------*/
-int conf_save(int tmp) {
+short conf_save(short tmp) {
 	FILE *fh;
-	int i, sh, sv, x, y, w, h;
+	short i, sh, sv, x, y, w, h, d;
 	char *name, *rname;
 	char *bname, *brname;
 	APPLINFO *appl;
@@ -219,40 +219,40 @@ int conf_save(int tmp) {
 		/* Verzeichnisfenster */
 		for (i = 0; i < 16; i++) {
 			if (glob.win[i].state & WSICON) {
-				x = glob.win[i].save.x;
-				y = glob.win[i].save.y;
-				w = glob.win[i].save.w;
-				h = glob.win[i].save.h;
+				x = glob.win[i].save.g_x;
+				y = glob.win[i].save.g_y;
+				w = glob.win[i].save.g_w;
+				h = glob.win[i].save.g_h;
 			} else {
-				x = glob.win[i].curr.x;
-				y = glob.win[i].curr.y;
-				w = glob.win[i].curr.w;
-				h = glob.win[i].curr.h;
+				x = glob.win[i].curr.g_x;
+				y = glob.win[i].curr.g_y;
+				w = glob.win[i].curr.g_w;
+				h = glob.win[i].curr.g_h;
 			}
-			lx = (double) (x - tb.desk.x) * 10000L / (double) tb.desk.w;
-			ly = (double) (y - tb.desk.y) * 10000L / (double) tb.desk.h;
-			lw = (double) w * 10000L / (double) tb.desk.w;
-			lh = (double) h * 10000L / (double) tb.desk.h;
-			fprintf(fh, "WIXY %d %d %d %d %d\n", i, (int) lx, (int) ly, (int) lw, (int) lh);
+			lx = (double) (x - tb.desk.g_x) * 10000L / (double) tb.desk.g_w;
+			ly = (double) (y - tb.desk.g_y) * 10000L / (double) tb.desk.g_h;
+			lw = (double) w * 10000L / (double) tb.desk.g_w;
+			lh = (double) h * 10000L / (double) tb.desk.g_h;
+			fprintf(fh, "WIXY %d %d %d %d %d\n", i, (short) lx, (short) ly, (short) lw, (short) lh);
 		}
 
 		/* Console-Fenster */
 		if (con.win.state & WSICON) {
-			x = con.win.save.x;
-			y = con.win.save.y;
-			w = con.win.save.w;
-			h = con.win.save.h;
+			x = con.win.save.g_x;
+			y = con.win.save.g_y;
+			w = con.win.save.g_w;
+			h = con.win.save.g_h;
 		} else {
-			x = con.win.curr.x;
-			y = con.win.curr.y;
-			w = con.win.curr.w;
-			h = con.win.curr.h;
+			x = con.win.curr.g_x;
+			y = con.win.curr.g_y;
+			w = con.win.curr.g_w;
+			h = con.win.curr.g_h;
 		}
-		lx = (double) (x - tb.desk.x) * 10000L / (double) tb.desk.w;
-		ly = (double) (y - tb.desk.y) * 10000L / (double) tb.desk.h;
-		lw = (double) w * 10000L / (double) tb.desk.w;
-		lh = (double) h * 10000L / (double) tb.desk.h;
-		fprintf(fh, "VTXY %d %d %d %d\n", (int) lx, (int) ly, (int) lw, (int) lh);
+		lx = (double) (x - tb.desk.g_x) * 10000L / (double) tb.desk.g_w;
+		ly = (double) (y - tb.desk.g_y) * 10000L / (double) tb.desk.g_h;
+		lw = (double) w * 10000L / (double) tb.desk.g_w;
+		lh = (double) h * 10000L / (double) tb.desk.g_h;
+		fprintf(fh, "VTXY %d %d %d %d\n", (short) lx, (short) ly, (short) lw, (short) lh);
 
 		/* Offene Fenster */
 		if (tmp || !conf.nowin) {
@@ -261,8 +261,8 @@ int conf_save(int tmp) {
 				/* Dialogfenster nicht sichern! */
 				if (win->class != WCDIAL) {
 					/* Angaben bei allen Fenstern */
-					new_wind_get(win->handle, WF_HSLIDE, &sh, &i, &i, &i);
-					new_wind_get(win->handle, WF_VSLIDE, &sv, &i, &i, &i);
+					wind_get(win->handle, WF_HSLIDE, &sh, &d, &d, &d );
+					wind_get(win->handle, WF_VSLIDE, &sv, &d, &d, &d );
 					fprintf(fh, "WOPN %d %d %d %d ", win->class, win == tb.topwin, sh, sv);
 					/* Weitere Angaben je nach Fenstertyp */
 					switch (win->class) {
@@ -466,11 +466,11 @@ int conf_save(int tmp) {
 	}
 }
 
-int conf_load(void) {
+short conf_load(void) {
 	FILE *fh;
 	char inbuf[1024], *inbuf5 = &inbuf[5];
 	unsigned long id;
-	int i, p, x, y, w, h, n;
+	short i, p, x, y, w, h, n;
 	char *text, wildcard[MAX_FLEN], *name;
 	D_DRIVE ddrive;
 	D_FILE dfile;
@@ -478,15 +478,15 @@ int conf_load(void) {
 	D_DEVICE ddevice;
 	APPLINFO appl, *aptr;
 	char *tx;
-	int tmp, vers;
+	short tmp, vers;
 	WINOPEN *wopen, *wopen1;
 	double lx, ly, lw, lh;
 	ACSTATE accstate;
 	char evar[51];
-	int old_format, format;
+	short old_format, format;
 	char filelist[61], *mask, *buf;
-	int has_staropen, first;
-	int ok = 0;
+	short has_staropen, first;
+	short ok = 0;
 
 	text = pmalloc(MAX_PLEN * 3L);
 	if (text == NULL) {
@@ -816,7 +816,7 @@ int conf_load(void) {
 					}
 					/* Zus„tzliche Optionen fr die vorherige Applikation */
 					if ((id == 'AOPT') && aptr) {
-						int alert;
+						short alert;
 
 						sscanf(inbuf5, "%d %ld %d %d %d", &aptr->paralways,
 								&aptr->memlimit, &aptr->fullcompare,
@@ -865,12 +865,9 @@ int conf_load(void) {
 					}
 				}
 					if (id == 'DRIV') {
-						int drv, ul, ai;
+						short drv, ul, ai;
 
 						sscanf(inbuf5, "%d %d %d", &drv, &ul, &ai);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: DRIV, drv=%i, ul=%i, ai=%i", drv, ul, ai); debugMain(almsg);
-#endif
 						if ((drv >= 0) && (drv < MAXDRIVES)) {
 							desk.dicon[drv + 1].spec.drive->uselabel = ul;
 							desk.dicon[drv + 1].spec.drive->autoinstall = ai;
@@ -879,84 +876,66 @@ int conf_load(void) {
 					/* Fenster */
 					if (id == 'WIXY') {
 						sscanf(inbuf5, "%d %d %d %d %d", &p, &x, &y, &w, &h);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: WIXY, p=%i, x=%i, y=%i, w=%i, h=%i", p, x, y, w, h); debugMain(almsg);
-#endif
 						if (p >= 0 && p <= 15) {
-							lx = (double) tb.desk.w * (double) x / 10000L;
-							x = tb.desk.x + (int) (lx + 0.5);
-							ly = (double) tb.desk.h * (double) y / 10000L;
-							y = tb.desk.y + (int) (ly + 0.5);
-							lw = (double) tb.desk.w * (double) w / 10000L;
-							w = (int) (lw + 0.5);
-							lh = (double) tb.desk.h * (double) h / 10000L;
-							h = (int) (lh + 0.5);
-							n = tb.desk.x + tb.desk.w - 16;
+							lx = (double) tb.desk.g_w * (double) x / 10000L;
+							x = tb.desk.g_x + (short) (lx + 0.5);
+							ly = (double) tb.desk.g_h * (double) y / 10000L;
+							y = tb.desk.g_y + (short) (ly + 0.5);
+							lw = (double) tb.desk.g_w * (double) w / 10000L;
+							w = (short) (lw + 0.5);
+							lh = (double) tb.desk.g_h * (double) h / 10000L;
+							h = (short) (lh + 0.5);
+							n = tb.desk.g_x + tb.desk.g_w - 16;
 							if (x > n)
 								x = n;
-							n = tb.desk.y + tb.desk.h - 16;
+							n = tb.desk.g_y + tb.desk.g_h - 16;
 							if (y > n)
 								y = n;
-							if (w > tb.desk.w)
-								w = tb.desk.w;
-							if (h > tb.desk.h)
-								h = tb.desk.h;
-							glob.win[p].curr.x = x;
-							glob.win[p].curr.y = y;
-							glob.win[p].curr.w = w;
-							glob.win[p].curr.h = h;
+							if (w > tb.desk.g_w)
+								w = tb.desk.g_w;
+							if (h > tb.desk.g_h)
+								h = tb.desk.g_h;
+							glob.win[p].curr.g_x = x;
+							glob.win[p].curr.g_y = y;
+							glob.win[p].curr.g_w = w;
+							glob.win[p].curr.g_h = h;
 						}
 					}
 					/* Console-Fenster */
 					if (id == 'VTXY') {
 						sscanf(inbuf5, "%d %d %d %d", &x, &y, &w, &h);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: VTXY, x=%i, y=%i, w=%i, h=%i", x, y, w, h); debugMain(almsg);
-#endif
-						lx = (double) tb.desk.w * (double) x / 10000L;
-						x = tb.desk.x + (int) (lx + 0.5);
-						ly = (double) tb.desk.h * (double) y / 10000L;
-						y = tb.desk.y + (int) (ly + 0.5);
-						lw = (double) tb.desk.w * (double) w / 10000L;
-						w = (int) (lw + 0.5);
-						lh = (double) tb.desk.h * (double) h / 10000L;
-						h = (int) (lh + 0.5);
-						n = tb.desk.x + tb.desk.w - 16;
+						lx = (double) tb.desk.g_w * (double) x / 10000L;
+						x = tb.desk.g_x + (short) (lx + 0.5);
+						ly = (double) tb.desk.g_h * (double) y / 10000L;
+						y = tb.desk.g_y + (short) (ly + 0.5);
+						lw = (double) tb.desk.g_w * (double) w / 10000L;
+						w = (short) (lw + 0.5);
+						lh = (double) tb.desk.g_h * (double) h / 10000L;
+						h = (short) (lh + 0.5);
+						n = tb.desk.g_x + tb.desk.g_w - 16;
 						if (x > n)
 							x = n;
-						n = tb.desk.y + tb.desk.h - 16;
+						n = tb.desk.g_y + tb.desk.g_h - 16;
 						if (y > n)
 							y = n;
-						if (w > tb.desk.w)
-							w = tb.desk.w;
-						if (h > tb.desk.h)
-							h = tb.desk.h;
-						con.win.curr.x = x;
-						con.win.curr.y = y;
-						con.win.curr.w = w;
-						con.win.curr.h = h;
+						if (w > tb.desk.g_w)
+							w = tb.desk.g_w;
+						if (h > tb.desk.g_h)
+							h = tb.desk.g_h;
+						con.win.curr.g_x = x;
+						con.win.curr.g_y = y;
+						con.win.curr.g_w = w;
+						con.win.curr.g_h = h;
 					}
 					/* Offenes Fenster */
 					if (id == 'WOPN') {
 						sscanf(inbuf5, "%d %d %d %d", &x, &y, &w, &h);
 						tx = inbuf5;
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: WOPN, x=%i, y=%i, w=%i, h=%i", x, y, w, h); debugMain(almsg);
-#endif
 						for (i = 0; i < 4; i++)
 							get_buf_entry(tx, buf, &tx);
 						get_buf_entry(tx, wildcard, &tx);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: WOPN + 1 , wildcard=%s", wildcard); debugMain(almsg);
-#endif
 						get_buf_entry(tx, text, &tx);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: WOPN + 2 , text=%s", text); debugMain(almsg);
-#endif
 						sscanf(tx, "%d", &p);
-#ifdef _DEBUG
-							sprintf(almsg, "CLOD: WOPN + 3 , p=%i", p); debugMain(almsg);
-#endif
 						/* Neuen Eintrag an die Open-Liste anh„ngen */
 						wopen = pmalloc(sizeof(WINOPEN));
 						if (!wopen) {
@@ -1047,7 +1026,7 @@ int conf_load(void) {
 		if (!fh && !tmp) /* N„chst kleinere Datei suchen */
 		{
 			XATTR xattr;
-			int maxx, maxy, maxc, x, y, c;
+			short maxx, maxy, maxc, x, y, c;
 			char *pos;
 
 			maxx = maxy = maxc = 0;
@@ -1205,7 +1184,7 @@ int conf_load(void) {
 								get_buf_entry(tx, dfolder.path, &tx);
 
 								/* Sicherheitscheck auf Gltigkeit */
-								w = (int) strlen(dfolder.path);
+								w = (short) strlen(dfolder.path);
 								if (w > 4 && dfolder.path[w - 1] == '\\') {
 									/* Neues Icon fr einen Ordner einrichten */
 									p = OBUSER;
@@ -1340,11 +1319,11 @@ int conf_load(void) {
  Icon-Informationen sichern/laden
  -------------------------------------------------------------------------*/
 
-int conf_isave(void) {
+short conf_isave(void) {
 	return (1);
 }
 
-int conf_iload(void) {
+short conf_iload(void) {
 	FILE *fh;
 	char name[MAX_PLEN];
 	char inbuf[512];
@@ -1352,8 +1331,8 @@ int conf_iload(void) {
 	ICONIMG *icon;
 	unsigned long id;
 	char *p, *t, tchar;
-	int i, j, ret, num, maxnum, l, altapp, altcpx;
-	int tcol;
+	short i, j, ret, num, maxnum, l, altapp, altcpx;
+	short tcol;
 	long bufsize;
 	ICONBLK *dummy;
 
@@ -1473,7 +1452,7 @@ int conf_iload(void) {
 							t[-1] = 0;
 						t = strrchr(inbuf, ' ');
 						if ((t != NULL) && (t > p) && t[1]) {
-							l = (int) (t - inbuf) + 1;
+							l = (short) (t - inbuf) + 1;
 							i = l - 1;
 							while (inbuf[i] == ' ')
 								i--;
@@ -1527,7 +1506,7 @@ int conf_iload(void) {
 									 * und die Zuordnung "vergessen".
 									 */
 									if (!strcmp(imask, "*") || !strcmp(imask, "**")) {
-										int used = 1;
+										short used = 1;
 
 										if (icon->class == 0) {
 											if (!strcmp(iname, "FILE"))
@@ -1575,7 +1554,7 @@ int conf_iload(void) {
 			sprintf(almsg, "CILO: shrinking buffer, old=%d, new=%d", maxnum, num); debugMain(almsg);
 #endif
 			if (num > 0)
-				Mshrink(0, desk.icon, (long) num * sizeof(ICONIMG));
+				Mshrink(desk.icon, (long) num * sizeof(ICONIMG));
 			else {
 				Mfree(desk.icon);
 				desk.icon = 0L;

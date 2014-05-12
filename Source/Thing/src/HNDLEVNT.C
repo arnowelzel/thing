@@ -33,6 +33,7 @@
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
 #include <ctype.h>
+#include <mt_gemx.h>
 #include "..\include\dragdrop.h"
 #include "..\include\tcmd.h"
 #include "..\include\jobid.h"
@@ -51,9 +52,9 @@ static clock_t timer2;
  Verarbeiten einer Menueauswahl
  Wird auch von handle_key() bei Shortcuts aufgerufen
  -------------------------------------------------------------------------*/
-void handle_menu(int title, int item, int ks) {
+void handle_menu(short title, short item, short ks) {
 	WININFO *win;
-	int i, j, k, font, fontid, whandle;
+	short i, j, k, font, fontid, whandle, d;
 
 	font = 0;
 	fontid = -1;
@@ -62,7 +63,7 @@ void handle_menu(int title, int item, int ks) {
 		if (tb.sys & SY_OWNER) {
 			get_twin(&whandle);
 			if (whandle)
-				if (!new_wind_get(whandle, WF_OWNER, &fontid, &i, &i, &i))
+				if (!wind_get(whandle, WF_OWNER, &fontid, &d, &d, &d))
 					fontid = -1;
 		}
 	} else {
@@ -469,19 +470,20 @@ void handle_menu(int title, int item, int ks) {
 
  Verarbeiten von Fensterereignissen
  -------------------------------------------------------------------------*/
-void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
+void handle_win(short handle, short msg, short f1, short f2, short f3, short f4, short ks) {
 	WININFO *win;
 	FORMINFO *fi;
 	W_PATH *wpath;
 	W_GRP *wgrp;
-	int top,new;
-	int x, y, w, h;
-	int mx, my, lks, mb, mc;
-	int owner, dummy;
-	int lshift, rshift;
+	short top,new;
+	short x, y, w, h;
+	short mx, my, lks, mb, mc;
+	short owner;
+	short lshift, rshift;
 	ALICE_WIN *awin;
-	int ofull;
-	int correct;
+	short ofull;
+	short correct;
+	short d;
 
 	/* Kein Redraw, wenn nicht im Fenster liegender Dialog aktiv ist */
 	if (tb.sm_nowdial && (msg == WM_REDRAW))
@@ -550,7 +552,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			mn_update();
 			/* Workaround fr MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
-				if (new_wind_get(top, WF_OWNER, &owner, &dummy, &dummy, &dummy))
+				if (wind_get(top, WF_OWNER, &owner, &d, &d, &d))
 					magx_switch(owner, 0);
 			}
 		}
@@ -640,7 +642,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 						wpath->rel = 0;
 						wpath->path[3] = 0;
 						wpath_update(win);
-						win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					}
 				} else {
 					if (lshift || rshift) {
@@ -691,7 +693,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 								/* Kein Root */
 								/* Hotclose? */
 								wind_update(BEG_MCTRL);
-								evnt_timer(conf.clickms, 0);
+								evnt_timer( (long)conf.clickms);
 								graf_mkstate(&mx, &my, &mb, &lks);
 								if (mb & 1) {
 									if (!wpath_parent(win, 2, 1)) {
@@ -705,7 +707,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 										graf_mouse(USER_DEF, &mf_hotc);
 										mc = 0;
 										while (mb & 1) {
-											evnt_timer(100, 0);
+											evnt_timer(100L);
 											mc++;
 											if (mc > 4) {
 												mc = 0;
@@ -721,7 +723,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 										graf_mouse(ARROW, 0L);
 										wpath_update(win);
 										win_slide(win, S_INIT, 0, 0);
-										win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+										win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 									}
 								} else {
 									/* Kein Hotclose */
@@ -764,13 +766,13 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		case WCCON:
 			/* Console speziell behandeln */
 			if (win->state & WSFULL)
-				new_wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
+				wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
 			else
-				new_wind_get(win->handle, WF_FULLXYWH, &x, &y, &w, &h);
-			win->curr.x = x;
-			win->curr.y = y;
-			win->curr.w = w;
-			win->curr.h = h;
+				wind_get(win->handle, WF_FULLXYWH, &x, &y, &w, &h);
+			win->curr.g_x = x;
+			win->curr.g_y = y;
+			win->curr.g_w = w;
+			win->curr.g_h = h;
 			win->state ^= WSFULL;
 			cwin_attr();
 			break;
@@ -789,15 +791,15 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 				if (!ofull) {
 					win->full = tb.desk;
 					if (conf.autoplace) {
-						win->full.x += tb.fleft;
-						win->full.y += tb.fupper;
-						win->full.w -= tb.fleft + tb.fright;
-						win->full.h -= tb.fupper + tb.flower;
+						win->full.g_x += tb.fleft;
+						win->full.g_y += tb.fupper;
+						win->full.g_w -= tb.fleft + tb.fright;
+						win->full.g_h -= tb.fupper + tb.flower;
 					}
 				}
 				win_full(win);
 			} else {
-				int as, asx, asy;
+				short as, asx, asy;
 
 				/* Sonst: Nur optimale Groesse */
 				as = conf.autosize;
@@ -857,8 +859,8 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		/* Bei Console auf Zeichengroesse snappen */
 		case WCCON:
 			win->state &= ~WSFULL;
-			win->curr.w = f3;
-			win->curr.h = f4;
+			win->curr.g_w = f3;
+			win->curr.g_h = f4;
 			cwin_attr();
 			break;
 		/* Bei Gruppen Flag fuer Aenderung setzen */
@@ -894,11 +896,11 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 			if (!(win->state & WSICON)) {
 				/* Nur, wenn das Fenster nicht ausgeblendet war oder wird */
 				/* Workaround: Fenster werden zweimal eingeblendet?? */
-				if (((f1 != win->curr.x) || (f2 != win->curr.y)) &&
-						(f1 < (tb.desk.x + tb.desk.w)) &&
-						(f2 < (tb.desk.y + tb.desk.h)) &&
-						(win->curr.x < (tb.desk.x + tb.desk.w)) &&
-						(win->curr.y < (tb.desk.y + tb.desk.h)))
+				if (((f1 != win->curr.g_x) || (f2 != win->curr.g_y)) &&
+						(f1 < (tb.desk.g_x + tb.desk.g_w)) &&
+						(f2 < (tb.desk.g_y + tb.desk.g_h)) &&
+						(win->curr.g_x < (tb.desk.g_x + tb.desk.g_w)) &&
+						(win->curr.g_y < (tb.desk.g_y + tb.desk.g_h)))
 				{
 					wgrp_change(win);
 					mn_update();
@@ -915,12 +917,12 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		}
 		/* Ggf. Position korrigieren wegen Hintergrundmuster */
 		if ((correct != 0) && (correct != 7)) {
-			f1 -= tb.desk.x;
-			f2 -= tb.desk.y;
+			f1 -= tb.desk.g_x;
+			f2 -= tb.desk.g_y;
 			f1 &= ~3;
 			f2 &= ~3;
-			f1 += tb.desk.x;
-			f2 += tb.desk.y;
+			f1 += tb.desk.g_x;
+			f2 += tb.desk.g_y;
 		}
 		win_size(win, f1, f2, f3, f4);
 		break;
@@ -932,19 +934,19 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 
  Verarbeiten von Mausklicks
  -------------------------------------------------------------------------*/
-void handle_button(int mx, int my, int but, int ks, int br) {
-	int whandle, obj;
+void handle_button(short mx, short my, short but, short ks, short br) {
+	short whandle, obj;
 	WININFO *win, *win1;
 	WP_ENTRY *item;
 	W_PATH *wpath;
 	W_GRP *wgrp;
 	WG_ENTRY *gitem, *gprev;
-	int lmx, lmy, lmk, lks;
-	int x, y, dx, dy;
-	int i, istop, wait;
-	int lshift, rshift, ctrl;
-	int csim = 0, dsim = 0;
-	int obut = but;
+	short lmx, lmy, lmk, lks;
+	short x, y, dx, dy;
+	short i, istop, wait;
+	short lshift, rshift, ctrl;
+	short csim = 0, dsim = 0;
+	short obut = but;
 
 	wait = 1; /* Flag fuer Test auf Klick oder Drag&Drop */
 
@@ -981,7 +983,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 
 			/* Falls Mausklick nicht im Arbeitsbereich, dann ignorieren
 			 ist unter MTOS notwendig */
-			if (mx < win->work.x || my < win->work.y || mx >= win->work.x + win->work.w || my >= win->work.y + win->work.h)
+			if (mx < win->work.g_x || my < win->work.g_y || mx >= win->work.g_x + win->work.g_w || my >= win->work.g_y + win->work.g_h)
 				return;
 
 			/* Falls Auswahl im Hintergrund abgeschaltet, dann rechten
@@ -993,7 +995,7 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 			/* Rechtsklick-Drag-Simulator fr MagiCMac-User */
 			if ((br == 2) && (but == 1)) {
 				wind_update (BEG_MCTRL);
-				evnt_timer(conf.clickms, 0);
+				evnt_timer( (long)conf.clickms);
 				graf_mkstate(&lmx, &lmy, &lmk, &lks);
 				wind_update (END_MCTRL);
 				if (lmk & 3) {
@@ -1059,7 +1061,7 @@ handle_button1: ;
 							/* Einfacher Klick */
 							wind_update(BEG_MCTRL);
 							if (wait)
-								evnt_timer(conf.clickms, 0);
+								evnt_timer( (long)conf.clickms);
 							graf_mkstate(&lmx,&lmy,&lmk,&lks);
 							wind_update(END_MCTRL);
 							if (lmk&3) {
@@ -1111,7 +1113,7 @@ handle_button1: ;
 							/* Klick oder immer noch gedrckt? */
 							wind_update(BEG_MCTRL);
 							if (wait)
-								evnt_timer(conf.clickms, 0);
+								evnt_timer( (long)conf.clickms);
 							graf_mkstate(&lmx ,&lmy, &lmk, &lks);
 							wind_update(END_MCTRL);
 							/* Hintergrund eines inaktiven Fensters angeklickt? */
@@ -1222,7 +1224,7 @@ wrubber:
 						else /* Einfacher Klick */
 						{
 							wind_update(BEG_MCTRL);
-							if(wait) evnt_timer(conf.clickms,0);
+							if(wait) evnt_timer( (long)conf.clickms);
 							graf_mkstate(&lmx,&lmy,&lmk,&lks);
 							wind_update(END_MCTRL);
 							if(lmk&3) /* Maustaste immer noch gedckt - Drag&Drop */
@@ -1254,7 +1256,7 @@ wrubber:
 						if(br==1) /* Klick oder immer noch gedrckt? */
 						{
 							wind_update(BEG_MCTRL);
-							if(wait) evnt_timer(conf.clickms,0);
+							if(wait) evnt_timer( (long)conf.clickms);
 							graf_mkstate(&lmx,&lmy,&lmk,&lks);
 							wind_update(END_MCTRL);
 							/* Hintergrund eines inaktiven Fensters angeklickt? */
@@ -1320,7 +1322,7 @@ wrubber:
 				case 2: /* Rechte Maustaste */
 				wind_update(BEG_MCTRL);
 				if(wait)
-					evnt_timer(conf.clickms,0);
+					evnt_timer( (long)conf.clickms);
 				graf_mkstate(&lmx,&lmy,&lmk,&lks);
 				wind_update(END_MCTRL);
 				if(lmk&3 && br==1) /* Taste immer noch gedrckt ? */
@@ -1402,7 +1404,7 @@ wrubber:
 			if(br==2) /* Doppelklick */
 			{
 				if(but==1) {
-					int du;
+					short du;
 
 					icon_select(obj,0,1); /* Objekt als einziges selektieren */
 					icon_checksel(); /* Aktuelle Auswahl aktualisieren */
@@ -1433,7 +1435,7 @@ wrubber:
 #endif
 				{
 					wind_update(BEG_MCTRL);
-					if(wait) evnt_timer(conf.clickms,0);
+					if(wait) evnt_timer( (long)conf.clickms);
 					graf_mkstate(&lmx,&lmy,&lmk,&lks);
 					wind_update(END_MCTRL);
 					if(lmk&1) /* Linke Maustaste immer noch gedrckt -> Drag&Drop */
@@ -1485,7 +1487,7 @@ wrubber:
 						icon_select(-1,0,0);
 					wind_update(BEG_MCTRL);
 					if(wait)
-						evnt_timer(70,0);
+						evnt_timer(70L);
 					graf_mkstate(&lmx,&lmy,&lmk,&lks);
 					wind_update(END_MCTRL);
 					if(lmk&3) /* Immer noch gedrckt - "Gummiband" aufziehen */
@@ -1512,7 +1514,7 @@ wrubber:
  * Verarbeiten von Tastatureingaben
  */
 void call_smu(void) {
-	int smu_id;
+	short smu_id;
 
 	if ((smu_id = appl_find("START   ")) >= 0)
 		appl_send(smu_id, VA_START, 0, 0, 0, 0, 0, 0);
@@ -1523,22 +1525,22 @@ void call_smu(void) {
 /**
  *
  */
-void handle_key(int ks, int kr) {
-	unsigned int key;
-	int title, item, l, i, j, k;
+void handle_key(short ks, short kr) {
+	unsigned short key;
+	short title, item, l, i, j, k;
 	char path[4], *p, akey;
 	W_PATH *wpath;
 	WP_ENTRY *litem;
 	W_GRP *wgrp;
 	WG_ENTRY *gitem;
 	WININFO *win1;
-	RECT wrect;
-	int wrd, found, drv;
+	GRECT wrect;
+	short wrd, found, drv;
 	char lmask[MAX_FLEN], fpath[MAX_PLEN], amask[MAX_FLEN];
-	int focus;
+	short focus;
 	char *help;
 	APPLINFO *aptr;
-	int mx, my, d;
+	short mx, my, d;
 
 	graf_mkstate(&mx, &my, &d, &d);
 	key = normkey(ks, kr);
@@ -1931,7 +1933,7 @@ void handle_key(int ks, int kr) {
 										}
 										/* Auto-Locator setzen */
 										strcpy(lmask,wpath->amask);
-										l=(int)strlen(lmask);
+										l=(short)strlen(lmask);
 										if(key==(NKF_FUNC|NK_BS)) /* Backspace */
 										{
 											if(l>0) /* Auto-Locator vorhanden? */
@@ -2064,12 +2066,12 @@ void handle_key(int ks, int kr) {
 												/* Bei Bedarf Auto-Locator automatisch erweitern */
 												if(conf.autocomp)
 												{
-													int wild = 0;
+													short wild = 0;
 													char last,
 													*_mask;
 
 													_mask = wpath->amask;
-													l = (int)strlen(_mask);
+													l = (short)strlen(_mask);
 													if (l)
 													{
 														l--;
@@ -2118,7 +2120,7 @@ void handle_key(int ks, int kr) {
 																		}
 																	}
 #endif
-																	l=(int)strlen(amask);
+																	l=(short)strlen(amask);
 																}
 																else
 																{
@@ -2158,7 +2160,7 @@ void handle_key(int ks, int kr) {
 												}
 												/* Fensterinhalt aktualisieren */
 												if(found) wpath->focus=focus;
-												if(wrd) win_redraw(tb.topwin,wrect.x,wrect.y,wrect.w,wrect.h);
+												if(wrd) win_redraw(tb.topwin,wrect.g_x,wrect.g_y,wrect.g_w,wrect.g_h);
 												wpath_showsel(tb.topwin,1);
 											}
 											else mybeep();
@@ -2278,8 +2280,8 @@ void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
 			fd = Fopen(pipename, FO_RW);
 			if (fd >= 0L) {
 				c = DD_NAK;
-				Fwrite((int) fd, 1, &c);
-				Fclose((int) fd);
+				Fwrite((short) fd, 1, &c);
+				Fclose((short) fd);
 			}
 			frm_alert(1, rs_frstr[ALWDIAL], altitle, 0, 0L);
 			break;
@@ -2413,13 +2415,12 @@ void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
 /**-------------------------------------------------------------------------
  Font-Protokoll
  -------------------------------------------------------------------------*/
-void handle_fontmsg(int *msg) {
+void handle_fontmsg(short *msg) {
 	WININFO *mwin, *win;
 	W_GRP *wgrp;
-	int i, j, w, ok, dummy;
-	int dotest, wmin, wmax;
-	int minade, maxade, dist[5], mw, eff[3];
-	VDIPB vdipb;
+	short i, j, w, ok, dummy;
+	short dotest, wmin, wmax;
+	short minade, maxade, dist[5], mw, eff[3];
 	GFONT font;
 
 	switch (msg[0]) {
@@ -2461,7 +2462,7 @@ void handle_fontmsg(int *msg) {
 						if (win->class == WCPATH) {
 							wpath_iupdate(win, 0);
 							wpath_tree(win);
-							win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							win_slide(win, S_INIT, 0, 0);
 						}
 						win = win->next;
@@ -2484,7 +2485,7 @@ void handle_fontmsg(int *msg) {
 					wgrp->font.size = font.size;
 					wgrp->font.fcol = font.fcol;
 					wgrp_tree(mwin);
-					win_redraw(mwin, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(mwin, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					win_slide(mwin, S_INIT, 0, 0);
 					wgrp_change(mwin);
 				}
@@ -2500,30 +2501,21 @@ void handle_fontmsg(int *msg) {
 
 				/* Falls ja, dann pruefen, ob er fuer die Console geeignet ist */
 				if (ok) {
-					vdipb.contrl = _VDIParBlk.contrl;
-					vdipb.intin = _VDIParBlk.intin;
-					vdipb.ptsin = _VDIParBlk.ptsin;
-					vdipb.intout = _VDIParBlk.intout;
-					vdipb.ptsout = _VDIParBlk.ptsout;
 
 					dotest = 1;
 					if (tb.gdos) {
 						/* Sicherheitshalber nur mit GDOS ;-) */
 						for (i = 0; i < gdos.numfonts; i++) {
 							if (gdos.fontid[i * 2L] == font.id) {
-								_VDIParBlk.contrl[0] = 130;
-								_VDIParBlk.contrl[1] = 0;
-								_VDIParBlk.contrl[3] = 2;
-								_VDIParBlk.contrl[5] = 1;
-								_VDIParBlk.contrl[6] = tb.vdi_handle;
-								_VDIParBlk.intin[0] = gdos.fontid[i * 2L + 1];
-								_VDIParBlk.intin[1] = 0;
-								vdi(&vdipb);
-								/* Font monospaced? */
-								if (_VDIParBlk.contrl[4] >= 35) {
+								char name[40];
+								short ret, font_format, flags;
+								
+								ret = vqt_ext_name (tb.vdi_handle, gdos.fontid[i * 2L + 1], name, &font_format, &flags);
+								/* Function present?, Font monospaced? */
+								if (ret) {
 									dotest = 0; /* Keine weiteren Tests n”tig */
 									wmin = 0;
-									if ((_VDIParBlk.intout[34] & 0xff00) == 0x0100) {
+									if ( flags & 0x01 ) {
 										wmax = 0;
 									} else {
 										wmax = 1;
@@ -2579,7 +2571,7 @@ void handle_job(EVENT *event) {
 	}
 }
 
-void do_job(int j_id) {
+void do_job(short j_id) {
 	appl_send(tb.app_id, THING_MSG, 0, TI_JOB, j_id, 0x4711, 0, 0);
 }
 
@@ -2588,28 +2580,28 @@ void do_job(int j_id) {
 
  Drag&Drop-Anforderung bearbeiten
  -------------------------------------------------------------------------*/
-int read_dd_data(char *buf, long len, int fd) {
+short read_dd_data(char *buf, long len, short fd) {
 	char c;
 
 	buf[len] = 0;
 	/* Je nach Art der Daten reagieren */
 	c = DD_OK;
-	Fwrite((int) fd, 1L, &c);
-	Fread((int) fd, 1L, &c);
+	Fwrite((short) fd, 1L, &c);
+	Fread((short) fd, 1L, &c);
 	if (c == DD_OK) {
 		/* Empfaenger einverstanden? */
-		return (Fread((int) fd, len, buf) == len);
+		return (Fread((short) fd, len, buf) == len);
 	} else
 		/* Noe :( */
 		return (0);
 }
 
-void handle_dd(int *msg) {
+void handle_dd(short *msg) {
 	char *pipename = "U:\\PIPE\\DRAGDROP.AA";
 	long fd;
 	char c, ext[32];
-	int i, j, hlen;
-	int px, py, ks, whandle, dobj;
+	short i, j, hlen;
+	short px, py, ks, whandle, dobj;
 	WININFO *win;
 	char hext[5];
 	long dlen;
@@ -2629,25 +2621,25 @@ void handle_dd(int *msg) {
 	if (fd >= 0L) {
 		/* Empfang bestaetigen */
 		c = DD_OK;
-		Fwrite((int) fd, 1L, &c);
+		Fwrite((short) fd, 1L, &c);
 
 		/* Extensions uebermitteln - ARGS und .TXT */
 		for (i = 0; i < 32; i++)
 			ext[i] = 0;
 		strcpy(ext, "ARGS.TXT");
-		Fwrite((int) fd, 32L, ext);
+		Fwrite((short) fd, 32L, ext);
 
 		/* Header lesen */
-		Fread((int) fd, 2L, &hlen);
-		Fread((int) fd, 4L, hext);
+		Fread((short) fd, 2L, &hlen);
+		Fread((short) fd, 4L, hext);
 		hext[4] = 0;
-		Fread((int) fd, 4L, &dlen);
+		Fread((short) fd, 4L, &dlen);
 		/* Name der Daten lesen */
 		j = 9;
 		i = 0;
 		c = 1;
 		while (j < hlen && i < MAX_PLEN && c != 0) {
-			Fread((int) fd, 1L, &c);
+			Fread((short) fd, 1L, &c);
 			dname[i] = c;
 			i++;
 			j++;
@@ -2655,7 +2647,7 @@ void handle_dd(int *msg) {
 		dname[i] = 0;
 		/* ueberschuessige Bytes abholen */
 		while (j < hlen) {
-			Fread((int) fd, 1L, &c);
+			Fread((short) fd, 1L, &c);
 			j++;
 		}
 
@@ -2664,14 +2656,14 @@ void handle_dd(int *msg) {
 			dlen = 0L;
 			dbuf = NULL;
 			c = DD_NAK;
-			Fwrite((int) fd, 1L, &c);
+			Fwrite((short) fd, 1L, &c);
 		}
 		if (dlen > 0L) {
 			dbuf = Malloc(dlen + 1L);
 			if (dbuf == NULL) /* Kein Bufferspeicher mehr! */
 			{
 				c = DD_NAK;
-				Fwrite((int) fd, 1L, &c);
+				Fwrite((short) fd, 1L, &c);
 			}
 		}
 
@@ -2679,14 +2671,14 @@ void handle_dd(int *msg) {
 		if (dbuf) {
 			if (!strcmp(hext, "ARGS")) {
 				/* Kommandozeile */
-				if (read_dd_data(dbuf, dlen, (int) fd)) {
+				if (read_dd_data(dbuf, dlen, (short) fd)) {
 					if (dlen > MAX_AVLEN)
 						dlen = MAX_AVLEN;
 					memcpy(aesbuf, dbuf, dlen);
 					va_open(aesbuf);
 				} else
 					mybeep();
-				Fclose((int) fd);
+				Fclose((short) fd);
 			} else {
 				/* Normale Daten */
 				strcpy(path, "X:\\");
@@ -2720,14 +2712,14 @@ void handle_dd(int *msg) {
 						if (dobj == -1) {
 							mybeep();
 							c = DD_NAK;
-							Fwrite((int)fd, 1L, &c);
+							Fwrite((short)fd, 1L, &c);
 						} else {
-							if (read_dd_data(dbuf, dlen, (int)fd))
+							if (read_dd_data(dbuf, dlen, (short)fd))
 								dl_wdrag_d(fi, dobj, dbuf, ks);
 							else
 								mybeep();
 						}
-						Fclose((int)fd);
+						Fclose((short)fd);
 						break;
 					case WCGROUP:
 						strcpy(path, ((W_GRP *)win->user)->name);
@@ -2760,13 +2752,13 @@ void handle_dd(int *msg) {
 						case IDTRASH:
 							i = 2; /* Daten schon verarbeitet */
 							c = (q->class == IDPRT) ? DD_PRINTER : DD_TRASH;
-							Fwrite((int)fd, 1L, &c);
-							Fclose((int)fd);
+							Fwrite((short)fd, 1L, &c);
+							Fclose((short)fd);
 							break;
 							default:
 							c = DD_NAK;
-							Fwrite((int)fd, 1L, &c);
-							Fclose((int)fd);
+							Fwrite((short)fd, 1L, &c);
+							Fclose((short)fd);
 							mybeep();
 							i = 2;
 						}
@@ -2774,11 +2766,11 @@ void handle_dd(int *msg) {
 				}
 
 				if (i != 2) {
-					if (!read_dd_data(dbuf, dlen, (int) fd)) {
+					if (!read_dd_data(dbuf, dlen, (short) fd)) {
 						mybeep();
 						i = 2;
 					}
-					Fclose((int) fd);
+					Fclose((short) fd);
 				}
 				if (!i) {
 					fsinfo(path, &fs);
@@ -2798,14 +2790,14 @@ void handle_dd(int *msg) {
 					if (fd < 0L)
 						err_file(rs_frstr[ALFLCREATE], fd, full);
 					else {
-						Fwrite((int) fd, dlen, dbuf);
-						Fclose((int) fd);
+						Fwrite((short) fd, dlen, dbuf);
+						Fclose((short) fd);
 					}
 				}
 			}
 			pfree(dbuf);
 		} else
-			Fclose((int) fd);
+			Fclose((short) fd);
 	} else
 		mybeep();
 }
@@ -2824,7 +2816,7 @@ void handle_dd(int *msg) {
  * sonst: Eintrag OK (sagt nichts darueber aus, ob der Programmstart
  *        oder das ™ffnen des Verzeichnisfensters erfolgreich war)
  */
-int handle_fkey_or_tool(char *entry) {
+short handle_fkey_or_tool(char *entry) {
 	char fpath[MAX_PLEN], *p;
 
 	if (get_buf_entry(entry, fpath, &p)) {
@@ -2858,8 +2850,8 @@ int handle_fkey_or_tool(char *entry) {
  * win: Zeiger auf betroffenes Fenster (wenn das Kontextmen sich
  *      nicht auf bestimmte Eintraege bezieht) oder NULL
  */
-void handle_context(int mx, int my, WININFO *win) {
-	int pitem, i, count, cobj, ok, obj, d, ks, msg[8];
+void handle_context(short mx, short my, WININFO *win) {
+	short pitem, i, count, cobj, ok, obj, d, ks, msg[8];
 	char fname[MAX_PLEN], fpath[MAX_PLEN], **list;
 	ICONDESK *p;
 	OBJECT *tree;
@@ -3184,8 +3176,8 @@ void handle_context(int mx, int my, WININFO *win) {
 				for (entry = glob.sendto->entry; entry != NULL;
 						entry = entry->next) {
 					*list++ = entry->title;
-					if ((int) strlen(entry->title) > plsendto.len)
-						plsendto.len = (int) strlen(entry->title);
+					if ((short) strlen(entry->title) > plsendto.len)
+						plsendto.len = (short) strlen(entry->title);
 				}
 			} else
 				count = 0;
@@ -3341,8 +3333,8 @@ void handle_context(int mx, int my, WININFO *win) {
  * mx: x-Position der Maus
  * my: y-Position der Maus
  */
-void desk_popup(int mx, int my) {
-	int i, j, max, first, nitems, oitems, maxw, px, py, ok, d, ks;
+void desk_popup(short mx, short my) {
+	short i, j, max, first, nitems, oitems, maxw, px, py, ok, d, ks;
 	char **eptr, *hlp, *q, *r, title[MAX_FLEN];
 	ICONDESK *p, **icons;
 	POPLIST items;
@@ -3365,7 +3357,7 @@ void desk_popup(int mx, int my) {
 	while (*hlp == ' ')
 		*(hlp--) = 0;
 	strcat(hlp, " ");
-	maxw = (int) strlen(eptr[0]);
+	maxw = (short) strlen(eptr[0]);
 	strcpy(eptr[1], "-");
 	strcpy(eptr[2], rs_trindex[MAINMENU][MCONFIG].ob_spec.free_string);
 	hlp = strstr(eptr[2], "...");
@@ -3376,8 +3368,8 @@ void desk_popup(int mx, int my) {
 	} else
 		hlp[3] = 0;
 	strcat(hlp, " ");
-	if ((int) strlen(eptr[2]) > maxw)
-		maxw = (int) strlen(eptr[2]);
+	if ((short) strlen(eptr[2]) > maxw)
+		maxw = (short) strlen(eptr[2]);
 	strcpy(eptr[3], "-");
 	nitems = oitems = 4;
 	first = 0;
@@ -3425,8 +3417,8 @@ void desk_popup(int mx, int my) {
 		}
 		if (oitems != nitems) {
 			oitems = nitems;
-			if ((int) strlen(eptr[nitems - 1]) > maxw)
-				maxw = (int) strlen(eptr[nitems - 1]);
+			if ((short) strlen(eptr[nitems - 1]) > maxw)
+				maxw = (short) strlen(eptr[nitems - 1]);
 		}
 	}
 	if (first) {
@@ -3447,10 +3439,10 @@ void desk_popup(int mx, int my) {
 			}
 		}
 	}
-	px = max(mx - (maxw * tb.ch_w) / 2, tb.desk.x);
-	py = max(my - tb.ch_h - tb.ch_h / 2, tb.desk.y);
-	if ((py + 8 + min(10, nitems) * tb.ch_h) >= (tb.desk.y + tb.desk.h))
-		py = tb.desk.y + tb.desk.h - 1;
+	px = max(mx - (maxw * tb.ch_w) / 2, tb.desk.g_x);
+	py = max(my - tb.ch_h - tb.ch_h / 2, tb.desk.g_y);
+	if ((py + 8 + min(10, nitems) * tb.ch_h) >= (tb.desk.g_y + tb.desk.g_h))
+		py = tb.desk.g_y + tb.desk.g_h - 1;
 	memset(&items, 0, sizeof(POPLIST));
 	items.formshort = -1;
 	items.sel = -1;
@@ -3501,8 +3493,8 @@ void desk_popup(int mx, int my) {
  * mx: x-Position der Maus
  * my: y-Position der Maus
  */
-void parent_popup(WININFO *win, int mx, int my) {
-	int i, nitems, maxw, ok, d, ks;
+void parent_popup(WININFO *win, short mx, short my) {
+	short i, nitems, maxw, ok, d, ks;
 	char **eptr, *hlp, *p, *q, path[MAX_PLEN + MAX_FLEN + 2];
 	W_PATH *wpath;
 	OBJECT dummy;
@@ -3528,12 +3520,12 @@ void parent_popup(WININFO *win, int mx, int my) {
 	strcpy(path, wpath->path);
 	p = path + 3;
 	strcpy(eptr[nitems - 1], "  \\ ");
-	maxw = (int) strlen(eptr[nitems - 1]);
+	maxw = (short) strlen(eptr[nitems - 1]);
 	for (i = nitems - 2; i >= 0; i--) {
 		q = strtok(p, "\\");
 		sprintf(eptr[i], "  %s\\ ", q);
-		if ((int) strlen(eptr[i]) > maxw)
-			maxw = (int) strlen(eptr[i]);
+		if ((short) strlen(eptr[i]) > maxw)
+			maxw = (short) strlen(eptr[i]);
 		p = NULL;
 	}
 	memset(&items, 0, sizeof(POPLIST));
@@ -3554,14 +3546,14 @@ void parent_popup(WININFO *win, int mx, int my) {
 		mx -= dummy.ob_width / 2;
 		my -= tb.ch_h / 2;
 	} else {
-		mx = win->work.x + 1;
-		my = win->work.y + 1;
+		mx = win->work.g_x + 1;
+		my = win->work.g_y + 1;
 	}
-	dummy.ob_x = max(mx, tb.desk.x);
-	dummy.ob_y = max(my, tb.desk.y);
+	dummy.ob_x = max(mx, tb.desk.g_x);
+	dummy.ob_y = max(my, tb.desk.g_y);
 	if ((dummy.ob_y + 8 + min(7, nitems) * tb.ch_h)
-			>= (tb.desk.y + tb.desk.h)) {
-		dummy.ob_y = tb.desk.y + tb.desk.h - 1;
+			>= (tb.desk.g_y + tb.desk.g_h)) {
+		dummy.ob_y = tb.desk.g_y + tb.desk.g_h - 1;
 	}
 	fi_dummy.tree = &dummy;
 	fi_dummy.poplist = poplist;
@@ -3603,7 +3595,7 @@ void parent_popup(WININFO *win, int mx, int my) {
  * NULL: Zu diesem ASCII-Wert gibt es keinen HOTKEY-Eintrag
  * sonst: Zeiger auf gefundenen HOTKEY-Eintrag
  */
-HOTKEY *get_hotkey(int key) {
+HOTKEY *get_hotkey(short key) {
 	HOTKEY *hk;
 
 	for (hk = glob.hotkeys; hk != NULL; hk = hk->next) {

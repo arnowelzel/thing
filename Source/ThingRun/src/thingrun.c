@@ -32,9 +32,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <aes.h>
-#include <vdi.h>
-#include <tos.h>
+#include <gem.h>
+#include <mintbind.h>
+#include <signal.h>
 #include <magx.h>
 #ifdef __MINT__
 #include <basepage.h>
@@ -50,18 +50,18 @@ char *app_argv(char *cmd, char *prog);
 void sigNix(void);
 void sigTerm(void);
 
-int quit;
+short quit;
 
-main(int argc, char *argv[]) {
-	int i, is_gr, multi = 0, dx, dy, dw, dh;
+main(short argc, char *argv[]) {
+	short i, is_gr, multi = 0, dx, dy, dw, dh;
 	FILE *fh;
 	char homepath[128], path[128], name[128];
 	char *cmd, *abuf, acmd[2];
-	int clen;
+	short clen;
 	char fname[128], tname[128];
-	int work_in[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1 }, work_out[57];
-	int vdi_handle;
-	int toswait;
+	short work_in[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1 }, work_out[57];
+	short vdi_handle;
+	short toswait;
 	char scmd[256], stail[256];
 
 	/* Keine Parameter erhalten, dann raus */
@@ -117,19 +117,19 @@ main(int argc, char *argv[]) {
 	}
 
 	fgets(tname, 127, fh);
-	tname[(int) strlen(tname) - 1] = 0;
+	tname[(short) strlen(tname) - 1] = 0;
 	fgets(path, 127, fh);
 	sscanf(path, "%d", &is_gr);
 	fgets(path, 127, fh);
-	path[(int) strlen(path) - 1] = 0;
+	path[(short) strlen(path) - 1] = 0;
 	fgets(name, 127, fh);
-	name[(int) strlen(name) - 1] = 0;
+	name[(short) strlen(name) - 1] = 0;
 	strcpy(fname, path);
 	strcat(fname, name);
 	cmd[1] = 0;
 	fgets(&cmd[1], 8192, fh);
 	if (cmd[1]) {
-		clen = (int) strlen(&cmd[1]);
+		clen = (short) strlen(&cmd[1]);
 		cmd[clen] = 0;
 		clen--;
 		if (clen > 125) {
@@ -147,7 +147,7 @@ main(int argc, char *argv[]) {
 		cmd[1] = 0;
 	}
 	fgets(homepath, 127, fh);
-	homepath[(int) strlen(homepath) - 1] = 0;
+	homepath[(short) strlen(homepath) - 1] = 0;
 	if (!homepath[2]) {
 		homepath[2] = '\\';
 		homepath[3] = 0;
@@ -159,10 +159,10 @@ main(int argc, char *argv[]) {
 	/* Programm starten */
 	if (multi) {
 		char *backslash;
-		int msg[8];
-		int new_app;
-		int has_wdef;
-		int du;
+		short msg[8];
+		short new_app;
+		short has_wdef;
+		short du;
 		long mpar[5];
 
 		quit = 0;
@@ -170,15 +170,15 @@ main(int argc, char *argv[]) {
 			has_wdef = 0;
 
 		/* Einige MiNT-Signal-Handler installieren */
-		Psignal(SIGINT, (void *) 1L);
-		Psignal(SIGSYS, (void *) 1L);
-		Psignal(SIGABRT, (void *) 1L);
-		Psignal(SIGTERM, sigTerm);
-		Psignal(SIGQUIT, (void *) 1L);
-		Psignal(SIGHUP, (void *) 1L);
+		Psignal(SIGINT, 1L );
+		Psignal(SIGSYS, 1L );
+		Psignal(SIGABRT, 1L );
+		Psignal(SIGTERM, (long) sigTerm );
+		Psignal(SIGQUIT, 1L );
+		Psignal(SIGHUP, 1L );
 
 		/* Thing etwas Zeit geben, sich zu beenden */
-		evnt_timer(1000, 0);
+		evnt_timer(1000L);
 
 		mpar[0] = (long) fname;
 		mpar[1] = 0L;
@@ -192,7 +192,7 @@ main(int argc, char *argv[]) {
 			quit = 1;
 
 		while (!quit) {
-			evnt_multi(MU_TIMER | MU_MESAG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, msg, 100, 0, &i, &i, &i, &i, &i, &i);
+			evnt_multi(MU_TIMER | MU_MESAG, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, msg, 100L, &i, &i, &i, &i, &i, &i);
 			if (((msg[0] == 80) || (msg[0] == 90)) && (msg[3] == new_app))
 				quit = 1;
 		}
@@ -305,7 +305,7 @@ main(int argc, char *argv[]) {
  -------------------------------------------------------------------------*/
 char *app_argv(char *cmd, char *prog) {
 	char *env, *new;
-	int elen, nlen, i, p, done;
+	short elen, nlen, i, p, done;
 
 	/* Groesse des aktuellen Environments ermitteln */
 	elen = 0;
@@ -324,8 +324,8 @@ char *app_argv(char *cmd, char *prog) {
 
 	/* Groesse fuer ARGV-Buffer berechnen */
 	nlen += 9; /* 'ARGV=1\0\0' und abschliessendes Doppelnullbyte */
-	nlen += ((int) strlen(prog)) + 1; /* Programmname als argv[0] */
-	nlen += ((int) strlen(cmd)) + 1; /* Parameter ab argv[1] */
+	nlen += ((short) strlen(prog)) + 1; /* Programmname als argv[0] */
+	nlen += ((short) strlen(cmd)) + 1; /* Parameter ab argv[1] */
 
 	/* Buffer reservieren */
 	new = malloc(nlen);

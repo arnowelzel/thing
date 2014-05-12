@@ -26,14 +26,14 @@
 #include "..\include\thingtbx.h"
 
 
-WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
+short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 {
-	int out[4];
+	short out[4];
 	LONG value;
    
 	value = 0;
 
-	if (appl_xgetinfo(3, &out[0], &out[1], &out[2], &out[3]) == 1)
+	if (appl_getinfo(3, &out[0], &out[1], &out[2], &out[3]) == 1)
 		value = (LONG) out[0];
   else
   {
@@ -45,7 +45,7 @@ WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 	{
 		case 0:
 	     strcpy ( sysLanguageCode, "en" );
-	     strcpy ( sysLanguageCodeLong, "english" );
+        strcpy ( sysLanguageCodeLong, "english" );
 		break;
 		case 1:
 	     strcpy ( sysLanguageCode, "de" );

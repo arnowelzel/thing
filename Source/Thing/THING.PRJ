@@ -4,7 +4,7 @@
 app\Thing.app
 
 .C [ -J -Z -M -P -Y -G -V]
-;.C [ -T- ]
+;.C [ -T ]
 .C [ -DDIRCH ]
 ;.C [ -DTB_EXTENSIONS ]
 
@@ -64,8 +64,6 @@ src\version.c (include\globdef.h, src\app.c, src\avserver.c, src\clip.c, src\con
 ; XHDI Support made by Julian Reschke
 ..\xhdi\xhdi.c [ -T- ]
 
-src\longcalc.c
-
 ; -------------------------------------------------------------------
 ; external libraries
 ; -------------------------------------------------------------------
@@ -84,7 +82,9 @@ mintlib.lib
 
 ; PureC Lib
 pcstdlib.lib
-pcgemlib.lib
+
+;GEMLib
+gem.lib
 
 ; Device Locking made by Hans-Juergen Richstein
 devlock.lib

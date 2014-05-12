@@ -39,10 +39,10 @@ void ddnak(EVENT *mevent) {
 
 	pipename[18] = mevent->ev_mmgpbuf[7] & 0x00ff;
 	pipename[17] = (mevent->ev_mmgpbuf[7] & 0xff00) >> 8;
-	fd = Fopen(pipename, FO_RW);
+	fd = Fopen(pipename, O_RDWR);
 	if (fd >= 0L) {
 		c = 1; /* DD_NAK */
-		Fwrite((int) fd, 1, &c);
-		Fclose((int) fd);
+		Fwrite((short) fd, 1, &c);
+		Fclose((short) fd);
 	}
 }

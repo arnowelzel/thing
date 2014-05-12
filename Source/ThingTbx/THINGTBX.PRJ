@@ -6,7 +6,7 @@ lib\thingtbx.lib
 .C [ -M -P -G ]
 
 ; optional
-;.C [ -DDEBUG ]			; general debug functionality
+;.C [ -D_DEBUG ]			; general debug functionality Toolbox
 .C [ -D-MEMDEBUG ]		; Memdebug support for debugging memory leaks
 
 .L [ -J ]

@@ -1,7 +1,6 @@
 /* GEM Resource C Source */
 
-#include <portab.h>
-#include <aes.h>
+#include <gem.h>
 #include "TOOLBOX.H"
 
 #if !defined(WHITEBAK)

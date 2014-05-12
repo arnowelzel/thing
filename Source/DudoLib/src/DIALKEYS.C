@@ -25,11 +25,7 @@
 
 #include <string.h>
 #include <ctype.h>
-#ifdef __MINT__
 #include <mintbind.h>
-#else
-#include <tos.h>
-#endif
 
 /**
  * Diese Routine laueft den Objektbaum durch und sucht nach tastatur-
@@ -64,7 +60,7 @@ DIALKEYS *create_dialkeys(OBJECT *tree) {
 			 * Testen, ob es ein Userdef-Objekt von mir ist.
 			 */
 			if (ubparm->magic != 'DIRK') {
-				if (!(tree[i].ob_flags & LASTOB))
+				if (!(tree[i].ob_flags & OF_LASTOB))
 					continue;
 				else
 					break;
@@ -108,7 +104,7 @@ DIALKEYS *create_dialkeys(OBJECT *tree) {
 				last_dialkey = new_dialkey;
 			}
 		}
-	} while (!(tree[i].ob_flags & LASTOB));
+	} while (!(tree[i].ob_flags & OF_LASTOB));
 
 	return (dialkeys);
 }

@@ -35,6 +35,7 @@
 #include "..\include\dragdrop.h"
 #include "..\include\tcmd.h"
 #include <new_rsc.h>
+#include <signal.h>
 #include <math.h>
 #include <pwd.h>
 #include <grp.h>
@@ -45,7 +46,7 @@
 #undef LINOUT
 #define LINOUT
 
-extern char *version_str(char *langver, int vers);
+extern char *version_str(char *langver, short vers);
 
 /*
  * Wird nur hier fuer die Reservierung/Freigabe gebraucht,
@@ -115,7 +116,7 @@ void sigTerm(long sig) {
 void cdecl sigFatal(long sig) {
 	char msg[256] = "ARGH! Thing received ";
 
-	switch ((int)sig) {
+	switch ((short)sig) {
 	case SIGBUS:
 		strcat(msg, "SIGBUS!");
 		break;
@@ -160,10 +161,10 @@ void free_wopen(WINOPEN **wopen) {
  *
  * @param desk_redraw
  */
-void wind_restore(int desk_redraw) {
+void wind_restore(short desk_redraw) {
 	WINOPEN *wopen;
 	WININFO *twin;
-	int wret;
+	short wret;
 	twin = 0L;
 	wopen = glob.openwin;
 
@@ -212,7 +213,7 @@ void wind_restore(int desk_redraw) {
 		/* Naechsten Eintrag holen und jetzigen Eintrag freigeben */
 		wopen = wopen->next;
 		if (desk_redraw) {
-			desk_draw(tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			desk_draw(tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 			desk_redraw = 0;
 		}
 	}
@@ -226,8 +227,8 @@ void wind_restore(int desk_redraw) {
  *
  * @return
  */
-int main_init(void) {
-	int i, j, l, x, y, w, h, fok, rex;
+short main_init(void) {
+	short i, j, l, x, y, w, h, fok, rex;
 	char tbuf[34];
 	char name[MAX_PLEN];
 	char *p, *sp, rsrcName[13];
@@ -249,7 +250,7 @@ int main_init(void) {
 	/* Globale Teile initialisieren */
 	if ((err = Pumask(0)) == -32L)
 		err = 022;
-	glob.umask = (unsigned int) err;
+	glob.umask = (unsigned short) err;
 	Pumask(glob.umask);
 	glob.toserr = 0;
 	glob.argv = 0;
@@ -325,12 +326,12 @@ int main_init(void) {
 DEBUGLOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 
 	{
-		int handle;
+		short handle;
 		long err;
 
 		sprintf(name, "%s%s", tb.homepath, FNAME_PAL);
 		if ((err = Fopen(name, 0)) >= 0L) {
-			handle = (int) err;
+			handle = (short) err;
 			Fread(handle, 256L * 6L, tos256pal);
 			Fclose(handle);
 		}
@@ -340,8 +341,8 @@ DEBUGLOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 		return (0);
 
 	glob.img_info.homepath = tb.homepath;
-	glob.img_info.desk_w = tb.desk.w;
-	glob.img_info.desk_h = tb.desk.h;
+	glob.img_info.desk_w = tb.desk.g_w;
+	glob.img_info.desk_h = tb.desk.g_h;
 	glob.img_info.confpath = glob.cpath;
 	glob.dir_img = glob.img_info;
 	menu_register(-1, "THING   ");
@@ -430,10 +431,10 @@ DEBUGLOG((1, "..3\n"));
 	}
 
 	/* Startverzeichnis mit abschliessendem '\' versehen */
-	l = (int) strlen(tb.homepath) - 1;
+	l = (short) strlen(tb.homepath) - 1;
 	if ((l > 0) && (tb.homepath[l] != '\\'))
 		strcat(tb.homepath, "\\");
-	l = (int) strlen(glob.cpath) - 1;
+	l = (short) strlen(glob.cpath) - 1;
 	if ((l > 0) && (glob.cpath[l] != '\\')) {
 		strcat(glob.cpath, "\\");
 	}
@@ -466,15 +467,12 @@ DEBUGLOG((1, "..3\n"));
 #endif
 
 	/* Alice austricksen ;-) */
-	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.x, tb.desk.y, 10, 10);
+	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.g_x, tb.desk.g_y, 10, 10);
 	if (i >= 0)
 		wind_delete(i);
 
 	/* Resource laden */
 	sprintf(rsrcName, "%s%s\\thing\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
-#ifdef _DEBUG
-  sprintf(almsg, "MAIN: rsrcName: %s", rsrcName); debugMain(almsg);
-#endif
 	if (!rsc_load(rsrcName, &rinfo)) {
 		sprintf(rsrcName, "%s%s\\thing\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
@@ -527,18 +525,18 @@ DEBUGLOG((1, "..3\n"));
 		Pdomain(1);
 
 		/* Einige MiNT-Signal-Handler installieren */
-		Psignal(SIGINT, (void *) 1L);
-		Psignal(SIGSYS, (void *) 1L);
-		Psignal(SIGABRT, (void *) 1L);
-		Psignal(SIGTERM, sigTerm);
+		Psignal(SIGINT, 1L);
+		Psignal(SIGSYS,  1L);
+		Psignal(SIGABRT, 1L);
+		Psignal(SIGTERM, (long) sigTerm);
 /*
 		 Psignal(SIGBUS, sigFatal);
 		 Psignal(SIGILL, sigFatal);
 		 Psignal(SIGPRIV, sigFatal);
 		 Psignal(SIGSEGV, sigFatal);
  */
-		Psignal(SIGQUIT, (void *) 1L);
-		Psignal(SIGHUP, (void *) 1L);
+		Psignal(SIGQUIT, 1L);
+		Psignal(SIGHUP,  1L);
 	}
 
 	/* Device-Lock initialisieren */
@@ -762,11 +760,11 @@ DEBUGLOG((1, "..3\n"));
 	 und 'Laufwerks-Info' auf Farbe 2 (Rot) setzen */
 	if (tb.planes > 1) {
 		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.fillpattern = IP_SOLID;
-		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.interiorcol = RED;
+		rs_trindex[WAIT][WFSLIDE].ob_spec.obspec.interiorcol = G_RED;
 		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.fillpattern = IP_SOLID;
-		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.interiorcol = RED;
+		rs_trindex[WAITCOPY][WCSLIDE].ob_spec.obspec.interiorcol = G_RED;
 		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.fillpattern = IP_SOLID;
-		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.interiorcol = RED;
+		rs_trindex[DIINFO][DIBUSED].ob_spec.obspec.interiorcol = G_RED;
 	}
 
 	/* Default-Parameter fuer Kobold */
@@ -931,7 +929,7 @@ DEBUGLOG((1, "..3\n"));
 
 			new->next = NULL;
 			strcpy(new->name, pwd->pw_name);
-			new->id = (int)pwd->pw_uid;
+			new->id = (short)pwd->pw_uid;
 			if (glob.usernames != NULL)
 				last->next = new;
 			else
@@ -954,7 +952,7 @@ DEBUGLOG((1, "..3\n"));
 			}
 			new->next = NULL;
 			strcpy(new->name, grp->gr_name);
-			new->id = (int)grp->gr_gid;
+			new->id = (short)grp->gr_gid;
 			if (glob.groupnames != NULL)
 				last->next = new;
 			else
@@ -1005,15 +1003,15 @@ DEBUGLOG((1, "..3\n"));
 	/* Desktop-Icon "Papierkorb" einrichten */
 	q = desk.dicon + OBTRASH;
 	q->class = IDTRASH;
-	q->x = tb.desk.w - 72;
-	q->y = tb.desk.h - 40;
+	q->x = tb.desk.g_w - 72;
+	q->y = tb.desk.g_h - 40;
 	strcpy(q->title, rs_frstr[TXTRASH]);
 
 	/* Desktop-Icon "Ablage" einrichten */
 	q = desk.dicon + OBCLIP;
 	q->class = IDCLIP;
-	q->x = tb.desk.w - 148;
-	q->y = tb.desk.h - 40;
+	q->x = tb.desk.g_w - 148;
+	q->y = tb.desk.g_h - 40;
 	strcpy(q->title, rs_frstr[TXCLIP]);
 	q->spec.clip = pmalloc(sizeof(D_CLIP));
 	if (!q->spec.clip) {
@@ -1036,15 +1034,15 @@ DEBUGLOG((1, "..3\n"));
 			p[0] = (char)boot_drv();
 		}
 	} else {
-		if (p[(int)strlen(p) - 1] != '\\')
+		if (p[(short)strlen(p) - 1] != '\\')
 			strcat(p, "\\");
 	}
 
 	/* Desktop-Icon "Drucker" einrichten */
 	q = desk.dicon + OBPRT;
 	q->class = IDPRT;
-	q->x = tb.desk.w - 220;
-	q->y = tb.desk.h - 40;
+	q->x = tb.desk.g_w - 220;
+	q->y = tb.desk.g_h - 40;
 	strcpy(q->title, rs_frstr[TXPRT]);
 
 	/* Bisherige Icons erzeugen */
@@ -1138,10 +1136,10 @@ DEBUGLOG((1, "..3\n"));
 	for (i = 0; i < MAX_PWIN; i++) {
 		glob.win[i].class = 0;
 		glob.win[i].state = 0;
-		glob.win[i].curr.x = tb.desk.x + tb.ch_w * 2 + i * 8;
-		glob.win[i].curr.y = tb.desk.y + 40 + tb.ch_h + i * 8;
-		glob.win[i].curr.w = tb.desk.w * 2 / 3;
-		glob.win[i].curr.h = tb.desk.h / 2;
+		glob.win[i].curr.g_x = tb.desk.g_x + tb.ch_w * 2 + i * 8;
+		glob.win[i].curr.g_y = tb.desk.g_y + 40 + tb.ch_h + i * 8;
+		glob.win[i].curr.g_w = tb.desk.g_w * 2 / 3;
+		glob.win[i].curr.g_h = tb.desk.g_h / 2;
 	}
 
 	/* Console */
@@ -1168,7 +1166,7 @@ DEBUGLOG((1, "..3\n"));
 	if (tb.use3d == 0)
 		set3dLook(FALSE);
 	else
-		setShortcutLineColor(RED);
+		setShortcutLineColor(G_RED);
 
 	/* Userdefs erzeugen */
 	if (conf.userdef) {
@@ -1217,8 +1215,8 @@ DEBUGLOG((1, "..3\n"));
 	gdos.fontlist = pmalloc((long)(34L * gdos.numfonts));
 	gdos.fontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
 	gdos.mfontname = pmalloc(sizeof(char *)*(long)gdos.numfonts);
-	gdos.fontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
-	gdos.mfontid = pmalloc(sizeof(int)*(long)gdos.numfonts * 2L);
+	gdos.fontid = pmalloc(sizeof(short)*(long)gdos.numfonts * 2L);
+	gdos.mfontid = pmalloc(sizeof(short)*(long)gdos.numfonts * 2L);
 	if (!gdos.fontlist || !gdos.fontname || !gdos.fontid || !gdos.mfontname || !gdos.mfontid) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return (0);
@@ -1294,7 +1292,11 @@ DEBUGLOG((1, "..3\n"));
 	if (*conf.dirimg)
 		glob.dir_ok = desk_iload(&glob.dir_img, conf.dirimg, 0, ALDIRIMGERR);
 
-	wind_set(0, WF_NEWDESK, rs_trindex[DESKTOP], ROOT);
+	{
+		short parm1, parm2;
+		long2int ( (long )rs_trindex[DESKTOP], &parm1, &parm2);
+	  wind_set(0, WF_NEWDESK, parm1, parm2, ROOT, 0);
+	}
 	mn_update();
 	graf_mouse(ARROW, 0L);
 	glob.menu = 1;
@@ -1349,7 +1351,7 @@ DEBUGLOG((1, "..3\n"));
  -------------------------------------------------------------------------*/
 void main_exit(void) {
 	FORMINFO *fi, *fi1;
-	int i, d, ks;
+	short i, d, ks;
 	UGNAME *j, *hlp;
 	ICONDESK *p;
 
@@ -1450,7 +1452,7 @@ LINOUT
 
 	/* Deinitialisieren */
 	if (glob.menu) {
-		wind_set(0, WF_NEWDESK, 0L, 0);
+		wind_set(0, WF_NEWDESK, 0, 0, 0, 0);
 LINOUT
 		menu_bar(rs_trindex[MAINMENU], 0);
 LINOUT
@@ -1539,13 +1541,13 @@ LINOUT
  Hauptschleife des Programms
  -------------------------------------------------------------------------*/
 void main_loop(void) {
-	int i, j, top, fdraw;
-	int evdone, ret;
+	short i, j, top, fdraw;
+	short evdone, ret;
 	WININFO *win, *twin;
 	W_GRP *wgrp;
 	char *fname, *fpath, *p;
 	char full[MAX_PLEN];
-	int fid;
+	short fid;
 	EVENT copy;
 
 	graf_mkstate(&mevent.ev_mm1x, &mevent.ev_mm1y, &mevent.ev_mmokstate, &mevent.ev_mbreturn);
@@ -1655,7 +1657,7 @@ void main_loop(void) {
 
 		/* AES-Message */
 		if (mevent.ev_mwich & MU_MESAG) {
-			int *msg;
+			short *msg;
 
 			msg = mevent.ev_mmgpbuf;
 			switch (msg[0]) {
@@ -1816,7 +1818,7 @@ void main_loop(void) {
 									wpath_lfree(&glob.win[i]);
 								} else {
 									wpath_update(&glob.win[i]);
-									win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+									win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 								}
 							}
 						}
@@ -1830,11 +1832,11 @@ void main_loop(void) {
 					if (glob.win[i].state & WSOPEN) {
 						if (msg[3] == -1) {
 							wpath_update(&glob.win[i]);
-							win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 						} else {
 							if (((W_PATH *) glob.win[i].user)->filesys.biosdev == msg[3]) {
 								wpath_update(&glob.win[i]);
-								win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+								win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							}
 						}
 					}
@@ -1905,8 +1907,8 @@ void main_loop(void) {
 /**-------------------------------------------------------------------------
  Programmstart
  -------------------------------------------------------------------------*/
-int main(void) {
-	int ret;
+short main(void) {
+	short ret;
 
 	ret = main_init();
 	if (ret) {

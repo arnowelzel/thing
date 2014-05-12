@@ -35,16 +35,12 @@
  */
 void clip_init(void) {
 	char path[MAX_PLEN], *cp;
-	int p, ret, exist;
+	short p, ret, exist;
 	XATTR xattr;
-
-#ifdef _DEBUG
-	debugMain("CLIP: Start clip_init --->");
-#endif
 
 	cp = desk.dicon[OBCLIP].spec.clip->path;
 	strcpy(path, cp);
-	p = (int) strlen(path) - 1;
+	p = (short) strlen(path) - 1;
 	if (p > 2) {
 		path[p] = 0;
 		exist = !file_exists(path, 1, &xattr);
@@ -57,7 +53,7 @@ void clip_init(void) {
 			if (ret < 0) {
 				err_file(rs_frstr[ALCCREATE], (long) ret, path);
 				scrp_read(cp);
-				p = (int) strlen(cp) - 1;
+				p = (short) strlen(cp) - 1;
 				if ((p > 0) && (cp[p] != '\\'))
 					strcat(cp, "\\");
 			} else
@@ -65,11 +61,6 @@ void clip_init(void) {
 		} else
 			scrp_write(cp);
 	}
-
-#ifdef _DEBUG
-	debugMain("CLIP: <---");
-#endif
-
 }
 
 /**
@@ -77,11 +68,11 @@ void clip_init(void) {
  *
  * @param *name Name der Datei
  */
-int clip_file(char *name) {
+short clip_file(char *name) {
 	long infh, outfh, inlen, outlen;
 	unsigned long bufsize;
 	char *buf, *p, outname[MAX_PLEN];
-	int done, ret;
+	short done, ret;
 
 	/* Dateiname fuer Clipboard erzeugen */
 	strcpy(outname, desk.dicon[OBCLIP].spec.clip->path);
@@ -109,7 +100,7 @@ int clip_file(char *name) {
 	}
 
 	/* Datei oeffnen */
-	infh = Fopen(name, FO_READ);
+	infh = Fopen(name, 0 /* FO_READ */);
 	if (infh < 0L) {
 		pfree(buf);
 		err_file(rs_frstr[ALFLOPEN], infh, name);
@@ -120,7 +111,7 @@ int clip_file(char *name) {
 	scrap_clear();
 	outfh = Fcreate(outname, 0);
 	if (outfh < 0L) {
-		Fclose((int) infh);
+		Fclose((short) infh);
 		pfree(buf);
 		err_file(rs_frstr[ALFLCREATE], outfh, outname);
 		return (0);
@@ -130,19 +121,19 @@ int clip_file(char *name) {
 	done = 0;
 	ret = 1;
 	while (!done) {
-		inlen = Fread((int) infh, bufsize, buf);
+		inlen = Fread((short) infh, bufsize, buf);
 		if (inlen < 0L) {
-			Fclose((int) outfh);
-			Fclose((int) infh);
+			Fclose((short) outfh);
+			Fclose((short) infh);
 			pfree(buf);
 			err_file(rs_frstr[ALFLREAD], inlen, name);
 			ret = 0;
 		}
 		if (inlen > 0L) {
-			outlen = Fwrite((int) outfh, inlen, buf);
+			outlen = Fwrite((short) outfh, inlen, buf);
 			if (outlen != inlen) {
-				Fclose((int) outfh);
-				Fclose((int) infh);
+				Fclose((short) outfh);
+				Fclose((short) infh);
 				pfree(buf);
 				if (outlen >= 0L)
 					outlen = -39L;
@@ -153,8 +144,8 @@ int clip_file(char *name) {
 		} else
 			done = 1;
 	}
-	Fclose((int) outfh);
-	Fclose((int) infh);
+	Fclose((short) outfh);
+	Fclose((short) infh);
 	pfree(buf);
 
 	clip_update();
@@ -166,7 +157,7 @@ int clip_file(char *name) {
  * Sorgt fuer ein Update des Clipboard-Verzeichnisses, wenn dort eine neue Datei angelegt wurde.
  */
 void clip_update(void) {
-	int mode, type, id;
+	short mode, type, id;
 	char name[9];
 
 	if (tb.sys & SY_ASEARCH) {

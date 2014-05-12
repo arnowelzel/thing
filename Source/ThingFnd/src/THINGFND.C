@@ -21,9 +21,9 @@
  * @license    LGPL
  */
 
-#include <aes.h>
-#include <vdi.h>
-#include <tos.h>
+#include <gem.h>
+#include <mintbind.h>
+#include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +51,7 @@
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
 char *aesapname, *altitle = "ThingFnd", almsg[256];
-int aesmsg[8];
+short aesmsg[8];
 EVENT mevent;
 GLOB glob;
 RSINFO rinfo;
@@ -110,10 +110,10 @@ void sigTerm(long sig) {
  * 1: Dateiauswahl erfolgreich, ausgewaehlte Datei steht in full
  * 2: Dateiauswahl erfolgreich, ausgewaehlter Ordner steht in full
  */
-int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title,
-		int freedret, int freedid, FORMINFO *fi) {
+short full_fselect(char *full, char *deflt, char *ext, short dironly, char *title,
+		short freedret, short freedid, FORMINFO *fi) {
 	char path[MAX_PLEN], name[MAX_FLEN], *p;
-	int exbut, ret;
+	short exbut, ret;
 
 	if (!*full) {
 		if (deflt)
@@ -153,14 +153,15 @@ int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title,
  * @param *objectTree
  */
 static void mn_redraw(OBJECT *objectTree) {
-	int top;
+	short top;
+	short d;
 
 	wind_update(BEG_MCTRL);
 	if (!(tb.sys & SY_MULTI) || (tb.app_id == menu_bar(0L, -1))) {
-		wind_get(0, WF_TOP, &top);
+		wind_get(0, WF_TOP, &top, &d, &d, &d);
 		menu_bar(objectTree, 1);
 		if (top > 0)
-			wind_set(top, WF_TOP);
+			wind_set(top, WF_TOP, 0, 0, 0, 0);
 	}
 	wind_update(END_MCTRL);
 }
@@ -179,9 +180,9 @@ static void mn_redraw(OBJECT *objectTree) {
  *       Verhalten der Funktion undefiniert)
  * enable: Alle Eintraege aktivieren (1) oder deaktivieren (0)
  */
-static void mn_all_ienable(OBJECT *objectTree, int enable) {
-	int i, j, k, in_acc = 2;
-	static int state = 1;
+static void mn_all_ienable(OBJECT *objectTree, short enable) {
+	short i, j, k, in_acc = 2;
+	static short state = 1;
 
 	enable = !!enable;
 	if (enable == state)
@@ -217,7 +218,7 @@ void mn_disable(void) {
  * @param item
  * @param enable
  */
-void mn_istate(int item, int enable) {
+void mn_istate(short item, short enable) {
 	if (enable)
 		unsetObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 	else
@@ -259,7 +260,7 @@ void di_about(void) {
 /**
  *
  */
-void de_about(int mode, int ret) {
+void de_about(short mode, short ret) {
 	UNUSED(ret);
 
 	if (!mode) {
@@ -315,7 +316,7 @@ void dl_quit(void) {
  * str: Zeiger auf Zielpuffer
  * date: Einzufuegendes GEMDOS-Datum, 0xffff = kein Datum (leer)
  */
-static void insert_date(char *str, unsigned int date) {
+static void insert_date(char *str, unsigned short date) {
 	if (date == 0xffffU)
 		strcpy(str, "");
 	else
@@ -327,7 +328,7 @@ static void insert_date(char *str, unsigned int date) {
  *
  * @param page Anzuzeigende Karteikarte
  */
-static void find_setpage(int page) {
+static void find_setpage(short page) {
 	switch (page) {
 	case 0:
 		setActiveCard(mainCard, FGENERAL, FALSE);
@@ -344,7 +345,7 @@ static void find_setpage(int page) {
  * Oeffnet den Suchen-Dialog.
  */
 void di_find(void) {
-	int i, last;
+	short i, last;
 	char *p, *max, *start;
 	OBJECT *objectTree;
 
@@ -432,9 +433,9 @@ void di_find(void) {
  * Eingabe/Rueckgabe:
  * Siehe Parameter "update" bei search_main()
  */
-int search_update(char *current, long hits) {
-	int ret, wait;
-	static int count = 0;
+short search_update(char *current, long hits) {
+	short ret, wait;
+	static short count = 0;
 	OBJECT *objectTree;
 	EVENT event;
 
@@ -496,7 +497,7 @@ int search_update(char *current, long hits) {
  */
 static void de_find_go(OBJECT *objectTree) {
 	long err;
-	int start, end, i;
+	short start, end, i;
 	long ok;
 	char *p, fmask[MAX_PLEN], cmask[MAX_PLEN];
 	double size;
@@ -652,7 +653,7 @@ dfg_parseerr:
 		frm_alert(1, almsg, altitle, 1, 0L);
 		return;
 	}
-	Fclose((int) err);
+	Fclose((short) err);
 	find = temp;
 	s_tree = fi_status.tree;
 
@@ -696,9 +697,9 @@ dfg_parseerr:
  * ret: Rueckgabewert von frm_do(), zu bearbeitendes Objekt (wie bei
  *      form_do())
  */
-void de_find(int mode, int ret) {
+void de_find(short mode, short ret) {
 	OBJECT *objectTree;
-	int done, exitObject, edob, oldpage, go_disabled;
+	short done, exitObject, edob, oldpage, go_disabled;
 	char searchpath[MAX_PLEN];
 
 	UNUSED(ret);
@@ -811,7 +812,7 @@ void de_find(int mode, int ret) {
  * buf: Liste der erhaltenen Filenamen, durch Leerzeichen getrennt
  *      und ggf. gequotet
  */
-void drag_on_window(int handle, int mx, int my, char *buf) {
+void drag_on_window(short handle, short mx, short my, char *buf) {
 	UNUSED(handle);
 	UNUSED(mx);
 	UNUSED(my);
@@ -826,7 +827,7 @@ void drag_on_window(int handle, int mx, int my, char *buf) {
  * @param item
  * @param ks
  */
-void handle_menu(int title, int item, int ks) {
+void handle_menu(short title, short item, short ks) {
 	BOOLEAN stguide;
 	OBJECT *objectTree;
 
@@ -885,11 +886,12 @@ void handle_menu(int title, int item, int ks) {
  * @param f4
  * @param ks
  */
-void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
+void handle_win(short handle, short msg, short f1, short f2, short f3, short f4, short ks) {
 	WININFO *win;
 	FORMINFO *fi;
-	int top;
-	int owner;
+	short top;
+	short owner;
+	short d;
 
 	UNUSED(ks);
 
@@ -930,7 +932,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 
 			/* Workaround fuer MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
-				if (wind_get(top, WF_OWNER, &owner))
+				if (wind_get(top, WF_OWNER, &owner, &d, &d, &d))
 					magx_switch(owner, 0);
 			}
 		}
@@ -1040,10 +1042,10 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		break;
 
 	case WM_SIZED:
-		if (f3 > win->full.w)
-			f3 = win->full.w;
-		if (f4 > win->full.h)
-			f4 = win->full.h;
+		if (f3 > win->full.g_w)
+			f3 = win->full.g_w;
+		if (f4 > win->full.g_h)
+			f4 = win->full.g_h;
 		win_size(win, f1, f2, f3, f4);
 		break;
 
@@ -1062,7 +1064,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
  * @param ks
  * @param br
  */
-void handle_button(int mx, int my, int but, int ks, int br) {
+void handle_button(short mx, short my, short but, short ks, short br) {
 	UNUSED(mx);
 	UNUSED(my);
 	UNUSED(but);
@@ -1076,9 +1078,9 @@ void handle_button(int mx, int my, int but, int ks, int br) {
  * @param ks
  * @param kr
  */
-void handle_key(int ks, int kr) {
-	unsigned int key;
-	int title, item, skey;
+void handle_key(short ks, short kr) {
+	unsigned short key;
+	short title, item, skey;
 
 	key = normkey(ks, kr);
 	key &= ~(NKF_CAPS | NKF_RESVD); /* Nicht benoetigte Flags ausmaskieren */
@@ -1212,10 +1214,10 @@ void handle_fmsg(EVENT *mevent, FORMINFO *fi) {
  *    z.B. ungueltig, wenn er falsch gequotet wurde)
  * 1: name enthaelt den naechsten Filenamen
  */
-int get_buf_entry(char *buf, char *name, char **newpos) {
+short get_buf_entry(char *buf, char *name, char **newpos) {
 	static char *bufpos;
 	char *pos;
-	int closed;
+	short closed;
 
 	if (buf != 0L)
 		pos = buf;
@@ -1292,7 +1294,7 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
  * @return
  */
 BOOLEAN main_init(void) {
-	int i, l, x, y, w, h;
+	short i, l, x, y, w, h;
 	char *p, aname[9], rsrcName[13];
 	OBJECT *objectTree;
 
@@ -1300,12 +1302,12 @@ BOOLEAN main_init(void) {
 	Pdomain(1);
 
 	/* Einige MiNT-Signal-Handler installieren */
-	Psignal(SIGINT, (void *) 1L);
-	Psignal(SIGSYS, (void *) 1L);
-	Psignal(SIGABRT, (void *) 1L);
-	Psignal(SIGTERM, sigTerm);
-	Psignal(SIGQUIT, (void *) 1L);
-	Psignal(SIGHUP, (void *) 1L);
+	Psignal(SIGINT, 1L);
+	Psignal(SIGSYS, 1L);
+	Psignal(SIGABRT, 1L);
+	Psignal(SIGTERM, (long) sigTerm);
+	Psignal(SIGQUIT, 1L);
+	Psignal(SIGHUP, 1L);
 
 	aesBuffer = 0L;
 	aesapname = 0L;
@@ -1326,7 +1328,7 @@ BOOLEAN main_init(void) {
 		return (FALSE);
 
 	/* Startverzeichnis mit abschliessendem '\' versehen */
-	l = (int) strlen(tb.homepath) - 1;
+	l = (short) strlen(tb.homepath) - 1;
 	if ((l > 0) && (tb.homepath[l] != '\\'))
 		strcat(tb.homepath, "\\");
 
@@ -1343,16 +1345,16 @@ BOOLEAN main_init(void) {
 		set3dLook(FALSE);
 
 	/* Alice austricksen ;-) */
-	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.x, tb.desk.y, 10, 10);
+	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.g_x, tb.desk.g_y, 10, 10);
 	if (i >= 0)
 		wind_delete(i);
 
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	sprintf(rsrcName, "%s%s\\THINGFND\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
+	sprintf(rsrcName, "%s%s\\thgfnd\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
 	if (!rsc_load(rsrcName, &rinfo)) {
-		sprintf(rsrcName, "%s%s\\THINGFND\\english.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\thgfnd\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
 			frm_alert(1, "[3][THINGFND.RSC nicht gefunden!|THINGFND.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);
@@ -1363,7 +1365,7 @@ BOOLEAN main_init(void) {
 			rs_fix(rinfo.rs_trindex[i], 0, 0);
 		else
 			rs_fix(rinfo.rs_trindex[i], 8, 16);
-		rs_textadjust(rinfo.rs_trindex[i], (glob.use3d && (tb.colors >= 16)) ? getBackgroundColor() : WHITE);
+		rs_textadjust(rinfo.rs_trindex[i], (glob.use3d && (tb.colors >= 16)) ? getBackgroundColor() : G_WHITE);
 	}
 	tb.ictree = rinfo.rs_trindex[ICONWIN];
 	tb.ictreed = rinfo.rs_trindex[ICONDIAL];
@@ -1473,7 +1475,7 @@ BOOLEAN main_init(void) {
  * Hauptschleife des Programms
  */
 void main_loop(void) {
-	int top, *msg, evdone, ret;
+	short top, *msg, evdone, ret;
 
 	glob.done = 0;
 	graf_mkstate(&mevent.ev_mm1x, &mevent.ev_mm1y, &mevent.ev_mmokstate, &mevent.ev_mbreturn);
@@ -1614,7 +1616,7 @@ void main_loop(void) {
  * Programmdeinitialisierung
  */
 void main_exit(void) {
-	int i;
+	short i;
 	FORMINFO *fi, *fi1;
 
 	/* Offene Dialoge schliessen */
@@ -1654,8 +1656,8 @@ void main_exit(void) {
 /*------------------------------------------------------------------*/
 /*  main routine                                                    */
 /*------------------------------------------------------------------*/
-main(int argc, char *argv[]) {
-	int i;
+main(short argc, char *argv[]) {
+	short i;
 	char *p;
 
 	glob.use3d = 1;

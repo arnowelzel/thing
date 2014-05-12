@@ -1,8 +1,32 @@
 /* GEM Resource C Source */
 
 #include <portab.h>
-#include <aes.h>
+#include <gem.h>
 #include "USERIMG.H"
+
+/* Object flags */
+
+#define NONE            0x0000
+#define SELECTABLE      0x0001
+#define DEFAULT         0x0002
+#define EXIT            0x0004
+#define EDITABLE        0x0008
+#define RBUTTON         0x0010
+#define LASTOB          0x0020
+#define TOUCHEXIT       0x0040
+#define HIDETREE        0x0080
+#define INDIRECT        0x0100
+
+
+/* Object states */
+
+#define NORMAL          0x00
+#define SELECTED        0x01
+#define CROSSED         0x02
+#define CHECKED         0x04
+#define DISABLED        0x08
+#define OUTLINED        0x10
+#define SHADOWED        0x20
 
 #if !defined(WHITEBAK)
 #define WHITEBAK    0x0040

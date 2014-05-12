@@ -47,7 +47,7 @@ static char *kbuf; /* Puffer fuer den Kobold-Job */
  *
  * @return 1 - alles OK, 0 - sonst
  */
-int kbd_newjob(void) {
+short kbd_newjob(void) {
 #ifdef _DEBUG
 	sprintf(almsg, "KOBD: allocating new job buffer, len=%ld, xalloc=%d", MAX_KBDLEN, tb.sys & SY_XALLOC); debugMain(almsg);
 #endif
@@ -69,7 +69,7 @@ int kbd_newjob(void) {
  *
  * @return 1 - alles OK, 0 - sonst
  */
-int kbd_addcmd(char *cmd) {
+short kbd_addcmd(char *cmd) {
 	long blen, clen;
 
 #ifdef _DEBUG
@@ -92,13 +92,13 @@ int kbd_addcmd(char *cmd) {
  Erzeugten Kobold-Job ausfÅhren
  -------------------------------------------------------------------------*/
 void kbd_startjob(void) {
-	int kid, i, j, done, rex, reply = -1;
+	short kid, i, j, done, rex, reply = -1;
 	char kname[9], *p;
 	EVENT kevent;
 	APPLINFO appl, *aptr;
-	int whandle;
+	short whandle;
 	char kcmd[MAX_PLEN];
-	int was_there = 0;
+	short was_there = 0;
 
 #ifdef _DEBUG
 	sprintf(almsg, "KOBD: start job"); debugMain(almsg);
@@ -145,7 +145,7 @@ void kbd_startjob(void) {
 
 	/* Kobold nicht aktiv - unter Multitasking jetzt starten */
 	if (kid < 0 && (tb.sys & SY_MULTI)) {
-		int ao, as, ct;
+		short ao, as, ct;
 
 		ao = aptr->overlay;
 		as = aptr->single;
@@ -159,7 +159,7 @@ void kbd_startjob(void) {
 		aptr->single = as;
 		conf.texit = ct;
 		kid = appl_find(kname);
-		evnt_timer(500, 0);
+		evnt_timer(500L);
 		kid = appl_find(kname);
 	}
 
@@ -281,7 +281,7 @@ void kbd_startjob(void) {
 #endif
 			Pexec(0, aptr->name, kcmd, 0L);
 #if 1
-			form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			form_dial(FMD_FINISH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 #endif
 		}
 	}
@@ -301,7 +301,7 @@ void kbd_startjob(void) {
 		for (i = 0; i < MAX_PWIN; i++) {
 			if (glob.win[i].state & WSOPEN) {
 				wpath_update(&glob.win[i]);
-				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 			}
 		}
 	}

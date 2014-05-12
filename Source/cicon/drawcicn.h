@@ -24,8 +24,7 @@
 #ifndef _DRAWCICN_H_INCLUDED
 #define _DRAWCICN_H_INCLUDED
 
-#include <aes.h> /* Replace aes.h and vdi.h with the corresponding */
-#include <vdi.h> /* files of your favourite compiler */
+#include <gem.h>
 #include <stdlib.h>
 #include <string.h>
 #include <portab.h>
@@ -67,8 +66,8 @@ typedef struct
  DRAW_CICON	*first;
 } DCINFO;
 
-int init_cicon(void);
-int init_cicon_with_palette(WORD *pal);
+short init_cicon(void);
+short init_cicon_with_palette(WORD *pal);
 void exit_cicon(void);
 void init_routines(DCINFO *dinfo);
 void deinit_routines(DCINFO *dinfo);

@@ -29,8 +29,7 @@
 
 #ifdef __PUREC__
 #undef __STDC__
-#include <aes.h>
-#include <vdi.h>
+#include <gem.h>
 #elif __GNUC__
 #include <aesbind.h>
 #include <vdibind.h>
@@ -41,7 +40,7 @@
 #endif
 
 #ifndef BOOLEAN
-#define BOOLEAN		WORD
+#define BOOLEAN		short
 #endif
 #ifndef TRUE
 #define TRUE		(BOOLEAN)1
@@ -75,17 +74,6 @@
 #define FIS_HATCH		3	/* Schraffur */
 #define FIS_USER		4	/* frei definierbar */
 #endif
-
-/*
- * Texteffekte fuer vst_effects
- */
-#define TF_NORMAL		0x00
-#define TF_THICKENED	0x01
-#define TF_LIGHTENED	0x02
-#define TF_SLANTED		0x04
-#define TF_UNDERLINED	0x08
-#define TF_OUTLINED		0x10
-#define TF_SHADOWED		0x20
 
 /*
  * Textausrichtung fuer vst_alignment
@@ -238,7 +226,6 @@ WORD initDudolib(void);
 void releaseDudolib(void);
 WORD setUserdefs(OBJECT *tree, BOOLEAN isMenu);
 WORD unsetUserdefs(OBJECT *objectTree);
-WORD appl_xgetinfo(WORD type, WORD *out1, WORD *out2, WORD *out3, WORD *out4);
 #ifdef __GNUC__
 U_OB_SPEC get_obspec(OBJECT *tree, WORD object);
 #else
@@ -288,14 +275,14 @@ WORD find_object(DIALKEYS *dialkeys, char *keystring);
 void get_menue_item(DIALKEYS *dialkeys, char *keystring, WORD *title, WORD *item);
 
 /* Module 'card.c' */
-int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx);
+short cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx);
 void cardRemoveAll(CARD *card);
 void setCardRedraw(CARD *card, void(*redraw)(OBJECT *objectBodyTree, WORD objectBodyIdx, WORD x, WORD y, WORD w, WORD h));
 void cardDisable(CARD *card, WORD objectHeadIdx);
 void cardEnable(CARD *card, WORD objectHeadIdx);
 CARD *getActiveCard(CARD *card);
-int getActiveCardBodyIdx(CARD *card);
-void setActiveCard(CARD *card, int objectHeadIdx, BOOLEAN redraw);
+short getActiveCardBodyIdx(CARD *card);
+void setActiveCard(CARD *card, short objectHeadIdx, BOOLEAN redraw);
 
 #ifdef _USR_EDITFIELD_
 WORD getScrollOffset(OBJECT *tree, WORD object);

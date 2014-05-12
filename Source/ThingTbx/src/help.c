@@ -67,7 +67,7 @@ WORD showSTGuideHelp(BYTE *helpfile, BYTE *reference) {
  Anzeige eines Hilfetextes mit ST-Guide
  -------------------------------------------------------------------------*/
 void show_help(char *ref) {
-	int ap_id, ok, rex;
+	short ap_id, ok, rex;
 	APPLINFO app;
 	char *p;
 
@@ -115,7 +115,7 @@ void show_help(char *ref) {
  */
 void read_hlp(char *ext) {
 	char fname[256], line[257], *p;
-	int state, rebalance;
+	short state, rebalance;
 	long id_and_obj;
 	FILE *handle;
 	BHELP *new,

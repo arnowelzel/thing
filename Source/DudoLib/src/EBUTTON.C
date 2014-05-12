@@ -45,7 +45,7 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	vswr_mode(userdef->vdi_handle, MD_REPLACE);
 	vst_alignment(userdef->vdi_handle, TA_LEFT, TA_TOP, &du, &du);
 
-	if (get3dLook() == FALSE && (parmblock->pb_tree[parmblock->pb_obj].ob_flags & ~LASTOB) != TOUCHEXIT) {
+	if (get3dLook() == FALSE && (parmblock->pb_tree[parmblock->pb_obj].ob_flags & ~OF_LASTOB) != OF_TOUCHEXIT) {
 		parmblock->pb_h -= 2;
 		parmblock->pb_w -= 2;
 	}
@@ -63,10 +63,10 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	pxy[2] = pxy[0] + parmblock->pb_w - 1;
 	pxy[3] = pxy[1] + parmblock->pb_h - 1;
 
-	if ((parmblock->pb_tree[parmblock->pb_obj].ob_flags & ~LASTOB) == TOUCHEXIT) {
+	if ((parmblock->pb_tree[parmblock->pb_obj].ob_flags & ~OF_LASTOB) == OF_TOUCHEXIT) {
 		frame_size = 1;
 	} else {
-		if (parmblock->pb_tree[parmblock->pb_obj].ob_flags & DEFAULT)
+		if (parmblock->pb_tree[parmblock->pb_obj].ob_flags & OF_DEFAULT)
 			frame_size = 3;
 		else
 			frame_size = 2;
@@ -84,7 +84,7 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	}
 
 	vsf_interior(userdef->vdi_handle, FIS_SOLID);
-	vsf_color(userdef->vdi_handle, BLACK);
+	vsf_color(userdef->vdi_handle, G_BLACK);
 	v_bar(userdef->vdi_handle, pxy);
 	for (i = 1; i <= frame_size; i++) {
 		pxy[0]++;
@@ -94,13 +94,13 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 	}
 
 	if (get3dLook() == FALSE) {
-		if (parmblock->pb_currstate & SELECTED) {
-			ubparm->te_textcol = WHITE;
+		if (parmblock->pb_currstate & OS_SELECTED) {
+			ubparm->te_textcol = G_WHITE;
 		} else {
-			vsf_color(userdef->vdi_handle, WHITE);
+			vsf_color(userdef->vdi_handle, G_WHITE);
 			v_bar(userdef->vdi_handle, pxy);
 
-			ubparm->te_textcol = BLACK;
+			ubparm->te_textcol = G_BLACK;
 		}
 	} else {
 		vsf_color(userdef->vdi_handle, userdef->backgrd_color);
@@ -113,10 +113,10 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 		pxy1[4] = pxy[2] - 1;
 		pxy1[5] = pxy[1];
 
-		if (parmblock->pb_currstate & SELECTED)
-			vsl_color(userdef->vdi_handle, LBLACK);
+		if (parmblock->pb_currstate & OS_SELECTED)
+			vsl_color(userdef->vdi_handle, G_LBLACK);
 		else
-			vsl_color(userdef->vdi_handle, WHITE);
+			vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 3, pxy1);
 
 		pxy1[0]++;
@@ -124,24 +124,24 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 		pxy1[3] = pxy[3];
 		pxy1[4]++;
 
-		if (parmblock->pb_currstate & SELECTED)
-			vsl_color(userdef->vdi_handle, WHITE);
+		if (parmblock->pb_currstate & OS_SELECTED)
+			vsl_color(userdef->vdi_handle, G_WHITE);
 		else
-			vsl_color(userdef->vdi_handle, LBLACK);
+			vsl_color(userdef->vdi_handle, G_LBLACK);
 		v_pline(userdef->vdi_handle, 3, pxy1);
 
-		if (parmblock->pb_currstate & SELECTED) {
+		if (parmblock->pb_currstate & OS_SELECTED) {
 			xPos++;
 			yPos++;
 		}
-		ubparm->te_textcol = BLACK;
+		ubparm->te_textcol = G_BLACK;
 	}
 
 	vswr_mode(userdef->vdi_handle, MD_TRANS);
-	if (get3dLook() == TRUE && (parmblock->pb_currstate & DISABLED)) {
+	if (get3dLook() == TRUE && (parmblock->pb_currstate & OS_DISABLED)) {
 		text_effects = TF_LIGHTENED;
 		v_xgtext(xPos, yPos, text_effects, ubparm, parmblock);
-		parmblock->pb_currstate &= ~DISABLED;
+		parmblock->pb_currstate &= ~OS_DISABLED;
 	} else {
 		text_effects = TF_NORMAL;
 		v_xgtext(xPos, yPos, text_effects, ubparm, parmblock);
@@ -149,6 +149,6 @@ WORD cdecl exitbutton(PARMBLK *parmblock) {
 
 	clipping(parmblock, FALSE);
 
-	parmblock->pb_currstate &= ~SELECTED;
+	parmblock->pb_currstate &= ~OS_SELECTED;
 	return (parmblock->pb_currstate);
 }

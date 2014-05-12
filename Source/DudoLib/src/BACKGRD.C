@@ -163,7 +163,7 @@ WORD cdecl backgrdbox(PARMBLK *parmblock) {
 		pxy[3] = pxy[1];
 		pxy[4] = pxy[2];
 		pxy[5] = parmblock->pb_y + 1 + ubparm->backgrdoffset[1];
-		vsl_color(userdef->vdi_handle, BLACK);
+		vsl_color(userdef->vdi_handle, G_BLACK);
 		v_pline(userdef->vdi_handle, 3, pxy);
 
 		pxy[1]++;
@@ -188,7 +188,7 @@ WORD cdecl backgrdbox(PARMBLK *parmblock) {
 		pxy[7] = pxy[5];
 		pxy[8] = pxy[0];
 		pxy[9] = pxy[1];
-		vsl_color(userdef->vdi_handle, BLACK);
+		vsl_color(userdef->vdi_handle, G_BLACK);
 		v_pline(userdef->vdi_handle, 5, pxy);
 
 		ubparm->backgrdoffset[0]++;
@@ -208,7 +208,7 @@ WORD cdecl backgrdbox(PARMBLK *parmblock) {
 
 	if (get3dLook() == TRUE) {
 		/* weisse Linien zeichnen */
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 
 		pxy[0] = parmblock->pb_x + parmblock->pb_w - 1 - ubparm->backgrdoffset[2];
 		pxy[1] = parmblock->pb_y + ubparm->backgrdoffset[1];
@@ -228,7 +228,7 @@ WORD cdecl backgrdbox(PARMBLK *parmblock) {
 			v_pline(userdef->vdi_handle, 3, pxy);
 		}
 		/* dunkelgraue Linien zeichnen */
-		vsl_color(userdef->vdi_handle, LBLACK);
+		vsl_color(userdef->vdi_handle, G_LBLACK);
 
 		pxy[0] = parmblock->pb_x + parmblock->pb_w - 1 - ubparm->backgrdoffset[2];
 		pxy[1] = parmblock->pb_y + 1 + ubparm->backgrdoffset[1];
@@ -248,7 +248,7 @@ WORD cdecl backgrdbox(PARMBLK *parmblock) {
 			v_pline(userdef->vdi_handle, 3, pxy);
 
 			/* schwarze Linien zeichnen */
-			vsl_color(userdef->vdi_handle, BLACK);
+			vsl_color(userdef->vdi_handle, G_BLACK);
 
 			pxy[0] = parmblock->pb_x + 3 + ubparm->backgrdoffset[0];
 			pxy[1] = parmblock->pb_y + 3 + ubparm->backgrdoffset[1];

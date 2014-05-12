@@ -36,9 +36,6 @@
 #include <types.h>
 #include <pwd.h>
 #include <grp.h>
-#ifndef __MINT__
-#include <ext.h>
-#endif
 #include "..\include\dragdrop.h"
 
 #undef ARNO_ORIGINAL
@@ -46,19 +43,19 @@
 /* Lokale Prototypen sind auch nicht verkehrt... */
 static void dl_copy_slupdate(unsigned long total, unsigned long ready,
 		unsigned long size);
-static int dl_runapp(char *iname, int itype, char *ititle, int *rex);
+static short dl_runapp(char *iname, short itype, char *ititle, short *rex);
 
 /**-------------------------------------------------------------------------
  dl_ddrag()
 
  Drag&Drop auf ein Desktop-Objekt bearbeiten
  -------------------------------------------------------------------------*/
-void dl_ddrag(ICONDESK *icon, int ks) {
-	int i, j;
+void dl_ddrag(ICONDESK *icon, short ks) {
+	short i, j;
 #if 0
-	int cont;
+	short cont;
 #endif
-	int fin, rex;
+	short fin, rex;
 	char name[MAX_PLEN], dname[4];
 #if 0
 	char apath[MAX_PLEN],aname[MAX_FLEN];
@@ -229,8 +226,8 @@ void dl_ddrag(ICONDESK *icon, int ks) {
 
  Drag&Drop auf ein Fenster bearbeiten
  -------------------------------------------------------------------------*/
-void dl_wdrag_d(FORMINFO *fi, int obj, char *name, int ks) {
-	int ok, i, j;
+void dl_wdrag_d(FORMINFO *fi, short obj, char *name, short ks) {
+	short ok, i, j;
 	char *p, *f;
 	char fname[MAX_FLEN], *fpath, *full;
 
@@ -257,7 +254,7 @@ void dl_wdrag_d(FORMINFO *fi, int obj, char *name, int ks) {
 				if (!strchr(p, '|')) {
 					strcpy(p, fname);
 					strcat(p, "|");
-					p = &p[(int) strlen(p)];
+					p = &p[(short) strlen(p)];
 				} else {
 					i = 0;
 					while (p[i] != '|' && p[i])
@@ -375,8 +372,8 @@ void dl_wdrag_d(FORMINFO *fi, int obj, char *name, int ks) {
 }
 
 void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
-		int mx, int my, int ks) {
-	int i, j, cont, fin, rex, ups, upd;
+		short mx, short my, short ks) {
+	short i, j, cont, fin, rex, ups, upd;
 	char *full, *name, *iname;
 	char *apath, aname[MAX_FLEN], title[MAX_FLEN], *p;
 	APPLINFO *aptr;
@@ -388,7 +385,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 	W_GRP *wgrp, *sgrp;
 	WG_ENTRY *sgitem, *sgprev, *sgnext, *snitem;
 	FORMINFO *fi;
-	int obj;
+	short obj;
 
 	full = pmalloc(MAX_PLEN * 4L);
 	if (full == NULL) {
@@ -473,7 +470,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 						case IDFOLDER:
 							if (!p[0]) {
 								p = q->spec.folder->path;
-								j = (int)strlen(p) - 1;
+								j = (short)strlen(p) - 1;
 								if (j > 0)
 									j--;
 								while (p[j] != '\\' && j > 0)
@@ -505,7 +502,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 				}
 				/* Gruppe aktualisieren */
 				wgrp_tree(win);
-				win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 				win_slide(win, S_INIT, 0, 0);
 				wgrp_change(win);
 				if (snitem)
@@ -568,7 +565,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 						if (snitem)
 							snitem->sel = 1;
 						wgrp_tree(win);
-						win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 						win_slide(win, S_INIT, 0, 0);
 						wgrp_change(win);
 						if (snitem)
@@ -603,7 +600,7 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 						case EC_PARENT:
 							strcpy(iname, wpath->path);
 							if (item->class == EC_PARENT) {
-								i = (int)strlen(iname) - 2;
+								i = (short)strlen(iname) - 2;
 								while (iname[i] != '\\')
 									i--;
 								iname[i + 1] = 0;
@@ -723,14 +720,14 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 						/* Gruppen aktualisieren */
 						if (ups) {
 							wgrp_tree(desk.sel.win);
-							win_redraw(desk.sel.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(desk.sel.win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							win_slide(desk.sel.win, S_INIT, 0, 0);
 							wgrp_change(desk.sel.win);
 							wgrp->focus = 0;
 						}
 						if (upd) {
 							wgrp_tree(win);
-							win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							win_slide(win, S_INIT, 0, 0);
 							wgrp_change(win);
 						}
@@ -756,11 +753,11 @@ void dl_wdrag(WININFO *win, WP_ENTRY *item, WG_ENTRY *gitem, WG_ENTRY *gprev,
 
  Drag&Drop auf ein Accessory-Fenster bearbeiten
  -------------------------------------------------------------------------*/
-void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
-	int dodrag, owner, ok, dummy;
+void dl_awdrag(ACWIN *accwin, short whandle, short mx, short my, short ks) {
+	short dodrag, owner, ok, d;
 	char *name, *path;
 	/* ErgÑnzungen fÅr MT-D&D */
-	int dfh, dret;
+	short dfh, dret;
 	char dext[32];
 	long dsize;
 	unsigned long dtype;
@@ -794,7 +791,7 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 				/* EigentÅmer ermitteln */
 				owner = -1;
 				if (tb.sys & SY_OWNER)
-					if (!new_wind_get(whandle, WF_OWNER, &owner, &dummy, &dummy, &dummy))
+					if (!wind_get(whandle, WF_OWNER, &owner, &d, &d, &d))
 						owner = -1;
 				if (owner != -1 && owner != tb.app_id) {
 					/* MultiTOS D&D probieren */
@@ -838,8 +835,8 @@ void dl_awdrag(ACWIN *accwin, int whandle, int mx, int my, int ks) {
 
  Info ueber Laufwerk anzeigen/aendern
  -------------------------------------------------------------------------*/
-int dl_ddriveinfo(ICONDESK *icon, int donext) {
-	int cont, done, fret;
+short dl_ddriveinfo(ICONDESK *icon, short donext) {
+	short cont, done, fret;
 	char dtitle[80], drv[4];
 #if 0
 	DTA *odta, dta;
@@ -848,7 +845,7 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 	char *vmask;
 	char *dspec;
 	long fcret;
-	DISKINFO dinfo;
+	_DISKINFO dinfo;
 	double bar;
 	FILESYS fsys;
 #if 0
@@ -856,11 +853,11 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 #endif
 	OBJECT *tree;
 #if 0
-	int oedit;
+	short oedit;
 #endif
 	char u1[4] = "\0kB", u2[5] = " kB)", units[] = " kMGT";
 	double _free, used, total, clsizb;
-	int i;
+	short i;
 
 	tree = rs_trindex[DIINFO];
 
@@ -967,12 +964,12 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 		bar = 0;
 	if (bar < 1)
 		bar = 1;
-	tree[DIBUSED].ob_width = (int) bar;
+	tree[DIBUSED].ob_width = (short) bar;
 	if (total > 0.0)
 		bar =+ (used / total) * 100 + 0.5;
 	else
 		bar = 0;
-	sprintf(tree[DIBVALUE].ob_spec.free_string, "%d%%", (int) bar);
+	sprintf(tree[DIBVALUE].ob_spec.free_string, "%d%%", (short) bar);
 	setObjectState(tree, DIAUTOINSTALL, SELECTED, icon->spec.drive->autoinstall);
 	setObjectState(tree, DIUSELABEL, SELECTED, icon->spec.drive->uselabel);
 
@@ -1044,9 +1041,9 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 				/* Neues Label erzeugen */
 				if (nvname[0]) {
 					strcpy(&dtitle[3], nvname);
-					fcret = Fcreate(dtitle, FA_VOLUME);
+					fcret = Fcreate(dtitle, 0x08 /* FA_VOLUME */);
 					if (fcret >= 0L)
-						Fclose((int) fcret);
+						Fclose((short) fcret);
 					else {
 						dtitle[2] = 0;
 						sprintf(almsg, rs_frstr[ALDNAME], dtitle);
@@ -1066,8 +1063,8 @@ int dl_ddriveinfo(ICONDESK *icon, int donext) {
 
  Info ueber Papierkorb anzeigen/aendern
  -------------------------------------------------------------------------*/
-int dl_dtrashinfo(ICONDESK *icon, int donext) {
-	int cont, done;
+short dl_dtrashinfo(ICONDESK *icon, short donext) {
+	short cont, done;
 	OBJECT *tree;
 
 	tree = rs_trindex[TRASHINFO];
@@ -1114,11 +1111,11 @@ int dl_dtrashinfo(ICONDESK *icon, int donext) {
 
  Info ueber Ablage anzeigen/aendern
  -------------------------------------------------------------------------*/
-int dl_dclipinfo(ICONDESK *icon, int donext) {
-	int cont, done, ret, /*fret,*/ ok;
+short dl_dclipinfo(ICONDESK *icon, short donext) {
+	short cont, done, ret, /*fret,*/ ok;
 	char path[MAX_PLEN], /*name[MAX_FLEN],*/ *p;
 	FILESYS filesys;
-	int i;
+	short i;
 	long l;
 	W_PATH *wpath;
 	OBJECT *tree;
@@ -1146,7 +1143,7 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 				break;
 			strcpy(path, getObjectText(tree, CIPATH));
 			if (path[0]) {
-				if (path[(int) strlen(path) - 1] != '\\')
+				if (path[(short) strlen(path) - 1] != '\\')
 					strcat(path, "\\");
 			}
 
@@ -1181,7 +1178,7 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 			p = path;
 			if (ok) {
 				if (p[0]) {
-					if (p[(int) strlen(p) - 1] != '\\')
+					if (p[(short) strlen(p) - 1] != '\\')
 						strcat(p, "\\");
 					frm_edstring(&fi_clipinfo, CIPATH, path);
 					frm_redraw(&fi_clipinfo, CIPATH);
@@ -1235,7 +1232,7 @@ int dl_dclipinfo(ICONDESK *icon, int donext) {
 
  Info ueber Applikation anzeigen/aendern
  -------------------------------------------------------------------------*/
-void dl_dappinfo_mode(int mode) {
+void dl_dappinfo_mode(short mode) {
 	fi_dappinfo.keyflag = 0;
 
 #ifdef DIRCH
@@ -1325,7 +1322,7 @@ void dl_dappinfo_mode(int mode) {
 }
 
 /*-----------------------------------------------------------------------*/
-void dl_dappinfo_opt(int isap, int isdeflt) {
+void dl_dappinfo_opt(short isap, short isdeflt) {
 	OBJECT *appinfo;
 
 	appinfo = rs_trindex[DAPPINFO];
@@ -1449,9 +1446,9 @@ void dl_dappinfo_opt(int isap, int isdeflt) {
  * @param mode
  * @param ret
  */
-int dl_dappinfo(APPLINFO *appl, int del) {
-	int i, j, isap;
-	int obnum[5] = { DAIPARAM, DAIOPEN, DAIVIEW, DAIPRINT, DAEVAL },
+short dl_dappinfo(APPLINFO *appl, short del) {
+	short i, j, isap;
+	short obnum[5] = { DAIPARAM, DAIOPEN, DAIVIEW, DAIPRINT, DAEVAL },
 			oblen[5] = { 60, 60, 60, 60, 50 };
 	APPLINFO *aptr;
 	OBJECT *tree;
@@ -1630,14 +1627,14 @@ int dl_dappinfo(APPLINFO *appl, int del) {
  * @param mode
  * @param ret
  */
-void de_dappinfo(int mode, int ret) {
-	int done, cont, i, /*fret,*/ iret, ok, mode1, isap;
-	int exit_obj;
+void de_dappinfo(short mode, short ret) {
+	short done, cont, i, /*fret,*/ iret, ok, mode1, isap;
+	short exit_obj;
 	char *path, name[MAX_FLEN]; /*, *p;*/
 	APPLINFO *appl, *aptr;
 	char *aname;
 	FILESYS filesys;
-	int sel, d;
+	short sel, d;
 	OBJECT *tree;
 	WORD objectRedrawIdx;
 
@@ -1993,8 +1990,8 @@ void de_dappinfo(int mode, int ret) {
 
  Info ueber Drucker auf dem Desktop anzeigen/aendern
  -------------------------------------------------------------------------*/
-int dl_prtinfo(ICONDESK *icon, int donext) {
-	int cont, done;
+short dl_prtinfo(ICONDESK *icon, short donext) {
+	short cont, done;
 	OBJECT *tree;
 
 	tree = rs_trindex[PRTINFO];
@@ -2038,8 +2035,8 @@ int dl_prtinfo(ICONDESK *icon, int donext) {
 
  Info ueber Device auf dem Desktop anzeigen/Ñndern
  -------------------------------------------------------------------------*/
-int dl_devinfo(ICONDESK *icon, int donext) {
-	int cont, done;
+short dl_devinfo(ICONDESK *icon, short donext) {
+	short cont, done;
 	OBJECT *tree;
 
 	tree = rs_trindex[DEVINFO];
@@ -2087,7 +2084,7 @@ int dl_devinfo(ICONDESK *icon, int donext) {
 
  Info ueber Dateien/Ordner anzeigen/aendern
  -------------------------------------------------------------------------*/
-void dl_fileinfo_mode(int mode, int file, int desk) {
+void dl_fileinfo_mode(short mode, short file, short desk) {
 	OBJECT *tree;
 	UNUSED(file);
 
@@ -2143,10 +2140,10 @@ void dl_fileinfo_mode(int mode, int file, int desk) {
 /**
  *
  */
-static void dl_fileinfo_dmode(OBJECT *tree, int dmode, unsigned int atime,
-		unsigned int adate, unsigned int mtime, unsigned int mdate,
-		unsigned int ctime, unsigned int cdate) {
-	unsigned int _time, _date;
+static void dl_fileinfo_dmode(OBJECT *tree, short dmode, unsigned short atime,
+		unsigned short adate, unsigned short mtime, unsigned short mdate,
+		unsigned short ctime, unsigned short cdate) {
+	unsigned short _time, _date;
 	char *desc;
 
 	switch (dmode) {
@@ -2174,31 +2171,31 @@ static void dl_fileinfo_dmode(OBJECT *tree, int dmode, unsigned int atime,
 /**
  *
  */
-int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
-		ICONDESK *icon, int donext) {
+short dl_fileinfo(char *path, short usepar, FILESYS *filesys, WP_ENTRY *item,
+		ICONDESK *icon, short donext) {
 	W_PATH *wpath1;
 	char *wname, *lpath;
 	char *fmask, *dlstr;
-	int cont, done, ok, attr, fkey, atfirst, i, l, desk, file;
-	int nfiles, nfolders, nlinks;
+	short cont, done, ok, attr, fkey, atfirst, i, l, desk, file;
+	short nfiles, nfolders, nlinks;
 	unsigned long size;
 	long fret;
 	long magic[2];
 	char name[MAX_FLEN], *oldname, *newname;
-	int mode1;
-	static int mode = 0;
-	unsigned int tmode, imode;
+	short mode1;
+	static short mode = 0;
+	unsigned short tmode, imode;
 	long fh;
 	PH ph;
-	int isp, ism, dvalid;
-	DOSTIME dtime;
+	short isp, ism, dvalid;
+	_DOSTIME dtime;
 	OBJECT *tree;
-	static int dmode = 0;
+	static short dmode = 0;
 	struct passwd *pwd;
 	struct group *grp;
-	int newuid, newgid;
+	short newuid, newgid;
 	HOTKEY *hk, *p;
-	int key = 0;
+	short key = 0;
 
 	wname = pmalloc(MAX_PLEN * 4L);
 	if (wname == NULL) {
@@ -2290,25 +2287,25 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 				fh = Fopen(oldname, FO_READ);
 				if (fh >= 0L) {
 					/* Zeit/Datum sichern */
-					Fdatime(&dtime, (int) fh, 0);
+					Fdatime(&dtime, (short) fh, 0);
 					if (dtime.time != 0 && dtime.date != 0)
 						dvalid = 1;
 
 					/* Programmheader lesen */
-					if (Fread((int) fh, sizeof(PH), &ph) == sizeof(PH)) {
+					if (Fread((short) fh, sizeof(PH), &ph) == sizeof(PH)) {
 						if (ph.ph_branch == 0x601a)
 							isp = 1;
 					}
 
 					/* MagiC-Speicherlimit ermitteln */
 					if (isp && (tb.sys & SY_MAGX)) {
-						Fseek(-8L, (int) fh, 2);
-						if (Fread((int) fh, 8L, magic) == 8L) {
+						Fseek(-8L, (short) fh, 2);
+						if (Fread((short) fh, 8L, magic) == 8L) {
 							if (magic[0] == 'MAGX' && magic[1] >= 0L)
 								ism = 1;
 						}
 					}
-					Fclose((int) fh);
+					Fclose((short) fh);
 				}
 			}
 
@@ -2328,7 +2325,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 				setObjectState(tree, FPMALT, SELECTED, !!(ph.ph_res2 & 0x4L));
 				setObjectState(tree, FPMINMEM, SELECTED, !!(ph.ph_res2 & 0x8L));
 				setObjectState(tree, FPSHARED, SELECTED, !!(ph.ph_res2 & 0x800L));
-				pop_mem.sel = 1 + ((int) (ph.ph_res2 & 0x70L) >> 4);
+				pop_mem.sel = 1 + ((short) (ph.ph_res2 & 0x70L) >> 4);
 
 				if (ism && magic[1] > 0L)
 					ltoa(magic[1] / 1024L, tree[FPMAGIC].ob_spec.tedinfo->te_ptext, 10);
@@ -2353,13 +2350,13 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 
 			strcpy(lpath, path);
 			if (usepar) {
-				i = (int) strlen(lpath) - 2;
+				i = (short) strlen(lpath) - 2;
 				while (lpath[i] != '\\')
 					i--;
 				i++;
 				strcpy(item->name, &lpath[i]);
 				path[i] = 0;
-				item->name[(int) strlen(item->name) - 1] = 0;
+				item->name[(short) strlen(item->name) - 1] = 0;
 			}
 
 			/* Infos ermitteln */
@@ -2442,13 +2439,13 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 
 				pwd = getpwuid(item->uid);
 				if ((pwd == NULL) || (strlen(pwd->pw_name) > 8)) {
-					sprintf(tree[FAUID].ob_spec.tedinfo->te_ptext, "%u", (unsigned int) item->uid);
+					sprintf(tree[FAUID].ob_spec.tedinfo->te_ptext, "%u", (unsigned short) item->uid);
 				} else
 					strcpy(tree[FAUID].ob_spec.tedinfo->te_ptext, pwd->pw_name);
 
 				grp = getgrgid(item->gid);
 				if ((grp == NULL) || (strlen(grp->gr_name) > 8)) {
-					sprintf(tree[FAGID].ob_spec.tedinfo->te_ptext, "%u", (unsigned int) item->gid);
+					sprintf(tree[FAGID].ob_spec.tedinfo->te_ptext, "%u", (unsigned short) item->gid);
 				} else
 					strcpy(tree[FAGID].ob_spec.tedinfo->te_ptext, grp->gr_name);
 			} else {
@@ -2514,7 +2511,7 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 		frm_dial(&fi_fileinfo, &mevent);
 		mode1 = mode;
 		switch (fi_fileinfo.exit_obj) {
-		int d, mb;
+		short d, mb;
 
 		case FIDATETYPE:
 			do
@@ -2558,18 +2555,18 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 				if (ok && ((filesys->flags & (UNIXATTR | OWNER)) == (UNIXATTR | OWNER))) {
 					char *hlp, *err;
 					unsigned long id;
-					int isok = 1;
+					short isok = 1;
 
 					hlp = tree[FAUID].ob_spec.tedinfo->te_ptext;
 					if (isdigit(*hlp)) {
 						id = strtoul(hlp, &err, 10);
 						if (*err || (id > 65535UL))
 							isok = 0;
-						newuid = (int) id;
+						newuid = (short) id;
 					} else {
 						pwd = getpwnam(hlp);
 						if (pwd != NULL)
-							newuid = (int) pwd->pw_uid;
+							newuid = (short) pwd->pw_uid;
 						else
 							isok = 0;
 					}
@@ -2582,11 +2579,11 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 							id = strtoul(hlp, &err, 10);
 							if (*err || (id > 65535UL))
 								isok = 0;
-							newgid = (int) id;
+							newgid = (short) id;
 						} else {
 							grp = getgrnam(hlp);
 							if (grp != NULL)
-								newgid = (int) grp->gr_gid;
+								newgid = (short) grp->gr_gid;
 							else
 								isok = 0;
 						}
@@ -2737,29 +2734,29 @@ int dl_fileinfo(char *path, int usepar, FILESYS *filesys, WP_ENTRY *item,
 			if (file && isp) {
 				fh = Fopen(oldname, FO_RW);
 				if (fh >= 0L) {
-					Fwrite((int) fh, sizeof(PH), &ph);
+					Fwrite((short) fh, sizeof(PH), &ph);
 
 					/* Bei Bedarf MagiC-Speicherlimit setzen/loeschen */
 					if (magic[1] > 0L) /* Limit Ñndern/setzen */
 					{
 						if (ism)
-							Fseek(-8L, (int) fh, 2);
+							Fseek(-8L, (short) fh, 2);
 						else
-							Fseek(0L, (int) fh, 2);
-						Fwrite((int) fh, 8L, magic);
+							Fseek(0L, (short) fh, 2);
+						Fwrite((short) fh, 8L, magic);
 					} else /* Limit lîschen */
 					{
 						if (ism) {
-							Fseek(-8L, (int) fh, 2);
-							Fwrite((int) fh, 0L, (void *) -1L); /* Achtung: Geht nur mit MagiC! */
+							Fseek(-8L, (short) fh, 2);
+							Fwrite((short) fh, 0L, (void *) -1L); /* Achtung: Geht nur mit MagiC! */
 						}
 					}
 
 					/* Ggf. Datum/Zeit wiederherstellen */
 					if (dvalid)
-						Fdatime(&dtime, (int) fh, 1);
+						Fdatime(&dtime, (short) fh, 1);
 
-					Fclose((int) fh);
+					Fclose((short) fh);
 					/*
 					 * Durch das Aendern wurde das FA_ARCHIVE-Flag gesetzt und muss
 					 * daher im alten Attribut gesetzt werden, damit es anschliessend
@@ -2822,7 +2819,7 @@ dl_fileinfo2:
 					if (file && attr != item->attr) {
 						Fattrib(newname, 1, attr);
 						fret = (long) Fattrib(newname, 0, attr);
-						if ((int) fret != attr) {
+						if ((short) fret != attr) {
 							err_file(rs_frstr[ALFLATTR], fret, newname);
 							cont = 1;
 						} else {
@@ -2841,7 +2838,7 @@ dl_fileinfo3:
 			/* Bei Ordnern Pfade der Verzeichnisfenster anpassen */
 			if (!file) {
 				strcat(oldname, "\\");
-				l = (int) strlen(oldname);
+				l = (short) strlen(oldname);
 
 				for (i = 0; i < MAX_PWIN; i++) {
 					if (glob.win[i].state & WSOPEN) {
@@ -2908,7 +2905,7 @@ dl_fileinfo3:
 void dl_groupinfo(WININFO *win) {
 	W_GRP *wgrp;
 	char *title, *parent, *parobj, /**path, *name,*/ *parm; /*, *p;*/
-	int fkey, done, save, ret; /*, fret;*/
+	short fkey, done, save, ret; /*, fret;*/
 	WININFO *oldwin;
 	OBJECT *tree;
 #if 0
@@ -3010,10 +3007,10 @@ void dl_groupinfo(WININFO *win) {
 
  Info Åber aktuelles Gruppenobjekt anzeigen
  -------------------------------------------------------------------------*/
-int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
+short dl_giteminfo(WININFO *win, WG_ENTRY *item, short donext) {
 	W_GRP *wgrp;
-	int done, ret, ok, fret, i, j, b, rel, gplen, cont;
-	int obnum[2] = { GEENTRY, GEPARAM };
+	short done, ret, ok, fret, i, j, b, rel, gplen, cont;
+	short obnum[2] = { GEENTRY, GEPARAM };
 	char *p, *entry, *gpath, name[MAX_FLEN], *path, *full;
 	FILESYS filesys;
 	OBJECT *tree;
@@ -3056,7 +3053,7 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 	p = strrchr(gpath, '\\');
 	if (p)
 		p[1] = 0;
-	gplen = (int) strlen(gpath);
+	gplen = (short) strlen(gpath);
 
 	entry = tree[GEENTRY].ob_spec.tedinfo->te_ptext;
 	strcpy(tree[GETITLE].ob_spec.tedinfo->te_ptext, item->title);
@@ -3094,7 +3091,7 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 					frm_alert(1, rs_frstr[ALILLNAME], altitle, conf.wdial, 0L);
 					ok = 0;
 				} else {
-					if (entry[(int) strlen(entry) - 1] == '\\') {
+					if (entry[(short) strlen(entry) - 1] == '\\') {
 						i = 0;
 						b = 0;
 						while (entry[i]) {
@@ -3179,7 +3176,7 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 	if (fi_gobinfo.exit_obj == GEOK) {
 		strcpy(item->title, tree[GETITLE].ob_spec.tedinfo->te_ptext);
 		strcpy(item->name, entry);
-		if (item->name[(int)strlen(item->name) - 1] != '\\')
+		if (item->name[(short)strlen(item->name) - 1] != '\\')
 			item->class = EC_FILE;
 		else item->class=EC_FOLDER;
 		if (item->name[1] == ':') {
@@ -3190,7 +3187,7 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
 		item->paralways = isObjectSelected(tree, GEPARALWAYS);
 		wgrp_eupdate(wgrp, item);
 		wgrp_tree(win);
-		win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		win_slide(win, S_INIT, 0, 0);
 		wgrp_change(win);
 	}
@@ -3209,33 +3206,33 @@ int dl_giteminfo(WININFO *win, WG_ENTRY *item, int donext) {
  Optional kann auch ein String mit Objektnamen angegeben werden, der
  dann statt der aktuellen Auswahl in Thing verwendet wird.
  -------------------------------------------------------------------------*/
-static int cstop;
+static short cstop;
 
 /* Unterfunktion: Kopieren einer einzelnen Datei */
 
-static int dl_copy_file(char *src, char *dst, int *nfiles, int *nfolders,
-		unsigned long total, unsigned long *ready, int link, int del, int ren,
-		int *crepl, int backup, char *dlst) {
+static short dl_copy_file(char *src, char *dst, short *nfiles, short *nfolders,
+		unsigned long total, unsigned long *ready, short link, short del, short ren,
+		short *crepl, short backup, char *dlst) {
 	FILESYS sfilesys, dfilesys;
 	char *ldst;
 	char *lpath;
-	DTA dta, *odta;
+	_DTA dta, *odta;
 	XATTR xattr, xattr2;
-	int usemint;
+	short usemint;
 	unsigned long size, desize, lsize;
-	unsigned int date, time, attr, dedate, detime;
-	DOSTIME dtime;
+	unsigned short date, time, attr, dedate, detime;
+	_DOSTIME dtime;
 	long ret, ret2;
-	int exist, move;
+	short exist, move;
 	char *buf, *p;
 	unsigned long bufsize, inlen, outlen, s;
 	long fin, fout;
-	int doit, done, rdone;
-	int mx, my, ks, mb;
-	int alret, i, stop;
+	short doit, done, rdone;
+	short mx, my, ks, mb;
+	short alret, i, stop;
 	char *fmask;
 	OBJECT *tree;
-	int rlink = 0;
+	short rlink = 0;
 
 DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 
@@ -3309,10 +3306,10 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 		ret = (long) Fsfirst(src, FA_HIDDEN | FA_SYSTEM);
 		Fsetdta(odta);
 		fill_xattr(src, &xattr, &dta);
-		size = dta.d_length;
-		attr = dta.d_attrib;
-		time = dta.d_time;
-		date = dta.d_date;
+		size = dta.dta_size;
+		attr = dta.dta_attribute;
+		time = dta.dta_time;
+		date = dta.dta_date;
 	} else {
 		usemint = 1;
 		size = xattr.size;
@@ -3334,7 +3331,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 					if (xattr2.dev != xattr.dev)
 						move = 0;
 					else
-						move = ((int) xattr.dev != -1);
+						move = ((short) xattr.dev != -1);
 				}
 			}
 		}
@@ -3343,7 +3340,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	{
 		err_file(rs_frstr[ALFLREAD], ret, src);
 		pfree(ldst);
-		return (int) ret;
+		return (short) ret;
 	}
 	dtime.time = time;
 	dtime.date = date;
@@ -3358,7 +3355,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			{
 				err_file(rs_frstr[ALFLREAD], fin, src);
 				pfree(ldst);
-				return (int) fin;
+				return (short) fin;
 			}
 		}
 	}
@@ -3379,7 +3376,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	/* Falls Zielsystem case-sens. und Quellsystem nicht, dann
 	 Zieldatei in Kleinbuchstaben umwandeln */
 	if ((sfilesys.flags & (TOS | UPCASE)) && !(dfilesys.flags & UPCASE)) {
-		s = (int) strlen(ldst) - 1;
+		s = (short) strlen(ldst) - 1;
 		while (s > 0 && ldst[s] != '\\') {
 			ldst[s] = nkc_tolower(ldst[s]);
 			s--;
@@ -3394,14 +3391,14 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	/* Dateinamen im Dialog aktualisieren */
 	p = rs_trindex[WAITCOPY][WCSRC].ob_spec.tedinfo->te_ptext;
 	strShortener(p, src, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
 	strShortener(p, ldst, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
@@ -3422,7 +3419,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	/* Bei Bedarf vor dem Ueberschreiben oder fuer Umbenennen nachfragen */
 	if (((backup || *crepl || strcmp(src, ldst) == 0) && exist) || (ren && !rdone)) {
 		XATTR *xa;
-		int ask = 1;
+		short ask = 1;
 
 		/* Dialog vorbereiten */
 		if (exist && strcmp(src, ldst) && (ren && rdone || !ren)) {
@@ -3431,12 +3428,12 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			if (backup) {
 				if ((xa->mdate == date) && (xa->mtime == time) && (xa->size == size)) {
 					if (!move && !link && !rlink)
-						Fclose((int) fin);
+						Fclose((short) fin);
 					doit = 0;
 					ask = -1;
-				} else if (((unsigned int) xa->mdate < date)
-						|| (((unsigned int) xa->mdate == date)
-								&& ((unsigned int) xa->mtime < time))) {
+				} else if (((unsigned short) xa->mdate < date)
+						|| (((unsigned short) xa->mdate == date)
+								&& ((unsigned short) xa->mtime < time))) {
 					ask = 0;
 				}
 				if ((ask < 0) && del)
@@ -3532,12 +3529,12 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 				break;
 			case RFNEXT: /* 'Weiter' - Datei Åberspringen */
 				if (!move && !link && !rlink)
-					Fclose((int) fin);
+					Fclose((short) fin);
 				doit = 0;
 				break;
 			case RFCANCEL: /* 'Abbruch' - raus */
 				if (!move && !link && !rlink)
-					Fclose((int) fin);
+					Fclose((short) fin);
 				pfree(ldst);
 				return -1;
 			}
@@ -3565,7 +3562,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 		/* Ziel aktualisieren - koennte veraendert sein */
 		p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
 		strShortener(p, ldst, 45);
-		i = (int) strlen(p);
+		i = (short) strlen(p);
 		while (i < 45) {
 			p[i] = ' ';
 			i++;
@@ -3598,7 +3595,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 					bufsize = bufsize / 2;
 					if (!bufsize) /* Kein Speicher mehr, dann raus */
 					{
-						Fclose((int) fin);
+						Fclose((short) fin);
 						frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 						pfree(ldst);
 						return -1;
@@ -3612,12 +3609,12 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			ret = (long) Fdelete(ldst);
 			if (ret != 0L) {
 				if (!move && !link && !rlink)
-					Fclose((int) fin);
+					Fclose((short) fin);
 				if (buf)
 					pfree(buf);
 				err_file(rs_frstr[ALFLDELETE], ret, ldst);
 				pfree(ldst);
-				return (int) ret;
+				return (short) ret;
 			}
 		}
 
@@ -3626,7 +3623,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			/* Symbolischen Link Åber Dateigrenzen als solchen kopieren */
 			if (rlink) {
 				/* Link auslesen ... */
-				ret = Freadlink((int) min(bufsize, 32767L), buf, src);
+				ret = Freadlink((short) min(bufsize, 32767L), buf, src);
 				if (ret >= 0L) {
 					/* ... und anlegen */
 					ret = Fsymlink(buf, ldst);
@@ -3646,28 +3643,28 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			fout = Fcreate(ldst, 0);
 			if (fout < 0L) /* Bei Fehler raus */
 			{
-				Fclose((int) fin);
+				Fclose((short) fin);
 				if (buf)
 					pfree(buf);
 				err_file(rs_frstr[ALFLWRITE], fout, ldst);
 				pfree(ldst);
-				return (int) fout;
+				return (short) fout;
 			}
 
 			/* Dateiinhalt kopieren */
 			done = 0;
 			while (!done) {
-				inlen = Fread((int) fin, bufsize, buf);
+				inlen = Fread((short) fin, bufsize, buf);
 				if (inlen <= 0L) /* Lesefehler? */
 				{
 					done = 1;
-					ret = (int) inlen;
+					ret = (short) inlen;
 					if (inlen < 0L) {
 						err_file(rs_frstr[ALFLREAD], inlen, src);
 						done = 2;
 					}
 				} else {
-					outlen = Fwrite((int) fout, inlen, buf);
+					outlen = Fwrite((short) fout, inlen, buf);
 					if (outlen != inlen) {
 						done = 2;
 						if (outlen >= 0L) {
@@ -3677,7 +3674,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 						} else {
 							/* Fehlercode - ausgeben */
 							err_file(rs_frstr[ALFLWRITE], outlen, ldst);
-							ret = (int) outlen;
+							ret = (short) outlen;
 						}
 					}
 				}
@@ -3686,7 +3683,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 				lsize += inlen;
 				p = rs_trindex[WAITCOPY][WCSIZE].ob_spec.tedinfo->te_ptext;
 				prlong11((unsigned long) (*ready - lsize - (long) *nfolders), p);
-				i = (int) strlen(p);
+				i = (short) strlen(p);
 				while (i < 15) {
 					p[i] = ' ';
 					i++;
@@ -3702,11 +3699,11 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 			}
 
 			/* Datum/Zeit der Quelldatei auf die Zieldatei Åbertragen */
-			Fdatime(&dtime, (int) fout, 1);
+			Fdatime(&dtime, (short) fout, 1);
 
 			/* Dateien schliessen */
-			Fclose((int) fout);
-			Fclose((int) fin);
+			Fclose((short) fout);
+			Fclose((short) fin);
 
 			/* Bei Fehler Zieldatei lîschen, sonst
 			 Attribute der Quelldatei auf die Zieldatei Åbertragen */
@@ -3733,7 +3730,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 						Fchown(ldst, xattr.uid, xattr.gid);
 					if (dfilesys.flags & UNIXATTR) {
 						if (sfilesys.flags & UNIXATTR)
-							Fchmod(ldst, (int) (xattr.mode & 07777));
+							Fchmod(ldst, (short) (xattr.mode & 07777));
 						else {
 							p = strrchr(src, '\\');
 							if (is_app(++p, 0)) {
@@ -3787,7 +3784,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 
 	p = rs_trindex[WAITCOPY][WCFILES].ob_spec.tedinfo->te_ptext;
 	itoa(*nfiles, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
@@ -3797,7 +3794,7 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 	dl_copy_slupdate(total, *ready, 0);
 
 	pfree(ldst);
-	return (int) ret;
+	return (short) ret;
 }
 
 /* Unterfunktion: Kopieren eines Ordners */
@@ -3805,27 +3802,27 @@ DEBUGLOG((0, "dl_copy_file(%s, %s)\n", src, dst));
 /**
  *
  */
-static int dl_copy_folder(char *src, char *dst, int *nfiles, int *nfolders,
-		unsigned long total, unsigned long *ready, int del, int ren,
-		int *crepl, int backup, char *dlst) {
+static short dl_copy_folder(char *src, char *dst, short *nfiles, short *nfolders,
+		unsigned long total, unsigned long *ready, short del, short ren,
+		short *crepl, short backup, char *dlst) {
 	FILESYS sfilesys, dfilesys;
 	char *ldst, *lsrc;
 	char *lpath;
-	DTA dta, dta2, *odta;
+	_DTA dta, dta2, *odta;
 	XATTR xattr;
 	long dhandle;
 	char dbuf[MAX_FLEN + 4];
-	int usemint;
+	short usemint;
 	long ret;
-	int exist, isdir;
-	int doit, done, rdone, rdoit;
+	short exist, isdir;
+	short doit, done, rdone, rdoit;
 	char *p;
-	int mfiles, mfolders, mlinks, l;
+	short mfiles, mfolders, mlinks, l;
 	unsigned long msize, s;
-	int mx, my, ks, mb;
-	int stop, alret;
+	short mx, my, ks, mb;
+	short stop, alret;
 	char *fmask;
-	int i, whandle;
+	short i, whandle;
 	OBJECT *tree;
 	short timebuf[4];
 	XATTR xa;
@@ -3888,16 +3885,16 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 			strcat(lsrc, "\\");
 		strcat(lsrc, "*.*");
 		ret = (long) Fsfirst(lsrc, FA_SUBDIR | FA_HIDDEN | FA_SYSTEM);
-		while (!ret && (dta.d_attrib == 0xf)) /* VFAT unter TOS ausfiltern */
+		while (!ret && (dta.dta_attribute == 0xf)) /* VFAT unter TOS ausfiltern */
 			ret = Fsnext();
 		if (ret == 0L) {
 			rdoit = 1;
 			strcpy(lsrc, src);
 			if (isdir)
 				strcat(lsrc, "\\");
-			strcat(lsrc, dta.d_fname);
-			xattr.attr = dta.d_attrib;
-			xattr.size = dta.d_length;
+			strcat(lsrc, dta.dta_name);
+			xattr.attr = dta.dta_attribute;
+			xattr.size = dta.dta_size;
 		}
 	} else {
 		usemint = 1;
@@ -3932,7 +3929,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	/* Falls Zielsystem case-sens. und Quellsystem nicht, dann
 	 in Kleinbuchstaben umwandeln */
 	if ((sfilesys.flags & (TOS | UPCASE)) && !(dfilesys.flags & UPCASE)) {
-		s = (int) strlen(ldst) - 1;
+		s = (short) strlen(ldst) - 1;
 		while (s > 0 && ldst[s] != '\\') {
 			ldst[s] = nkc_tolower(ldst[s]);
 			s--;
@@ -3947,14 +3944,14 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	/* Dateinamen im Dialog aktualisieren */
 	p = rs_trindex[WAITCOPY][WCSRC].ob_spec.tedinfo->te_ptext;
 	strShortener(p, src, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
 	strShortener(p, ldst, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
@@ -3989,7 +3986,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 	/* Bei Bedarf vor dem öberschreiben oder fÅr Umbenennen nachfragen */
 	if ((((*crepl || strcmp(src, ldst) == 0) && (exist == 1)) || (ren && !rdone)) && isdir) {
-		int renam;
+		short renam;
 
 		/* Dialog vorbereiten */
 		if ((exist == 1) && strcmp(src, ldst) && (ren && rdone || !ren)) {
@@ -4114,7 +4111,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	if (doit) {
 		p = rs_trindex[WAITCOPY][WCDST].ob_spec.tedinfo->te_ptext;
 		strShortener(p, ldst, 45);
-		i = (int) strlen(p);
+		i = (short) strlen(p);
 		while (i < 45) {
 			p[i] = ' ';
 			i++;
@@ -4164,7 +4161,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 				else
 					Dclosedir(dhandle);
 				pfree(ldst);
-				return (int) ret;
+				return (short) ret;
 			}
 		}
 		/* Rekursiv alle EintrÑge bearbeiten */
@@ -4199,7 +4196,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 			fsconv(ldst, &dfilesys);
 
 			/* Standard-EintrÑge '.' und '..' nicht verwenden */
-			l = (int) strlen(lsrc);
+			l = (short) strlen(lsrc);
 			if (strcmp(&lsrc[l - 3], "\\..") != 0 && strcmp(&lsrc[l - 2], "\\.") != 0) {
 				if ((!usemint && (xattr.attr & FA_SUBDIR)) || (usemint && (xattr.mode & S_IFMT) == S_IFDIR)) /* Weiterer Ordner */
 					ret = (long) dl_copy_folder(lsrc, lpath, nfiles, nfolders, total, ready, del, ren, crepl, backup, dlst);
@@ -4215,13 +4212,13 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 				if (!usemint) {
 					do {
 						ret = (long) Fsnext();
-					} while (!ret && (dta.d_attrib == 0xf));
+					} while (!ret && (dta.dta_attribute == 0xf));
 					strcpy(lsrc, src);
 					if (isdir)
 						strcat(lsrc, "\\");
-					strcat(lsrc, dta.d_fname);
-					xattr.attr = dta.d_attrib;
-					xattr.size = dta.d_length;
+					strcat(lsrc, dta.dta_name);
+					xattr.attr = dta.dta_attribute;
+					xattr.size = dta.dta_size;
 				} else {
 					ret = Dreaddir(MAX_FLEN + 4, dhandle, dbuf);
 					strcpy(lsrc, src);
@@ -4246,7 +4243,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 		/* Falls gewÅnscht, Quell-Ordner lîschen */
 		if (del && ret == 0L && isdir) {
-			ret = (int) Ddelete(src);
+			ret = (short) Ddelete(src);
 			if (ret < 0L)
 				err_file(rs_frstr[ALPDELETE], ret, src);
 		}
@@ -4272,7 +4269,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 			/* Attribute Åbertragen */
 			if (usemint) {
 				if ((sfilesys.flags & UNIXATTR) && (dfilesys.flags & UNIXATTR))
-					Fchmod(ldst, (int) (xa.mode & 07777));
+					Fchmod(ldst, (short) (xa.mode & 07777));
 				if ((sfilesys.flags & OWNER) && (dfilesys.flags & OWNER))
 					Fchown(ldst, xa.uid, xa.gid);
 			}
@@ -4290,21 +4287,21 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 
 	p = rs_trindex[WAITCOPY][WCFILES].ob_spec.tedinfo->te_ptext;
 	itoa(*nfiles, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCFOLDERS].ob_spec.tedinfo->te_ptext;
 	itoa(*nfolders, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
 	}
 	p = rs_trindex[WAITCOPY][WCSIZE].ob_spec.tedinfo->te_ptext;
 	prlong11((unsigned long) (*ready - (long) *nfolders), p);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 15) {
 		p[i] = ' ';
 		i++;
@@ -4319,7 +4316,7 @@ DEBUGLOG((0, "dl_copy_folder(%s, %s)\n", src, dst));
 	sprintf(almsg, "CFLD: (no names available now)"); debugMain(almsg);
 #endif
 	pfree(ldst);
-	return (int) ret;
+	return (short) ret;
 }
 
 /**
@@ -4336,7 +4333,7 @@ static void dl_copy_slupdate(unsigned long total, unsigned long ready,
 		s = 1L;
 	if (s > (long) rs_trindex[WAITCOPY][WCBOX].ob_width)
 		s = (long) rs_trindex[WAITCOPY][WCBOX].ob_width;
-	rs_trindex[WAITCOPY][WCSLIDE].ob_width = (int) s;
+	rs_trindex[WAITCOPY][WCSLIDE].ob_width = (short) s;
 
 	frm_redraw(&fi_waitcopy, WCSLIDE);
 }
@@ -4344,7 +4341,7 @@ static void dl_copy_slupdate(unsigned long total, unsigned long ready,
 /**
  *  Unterfunktion: BestÑtigung fÅr's Kopieren
  */
-static void dl_copy_conf_mode(OBJECT *tree, int mode) {
+static void dl_copy_conf_mode(OBJECT *tree, short mode) {
 	tree[CPCOPY].ob_state &= ~SELECTED;
 	tree[CPLINK].ob_state &= ~SELECTED;
 	tree[CPMOVE].ob_state &= ~DISABLED;
@@ -4362,10 +4359,10 @@ static void dl_copy_conf_mode(OBJECT *tree, int mode) {
 /**
  *
  */
-static void dl_copy_conf(int *ok, int *del, int *ren, char *path,
-		unsigned long size, int nfiles, int nfolders, int src, int *mode,
-		int *follow, int *backup) {
-	int done;
+static void dl_copy_conf(short *ok, short *del, short *ren, char *path,
+		unsigned long size, short nfiles, short nfolders, short src, short *mode,
+		short *follow, short *backup) {
+	short done;
 	OBJECT *tree;
 	FILESYS fs;
 
@@ -4448,7 +4445,7 @@ static void dl_copy_conf(int *ok, int *del, int *ren, char *path,
 /**
  *  Unterfunktion: Copy/Move-Befehl fÅr Kobold erzeugen
  */
-static void dl_copy_kcmd(int del, int ren, char *kcmd) {
+static void dl_copy_kcmd(short del, short ren, char *kcmd) {
 	strcpy(kcmd, "SRC_SELECT \\\n");
 	if (del)
 		strcat(kcmd, "MOVE ");
@@ -4466,9 +4463,9 @@ static void dl_copy_kcmd(int del, int ren, char *kcmd) {
  * Unterfunktion: Umfang der Daten ermitteln, abhÑngig von
  * Linkverfolgung
  */
-static int dl_copy_size(char *buf, char *dpath, int *nfiles, int *nfolders,
-		unsigned long *size, int *nlinks, int *kdrv, int follow, int mode) {
-	int j, ok;
+static short dl_copy_size(char *buf, char *dpath, short *nfiles, short *nfolders,
+		unsigned long *size, short *nlinks, short *kdrv, short follow, short mode) {
+	short j, ok;
 	char name[MAX_PLEN], *bufpos;
 
 	*nfiles = *nfolders = *nlinks = 0;
@@ -4477,7 +4474,7 @@ static int dl_copy_size(char *buf, char *dpath, int *nfiles, int *nfolders,
 	ok = 1;
 	bufpos = buf;
 	while (get_buf_entry(bufpos, name, &bufpos) && ok) {
-		j = (int) strlen(name);
+		j = (short) strlen(name);
 		if (name[j - 1] == '\\') {
 			/* Unzulaessige Operationen abfangen */
 			if (!strncmp(dpath, name, strlen(name)))
@@ -4501,15 +4498,15 @@ static int dl_copy_size(char *buf, char *dpath, int *nfiles, int *nfolders,
 /**
  *
  */
-int dl_copy(char *path, int ks, char *buf) {
-	int i, j, ok, go, isf;
+short dl_copy(char *path, short ks, char *buf) {
+	short i, j, ok, go, isf;
 	char ipath[MAX_PLEN], iname[MAX_FLEN];
 	char kcmd[100], kstr[MAX_CLEN];
 	char *readbuf;
-	int kdrv, kdrv1, kuse;
-	int whandle;
+	short kdrv, kdrv1, kuse;
+	short whandle;
 	OBJECT *tree;
-	int nlinks;
+	short nlinks;
 	FILESYS dfs;
 
 	tree = rs_trindex[WAITCOPY];
@@ -4648,7 +4645,7 @@ int dl_copy(char *path, int ks, char *buf) {
 
 		/* Ggf. Bestaetigung fuers Kopieren */
 		if (go && !kuse && conf.ccopy) {
-			int omode = dcopy->mode, ofollow = dcopy->follow;
+			short omode = dcopy->mode, ofollow = dcopy->follow;
 
 			dl_copy_conf(&ok, &dcopy->del, &dcopy->ren, path, dcopy->size, dcopy->nfiles, dcopy->nfolders, kdrv, &dcopy->mode, &dcopy->follow, &dcopy->backup);
 			if (dcopy->mode == 2)
@@ -4684,7 +4681,7 @@ int dl_copy(char *path, int ks, char *buf) {
 				i = 0;
 				readbuf = buf;
 				while (get_buf_entry(readbuf, ipath, &readbuf)) {
-					j = (int) strlen(ipath);
+					j = (short) strlen(ipath);
 					if (ipath[j - 1] == '\\')
 						j--;
 					ipath[j] = 0;
@@ -4759,7 +4756,7 @@ int dl_copy(char *path, int ks, char *buf) {
 			while (get_buf_entry(readbuf, ipath, &readbuf) && ok) {
 				XATTR xattr;
 
-				j = (int) strlen(ipath);
+				j = (short) strlen(ipath);
 				if (ipath[j - 1] == '\\')
 					j--;
 				if (j > 2)
@@ -4819,7 +4816,7 @@ int dl_copy(char *path, int ks, char *buf) {
 					if (j >= 0 && j <= 31) {
 						if (dcopy->dlst[j]) {
 							wpath_update(&glob.win[i]);
-							win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							win_slide(&glob.win[i], S_INIT, 0, 0);
 						}
 					}
@@ -4843,7 +4840,7 @@ int dl_copy(char *path, int ks, char *buf) {
 	ok = 0;
 	lbuf = pmalloc(MAX_KBDLEN);
 	if (lbuf) {
-		ok = sel2buf(lbuf, iname, ipath, (int) MAX_KBDLEN);
+		ok = sel2buf(lbuf, iname, ipath, (short) MAX_KBDLEN);
 		if (ok) {
 			buf = lbuf;
 			goto dl_copy_buf;
@@ -4868,11 +4865,11 @@ int dl_copy(char *path, int ks, char *buf) {
 
  Ausgabe einer Datei Åber ein Device
  -------------------------------------------------------------------------*/
-int dl_devout(char *file, char *dev) {
+short dl_devout(char *file, char *dev) {
 	long infh, outfh, inlen, outlen;
 	unsigned long bufsize;
 	char *buf, *p, *pd;
-	int done, cret, copen;
+	short done, cret, copen;
 
 	pd = strrchr(dev, '\\');
 	pd = &pd[1];
@@ -4901,7 +4898,7 @@ int dl_devout(char *file, char *dev) {
 				bufsize = bufsize / 2;
 				if (!bufsize) /* Kein Speicher mehr, dann raus */
 				{
-					Fclose((int) outfh);
+					Fclose((short) outfh);
 					frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 					return (0);
 				}
@@ -4912,7 +4909,7 @@ int dl_devout(char *file, char *dev) {
 		infh = Fopen(file, FO_READ);
 		if (infh < 0L) {
 			pfree(buf);
-			Fclose((int) outfh);
+			Fclose((short) outfh);
 			err_file(rs_frstr[ALFLOPEN], infh, file);
 			return (0);
 		}
@@ -4921,11 +4918,11 @@ int dl_devout(char *file, char *dev) {
 		graf_mouse(BUSYBEE, 0L);
 		done = 0;
 		while (!done) {
-			inlen = Fread((int) infh, bufsize, buf);
+			inlen = Fread((short) infh, bufsize, buf);
 			if (inlen < 0L) {
-				Fclose((int) infh);
+				Fclose((short) infh);
 				pfree(buf);
-				Fclose((int) outfh);
+				Fclose((short) outfh);
 				graf_mouse(ARROW, 0L);
 				if (cret > 0)
 					cwin_endio();
@@ -4935,11 +4932,11 @@ int dl_devout(char *file, char *dev) {
 				return (0);
 			}
 			if (inlen > 0L) {
-				outlen = Fwrite((int) outfh, inlen, buf);
+				outlen = Fwrite((short) outfh, inlen, buf);
 				if (outlen != inlen) {
-					Fclose((int) infh);
+					Fclose((short) infh);
 					pfree(buf);
-					Fclose((int) outfh);
+					Fclose((short) outfh);
 					if (outlen >= 0L)
 						outlen = -36L;
 					graf_mouse(ARROW, 0L);
@@ -4953,9 +4950,9 @@ int dl_devout(char *file, char *dev) {
 			} else
 				done = 1;
 		}
-		Fclose((int) infh);
+		Fclose((short) infh);
 		pfree(buf);
-		Fclose((int) outfh);
+		Fclose((short) outfh);
 		graf_mouse(ARROW, 0L);
 		if (cret > 0)
 			cwin_endio();
@@ -4963,7 +4960,7 @@ int dl_devout(char *file, char *dev) {
 			cwin_close();
 		return (1);
 	} else {
-		Fclose((int) outfh);
+		Fclose((short) outfh);
 		return (0);
 	}
 }
@@ -4973,8 +4970,8 @@ int dl_devout(char *file, char *dev) {
 
  Verarbeiten von Events fÅr die Status-Anzeige im Fenster
  -------------------------------------------------------------------------*/
-int dl_waitevent(void) {
-	int ret, tlo, thi, mf;
+short dl_waitevent(void) {
+	short ret, tlo, thi, mf;
 
 	mf = mevent.ev_mflags;
 	tlo = mevent.ev_mtlocount;
@@ -5025,8 +5022,8 @@ int dl_waitevent(void) {
  * 0: Fehler aufgetreten
  * sonst: Alles klar
  */
-int dl_drag_on_gitem(W_GRP *wgrp, WG_ENTRY *gitem, int ks, int *rex) {
-	int fin, i, cont;
+short dl_drag_on_gitem(W_GRP *wgrp, WG_ENTRY *gitem, short ks, short *rex) {
+	short fin, i, cont;
 	APPLINFO *aptr, app;
 	char *name, *apath, aname[MAX_FLEN];
 
@@ -5050,7 +5047,7 @@ int dl_drag_on_gitem(W_GRP *wgrp, WG_ENTRY *gitem, int ks, int *rex) {
 				/* Zieldatei zusammen mit Objekten Åbergeben */
 				strcpy(glob.cmd, name);
 				strcat(glob.cmd, " ");
-				i = (int) strlen(glob.cmd);
+				i = (short) strlen(glob.cmd);
 				cont = sel2buf(&glob.cmd[i], aname, apath, MAX_CMDLEN - i);
 				if (cont)
 					fin = app_start(aptr, glob.cmd, apath, rex);
@@ -5060,7 +5057,7 @@ int dl_drag_on_gitem(W_GRP *wgrp, WG_ENTRY *gitem, int ks, int *rex) {
 				}
 			}
 		} else {
-			int always;
+			short always;
 
 			always = gitem->paralways;
 			if (ks & K_ALT)
@@ -5116,12 +5113,12 @@ int dl_drag_on_gitem(W_GRP *wgrp, WG_ENTRY *gitem, int ks, int *rex) {
  * 0: Fehler aufgetreten
  * sonst: Alles klar
  */
-int dl_drag_on_ditem(W_PATH *wpath, WP_ENTRY *item, int ks, int *rex) {
+short dl_drag_on_ditem(W_PATH *wpath, WP_ENTRY *item, short ks, short *rex) {
 	char *name, *iname, *apath, aname[MAX_FLEN];
 #if 0
-	int cont;
+	short cont;
 #endif
-	int fin, i;
+	short fin, i;
 #if 0
 	APPLINFO *aptr,
 	app;
@@ -5156,7 +5153,7 @@ int dl_drag_on_ditem(W_PATH *wpath, WP_ENTRY *item, int ks, int *rex) {
 			} else {
 				strcpy(name, wpath->path);
 				if (item->class==EC_PARENT) {
-					i = (int) strlen(name) - 2;
+					i = (short) strlen(name) - 2;
 					while (name[i] != '\\')
 						i--;
 					name[i + 1] = 0;
@@ -5189,9 +5186,9 @@ int dl_drag_on_ditem(W_PATH *wpath, WP_ENTRY *item, int ks, int *rex) {
  * 0: Fehler aufgetreten
  * sonst: Alles klar
  */
-static int dl_runapp(char *iname, int itype, char *ititle, int *rex) {
+static short dl_runapp(char *iname, short itype, char *ititle, short *rex) {
 	char apath[MAX_PLEN], aname[MAX_FLEN];
-	int cont, fin, i;
+	short cont, fin, i;
 	APPLINFO *aptr, app;
 
 	/* Indirektes Ziel? */
@@ -5201,7 +5198,7 @@ static int dl_runapp(char *iname, int itype, char *ititle, int *rex) {
 			/* Zieldatei zusammen mit Objekten Åbergeben */
 			strcpy(glob.cmd, iname);
 			strcat(glob.cmd, " ");
-			i = (int) strlen(glob.cmd);
+			i = (short) strlen(glob.cmd);
 			cont = sel2buf(&glob.cmd[i], aname, apath, MAX_CMDLEN - i);
 			if (cont)
 				fin = app_start(aptr, glob.cmd, apath, rex);

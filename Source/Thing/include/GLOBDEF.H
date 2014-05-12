@@ -32,13 +32,12 @@
 
 #include <portab.h>
 
-#include <aes.h>
-#include <vdi.h>
+#include <gem.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <tos.h>
+#include <mintbind.h>
 
 #ifdef __MINT__
 #include <support.h>
@@ -121,10 +120,10 @@
  NAES-Cookie
  -------------------------------------------------------------------------*/
 typedef struct {
-	unsigned int version;
-	unsigned int date;
-	unsigned int time;
-	unsigned int flags;
+	unsigned short version;
+	unsigned short date;
+	unsigned short time;
+	unsigned short flags;
 	unsigned long unused_1;
 	unsigned long unused_2;
 	unsigned long magic1;
@@ -136,11 +135,11 @@ typedef struct {
  -------------------------------------------------------------------------*/
 /* Schriftart */
 typedef struct {
-	int id;		/* GDOS-Id */
-	int size;	/* Groesse in Punkt (1/72") */
-	int fcol;	/* Schriftfarbe */
-	int bcol;	/* Hintergrundfarbe */
-	int attr;	/* Attribute */
+	short id;		/* GDOS-Id */
+	short size;	/* Groesse in Punkt (1/72") */
+	short fcol;	/* Schriftfarbe */
+	short bcol;	/* Hintergrundfarbe */
+	short attr;	/* Attribute */
 } GFONT;
 
 /* Infos ueber GDOS (Fonts etc.) */
@@ -148,14 +147,14 @@ typedef struct {
 	char *fontlist;		/* Buffer fuer die Namen der Zeichensaetze */
 
 	/* Zeichensaetze insgesamt */
-	int numfonts;		/* Anzahl der verfuegbaren Zeichensaetze */
+	short numfonts;		/* Anzahl der verfuegbaren Zeichensaetze */
 	char **fontname;	/* Zeiger auf die Namen */
-	int *fontid;		/* Liste der Font-IDs */
+	short *fontid;		/* Liste der Font-IDs */
 
 	/* Davon nicht-proportional (monospaced) */
-	int mnumfonts;
+	short mnumfonts;
 	char **mfontname;
-	int *mfontid;
+	short *mfontid;
 } GDOS;
 
 /*-------------------------------------------------------------------------
@@ -163,9 +162,9 @@ typedef struct {
  -------------------------------------------------------------------------*/
 /* Art der Darstellung in Fenstern */
 typedef struct {
-	int text;					/* Als Text */
-	int sortby;					/* Sortierung */
-	int show;					/* Anzeige von Groesse, Datum, Attributen */
+	short text;					/* Als Text */
+	short sortby;					/* Sortierung */
+	short show;					/* Anzeige von Groesse, Datum, Attributen */
 	char wildcard[MAX_FLEN];	/* Maske */
 } INDEX;
 
@@ -201,9 +200,9 @@ typedef struct iconimg {
 	DRAW_CICON *scblk;		/* ODER Zeiger bei Mini-Farbicons */
 	void *sub_code;			/* ... plus Userdef-Routine */
 	char mask[MAX_FLEN];	/* Wildcard */
-	int class;				/* 0 = Dateien/Programme, 1 = Ordner, 2 = Laufwerk */
+	short class;				/* 0 = Dateien/Programme, 1 = Ordner, 2 = Laufwerk */
 	char tchar;				/* Zeichen fuer Textdarstellung oder 0 */
-	int tcolor;				/* Farbe fuer Textdarstellung oder -1 */
+	short tcolor;				/* Farbe fuer Textdarstellung oder -1 */
 } ICONIMG;
 
 /*-------------------------------------------------------------------------
@@ -220,21 +219,21 @@ typedef struct iconimg {
 
 /* Info ueber Dateisysteme */
 typedef struct {
-	int namelen;	/* Laenge von Dateinamen */
-	int biosdev;	/* zugeordnetes BIOS-Device */
-	int flags;		/* Verschiedene Flags; Bitbelegung siehe oben */
+	short namelen;	/* Laenge von Dateinamen */
+	short biosdev;	/* zugeordnetes BIOS-Device */
+	short flags;		/* Verschiedene Flags; Bitbelegung siehe oben */
 } FILESYS;
 
 /* Alice-Cookie (Alice = All Iconify Enabler) */
 typedef struct {
 	long magic;			/* Magic - muss 'ALIC' sein */
 	long version;		/* Versionsnummer von Alice */
-	int redraw_ap_id;	/* Applikations-ID von Thing oder -1 */
+	short redraw_ap_id;	/* Applikations-ID von Thing oder -1 */
 } ALICE_COOKIE;
 
 /* Alice-Fenster */
 typedef struct alice_win {
-	int handle;			/* Fenster-Handle */
+	short handle;			/* Fenster-Handle */
 	OBJECT tree[2];		/* Icon */
 	char itext[13];		/* ... Text */
 	_CICONBLK iblk;		/* ... Iconblk */
@@ -249,123 +248,123 @@ typedef struct alice_win {
  -------------------------------------------------------------------------*/
 /* Eintrag in einem Verzeichnisfenster */
 typedef struct wp_entry {
-	int used;				/* Benutzt ja/nein (Um Dateien auszublenden) */
-	int sel, prevsel;		/* Select-Status wie bei Desktop-Icons */
-	int aptype;				/* Bei Dateien: ggf. Art der Applikation */
+	short used;				/* Benutzt ja/nein (Um Dateien auszublenden) */
+	short sel, prevsel;		/* Select-Status wie bei Desktop-Icons */
+	short aptype;				/* Bei Dateien: ggf. Art der Applikation */
 	char name[MAX_FLEN];	/* Dateiname */
 	char *fext;				/* Position des Extensionspunktes oder NULL */
-	int class;				/* 0=Ordner, 1=Datei, 2=Parent, 3=Device */
-	int num;				/* Laufende Nummer (Index) */
+	short class;				/* 0=Ordner, 1=Datei, 2=Parent, 3=Device */
+	short num;				/* Laufende Nummer (Index) */
 	unsigned long size;		/* Groeže der Datei in Bytes (Index) */
-	unsigned int date;		/* Datum der Datei (Index) */
-	unsigned int time;		/* Zeit der Datei (Index) */
-	int attr;				/* Attribute der Datei (Index) */
-	unsigned int mode;		/* Erweiterte Dateiattribute */
-	int link;				/* 0=normal, 1=sym. Link, 2=verwaister Link */
-	int uid;				/* Eigner */
-	int gid;				/* Gruppenzugehoerigkeit */
-	unsigned int adate;		/* Datum des letzten Zugriffs */
-	unsigned int atime;		/* Uhrzeit "    "        "    */
-	unsigned int cdate;		/* Datum der letzten Attributaenderung */
-	unsigned int ctime;		/* Uhrzeit "    "            "        */
+	unsigned short date;		/* Datum der Datei (Index) */
+	unsigned short time;		/* Zeit der Datei (Index) */
+	short attr;				/* Attribute der Datei (Index) */
+	unsigned short mode;		/* Erweiterte Dateiattribute */
+	short link;				/* 0=normal, 1=sym. Link, 2=verwaister Link */
+	short uid;				/* Eigner */
+	short gid;				/* Gruppenzugehoerigkeit */
+	unsigned short adate;		/* Datum des letzten Zugriffs */
+	unsigned short atime;		/* Uhrzeit "    "        "    */
+	unsigned short cdate;		/* Datum der letzten Attributaenderung */
+	unsigned short ctime;		/* Uhrzeit "    "            "        */
 	ICONIMG *iconimg;		/* Zeiger auf Iconzuordnung */
 	char tchar;				/* Zeichen fuer Textdarstellung oder 0 */
 	char tcolor;			/* Farbe fuer Textdarstellung oder -1 */
-	int obnum;				/* Objektnummer im Baum oder Textliste */
+	short obnum;				/* Objektnummer im Baum oder Textliste */
 } WP_ENTRY;
 
 /* Info-Struktur fuer Verzeichnisfenster */
 typedef struct {
-	int num;				/* Laufende Nummer des Fensters */
-	int rel;				/* Relativ: 0=normal, 1=relativ */
+	short num;				/* Laufende Nummer des Fensters */
+	short rel;				/* Relativ: 0=normal, 1=relativ */
 	char relname[MAX_FLEN];	/* Titel fuer Relativen Modus */
 	FILESYS filesys;		/* Infos ueber das Dateisystem */
-	int namelen;			/* Maximale Laenge von Dateinamen */
+	short namelen;			/* Maximale Laenge von Dateinamen */
 	char path[MAX_PLEN + MAX_FLEN + 2]; /* Pfad */
 	char amask[MAX_FLEN];	/* Maske fuer Auto-Locator */
-	unsigned int fdate, ftime; /* Datum und Zeit des Ordners fuer Infos */
+	unsigned short fdate, ftime; /* Datum und Zeit des Ordners fuer Infos */
 	GFONT font;				/* Zeichensatz und Farben fuer Textdarstellung */
-	int bpat;				/* Muster fuer Fenster */
+	short bpat;				/* Muster fuer Fenster */
 
 	INDEX index;			/* Aktueller Index */
 	INDEX cindex;			/* Letzter Index */
 	INDEX oindex[10];		/* Index-"Stack" */
-	int e_num;				/* Anzahl der Eintraege insgesamt */
-	int e_total;			/* Anzahl der angezeigten Eintraege */
-	int o_total;			/* Anzahl der angezeigten Objekte (Infozeile) */
-	int e_files;			/* Anzahl der angezeigten Dateien */
-	int e_sel;				/* Anzahl der selektierten Eintraege */
-	int o_sel;				/* Anzahl der selektierten Objekte (Infozeile) */
+	short e_num;				/* Anzahl der Eintraege insgesamt */
+	short e_total;			/* Anzahl der angezeigten Eintraege */
+	short o_total;			/* Anzahl der angezeigten Objekte (Infozeile) */
+	short e_files;			/* Anzahl der angezeigten Dateien */
+	short e_sel;				/* Anzahl der selektierten Eintraege */
+	short o_sel;				/* Anzahl der selektierten Objekte (Infozeile) */
 	unsigned long s_total;	/* Umfang der angezeigten Dateien in Bytes */
 	unsigned long s_sel;	/* Umfang der selektierten Dateien in Bytes */
 	WP_ENTRY *list;			/* Array fuer Verzeichniseintraege */
 	WP_ENTRY **lptr;		/* Zeigerarray fuer Verzeichniseintraege */
 	OBJECT *tree;			/* Zeiger auf Objektbaum fuer Icon-Darstellung */
 	WICON *wicon;			/* Zeiger auf Icons fur Icon-Darstellung */
-	int tlen;				/* Laenge eines Eintrags bei Textdarstellung */
-	int psize, pdate1;		/* Positionen der Textspalten (rechter Rand) */
-	int pdate, ptime, pattr, pmode;
-	int pext, pgid;
-	int iw, ih;				/* Breite/Hoehe des Ordnericons */
-	int cw, ch, clw, clh;	/* Groesse einer Textzelle bei Textdarstellung */
-	int cw_p1, cw_p2;		/* Breite von '.' und ':' */
-	int cw_nine;			/* Breite von '9' */
-	int cw_sl, cw_x;		/* Breite von '-' und flag-Zeichen */
-	int imx;				/* Anzahl Spalten */
-	int imy;				/* Anzahl Zeilen */
-	int offx, offy;			/* Offset des sichtbaren Ausschnitts */
-	int focus;				/* Aktueller Focus */
-	int iconok;				/* Icons ermittelt ja/nein */
+	short tlen;				/* Laenge eines Eintrags bei Textdarstellung */
+	short psize, pdate1;		/* Positionen der Textspalten (rechter Rand) */
+	short pdate, ptime, pattr, pmode;
+	short pext, pgid;
+	short iw, ih;				/* Breite/Hoehe des Ordnericons */
+	short cw, ch, clw, clh;	/* Groesse einer Textzelle bei Textdarstellung */
+	short cw_p1, cw_p2;		/* Breite von '.' und ':' */
+	short cw_nine;			/* Breite von '9' */
+	short cw_sl, cw_x;		/* Breite von '-' und flag-Zeichen */
+	short imx;				/* Anzahl Spalten */
+	short imy;				/* Anzahl Zeilen */
+	short offx, offy;			/* Offset des sichtbaren Ausschnitts */
+	short focus;				/* Aktueller Focus */
+	short iconok;				/* Icons ermittelt ja/nein */
 } W_PATH;
 
 /* Gruppeneintrag */
 typedef struct wg_entry {
-	int sel, prevsel;		/* Select-Status wie bei Desktop-Icons */
-	int aptype;				/* Bei Dateien: ggf. Art der Applikation */
+	short sel, prevsel;		/* Select-Status wie bei Desktop-Icons */
+	short aptype;				/* Bei Dateien: ggf. Art der Applikation */
 	char title[MAX_FLEN];	/* Titel und Iconbeschriftung */
 	char name[MAX_PLEN];	/* Datei-/Ordnername */
 	char parm[MAX_PLEN];	/* Parameter */
-	int paralways;			/* Parameter auch bei D&D uebergeben */
-	int class;				/* 0=Ordner, 1=Datei, 3=Device, 4=Gruppe, oder Objekt-ID fuer externe Module */
+	short paralways;			/* Parameter auch bei D&D uebergeben */
+	short class;				/* 0=Ordner, 1=Datei, 3=Device, 4=Gruppe, oder Objekt-ID fuer externe Module */
 	ICONIMG *iconimg;		/* Zeiger auf Iconzuordnung */
 	char tchar;				/* Zeichen fuer Textdarstellung oder 0 */
 	char tcolor;			/* Farbe fuer Textdarstellung oder -1 */
-	int obnum;				/* Objektnummer im Baum oder Textliste */
+	short obnum;				/* Objektnummer im Baum oder Textliste */
 	struct wg_entry *prev, *next; /* Listenverkettung */
 } WG_ENTRY;
 
 typedef struct /* Gruppenfenster */
 {
-	int ext; /* 0=Thing-Gruppe, 1=Gruppe eines ext. Moduls */
-	int eid; /* AES-ID des ext. Moduls */
-	int id; /* Gruppen-ID fuer das Modul */
+	short ext; /* 0=Thing-Gruppe, 1=Gruppe eines ext. Moduls */
+	short eid; /* AES-ID des ext. Moduls */
+	short id; /* Gruppen-ID fuer das Modul */
 	char title[MAX_FLEN]; /* Titel und Iconbeschriftung */
 	char name[MAX_PLEN]; /* Name der Gruppendatei */
 	char info[MAX_PLEN]; /* Text fuer Infozeile durch ext. Module */
-	int changed; /* Flag fuer Žnderung */
-	int autosave; /* Automatisch sichern */
-	int getattr; /* Unix-Attribute ermitteln */
-	int autoclose; /* Nach Objektoeffnung schliessen? */
+	short changed; /* Flag fuer Žnderung */
+	short autosave; /* Automatisch sichern */
+	short getattr; /* Unix-Attribute ermitteln */
+	short autoclose; /* Nach Objektoeffnung schliessen? */
 	char parent[MAX_PLEN]; /* Vaterobjekt */
-	int e_num; /* Anzahl der Eintraege insgesamt */
-	int text; /* Darstellung als Text oder Icons */
+	short e_num; /* Anzahl der Eintraege insgesamt */
+	short text; /* Darstellung als Text oder Icons */
 	GFONT font; /* Zeichensatz fuer Textdarstellung */
-	int bcol, fcol; /* Hintergrund und Schrift bei < 16 Farben */
-	int bcol16, fcol16; /* Hintergrund und Schrift bei >= 16 Farben */
-	int bpat, bpat16; /* Pattern fuer < und >= 16 Farben */
+	short bcol, fcol; /* Hintergrund und Schrift bei < 16 Farben */
+	short bcol16, fcol16; /* Hintergrund und Schrift bei >= 16 Farben */
+	short bpat, bpat16; /* Pattern fuer < und >= 16 Farben */
 	WG_ENTRY *entry; /* Zeiger auf Eintraege */
 	OBJECT *tree; /* Zeiger auf Objektbaum fuer Icon-Darstellung */
 	WICON *wicon; /* Zeiger auf Icons fuer Icon-Darstellung */
-	int tlen; /* Laenge eines Eintrags */
-	int iw, ih; /* Breite/Hoehe des Ordnericons */
-	int cw, ch, clw, clh; /* Groesse einer Textzelle bei Textdarstellung */
-	int imx; /* Anzahl Spalten */
-	int imy; /* Anzahl Zeilen */
-	int offx, offy; /* Offset des sichtbaren Ausschnitts */
-	int focus; /* Aktueller Fokus */
+	short tlen; /* Laenge eines Eintrags */
+	short iw, ih; /* Breite/Hoehe des Ordnericons */
+	short cw, ch, clw, clh; /* Groesse einer Textzelle bei Textdarstellung */
+	short imx; /* Anzahl Spalten */
+	short imy; /* Anzahl Zeilen */
+	short offx, offy; /* Offset des sichtbaren Ausschnitts */
+	short focus; /* Aktueller Fokus */
 	char img[MAX_PLEN]; /* Name des Hintergrundbildes */
-	int img_planes; /* Zahl der Planes im Hintergrundbild */
-	int img_ok; /* Wurde Bild erfolgreich geladen? */
+	short img_planes; /* Zahl der Planes im Hintergrundbild */
+	short img_ok; /* Wurde Bild erfolgreich geladen? */
 	THINGIMG img_info; /* THINGIMG-Struktur des Bildes */
 } W_GRP;
 
@@ -389,16 +388,16 @@ typedef struct /* Gruppenfenster */
 /* Info ueber offene Fenster beim Laden der Konfiguration */
 typedef struct winopen {
 	char title[MAX_PLEN]; /* Pfad/Name */
-	int sh, sv; /* Slider */
-	int class; /* Art des Fensters (WCPATH etc.) */
-	int istop; /* Aktives Fenster ja/nein */
+	short sh, sv; /* Slider */
+	short class; /* Art des Fensters (WCPATH etc.) */
+	short istop; /* Aktives Fenster ja/nein */
 	/* Zusaetzliche Angaben fuer Verzeichnisse */
-	int rel; /* Relativ */
+	short rel; /* Relativ */
 	char relname[MAX_FLEN]; /* Titel */
 	char wildcard[MAX_FLEN]; /* Maske */
-	int text; /* Text/Icons */
-	int sortby; /* Sortierung */
-	int num; /* Fensternummer */
+	short text; /* Text/Icons */
+	short sortby; /* Sortierung */
+	short num; /* Fensternummer */
 	struct winopen *next; /* Vorwaertsverkettung */
 } WINOPEN;
 
@@ -413,15 +412,15 @@ typedef struct {
 /* Desktop - Laufwerk */
 typedef struct {
 	char deftitle[MAX_FLEN]; /* Standardtitel */
-	int drive; /* Laufwerksnummer */
-	int uselabel; /* Laufwerkslabel als Titel? */
-	int autoinstall; /* Laufwerk automatisch an- und abmelden? */
+	short drive; /* Laufwerksnummer */
+	short uselabel; /* Laufwerkslabel als Titel? */
+	short autoinstall; /* Laufwerk automatisch an- und abmelden? */
 } D_DRIVE;
 
 /* Desktop - Datei */
 typedef struct {
 	char name[MAX_PLEN]; /* Name inkl. Pfad */
-	unsigned int mode; /* Minix-Attribute */
+	unsigned short mode; /* Minix-Attribute */
 } D_FILE;
 
 /* Desktop - MiNT-Device */
@@ -442,27 +441,27 @@ typedef struct applinfo {
 	char name[MAX_PLEN]; /* Dateiname inkl. Pfad */
 	char startname[MAX_PLEN]; /* Dateiname inkl. Pfad beim Start */
 	char parm[61]; /* Parameter */
-	int fullcompare; /* Kompletten Pfadnamen vergleichen? */
-	int paralways; /* Parameter immer uebergeben? */
-	int homepath; /* Startverzeichnis ist Applikation */
-	int fullpath; /* Volle Pfadnamen uebergeben? */
+	short fullcompare; /* Kompletten Pfadnamen vergleichen? */
+	short paralways; /* Parameter immer uebergeben? */
+	short homepath; /* Startverzeichnis ist Applikation */
+	short fullpath; /* Volle Pfadnamen uebergeben? */
 	char fileopen[61]; /* Wildcards - ™ffnen */
 	char fileview[61]; /* Wildcards - Anzeigen */
 	char fileprint[61]; /* Wildcards - Drucken */
-	int getpar; /* Parameter beim Start abfragen */
-	int vaproto; /* AV-Protokoll verwenden */
-	int single; /* Unter MagiC! im Single-Modus */
-	int conwin; /* Unter Single-TOS im Console-Fenster */
-	int toswait; /* Bei TOS/TTP auf Tastendruck warten */
-	int shortcut; /* [Alternate]-Shortcut (1-10 oder 0) */
-	int usesel; /* Auswahl bei Shortcut uebernehmen */
-	int autostart; /* Autostart */
-	int overlay; /* Overlay (Thing auslagern) */
+	short getpar; /* Parameter beim Start abfragen */
+	short vaproto; /* AV-Protokoll verwenden */
+	short single; /* Unter MagiC! im Single-Modus */
+	short conwin; /* Unter Single-TOS im Console-Fenster */
+	short toswait; /* Bei TOS/TTP auf Tastendruck warten */
+	short shortcut; /* [Alternate]-Shortcut (1-10 oder 0) */
+	short usesel; /* Auswahl bei Shortcut uebernehmen */
+	short autostart; /* Autostart */
+	short overlay; /* Overlay (Thing auslagern) */
 	long memlimit; /* MultiTOS-Speicherlimit */
 	char *evar[MAX_EVAR]; /* Environment */
-	int euse; /* Env. benutzen ja/nein */
-	int dodrag; /* Flag fuer Drag&Drop auf angem. Dateien */
-	int unixpaths; /* Pfade im UNIX- statt GEMDOS-Stil? */
+	short euse; /* Env. benutzen ja/nein */
+	short dodrag; /* Flag fuer Drag&Drop auf angem. Dateien */
+	short unixpaths; /* Pfade im UNIX- statt GEMDOS-Stil? */
 	char alert[61]; /* Warnungsalert vor dem Start */
 	/* Listenverkettung */
 	struct applinfo *prev, *next;
@@ -470,11 +469,11 @@ typedef struct applinfo {
 
 /* Objekte auf dem Desktop */
 typedef struct {
-	int obnum; /* Objektnummer innerhalb des Baums */
-	int class; /* Art des Icons (Laufwerk, Papierkorb etc.) */
-	int select; /* Selektiert ja/nein */
-	int prevsel; /* Select-Status fuer "Gummiband" */
-	int x, y; /* Position */
+	short obnum; /* Objektnummer innerhalb des Baums */
+	short class; /* Art des Icons (Laufwerk, Papierkorb etc.) */
+	short select; /* Selektiert ja/nein */
+	short prevsel; /* Select-Status fuer "Gummiband" */
+	short x, y; /* Position */
 	char title[MAX_FLEN]; /* Titel */
 	/* Zeiger auf weitere Infos */
 	union {
@@ -498,24 +497,24 @@ typedef struct {
 
 /* Einige Informationen zur aktuellen Auswahl */
 typedef struct {
-	int desk; /* Desktop/Fenster */
+	short desk; /* Desktop/Fenster */
 	WININFO *win; /* Verweis auf das Fenster, falls Auswahl im Fenster */
-	int numobs; /* Anzahl ausgewaehlter Objekte */
-	int trash; /* Papierkorb ausgewaehlt */
-	int clip; /* Ablage ausgewaehlt */
-	int drives; /* Anzahl ausgewaehlter Laufwerke */
-	int files; /* Anzahl ausgewaehlter Dateien */
-	int folders; /* Anzahl ausgewaehlter Ordner */
-	int parent; /* Falls 1, dann Parent-Verzeichnis selektiert */
-	int printer; /* Drucker ausgewaehlt */
-	int devices; /* Anzahl ausgewaehlter Devices */
+	short numobs; /* Anzahl ausgewaehlter Objekte */
+	short trash; /* Papierkorb ausgewaehlt */
+	short clip; /* Ablage ausgewaehlt */
+	short drives; /* Anzahl ausgewaehlter Laufwerke */
+	short files; /* Anzahl ausgewaehlter Dateien */
+	short folders; /* Anzahl ausgewaehlter Ordner */
+	short parent; /* Falls 1, dann Parent-Verzeichnis selektiert */
+	short printer; /* Drucker ausgewaehlt */
+	short devices; /* Anzahl ausgewaehlter Devices */
 } SEL_INFO;
 
 /* Die globale Struktur fuer den Desktop */
 typedef struct {
 	WICON *wicon; /* Icons */
 	ICONIMG *icon; /* Icon-Zuordnungen */
-	int maxicon; /* Anzahl der Icon-Zuordnungen */
+	short maxicon; /* Anzahl der Icon-Zuordnungen */
 	ICONIMG ic_trash; /* Icon Papierkorb */
 	ICONIMG ic_clip; /* Icon Ablage */
 #if 0
@@ -542,17 +541,17 @@ typedef struct {
  -------------------------------------------------------------------------*/
 /* Infos ueber eine AV-Applikation */
 typedef struct avinfo {
-	int id; /* Applikations-ID */
+	short id; /* Applikations-ID */
 	char name[9]; /* Name */
-	int state; /* Status */
+	short state; /* Status */
 	/* Listenverkettung */
 	struct avinfo *prev, *next;
 } AVINFO;
 
 /* Infos ueber Accessory-Fenster */
 typedef struct acwin {
-	int id; /* Applikations-ID des Acc */
-	int handle; /* AES-Handle des Fensters */
+	short id; /* Applikations-ID des Acc */
+	short handle; /* AES-Handle des Fensters */
 	/* Listenverkettung */
 	struct acwin *prev, *next;
 } ACWIN;
@@ -568,32 +567,32 @@ typedef struct acstate {
 /* User- bzw. Gruppennamen */
 typedef struct ugname {
 	struct ugname *next;
-	int id;
+	short id;
 	char name[9];
 } UGNAME;
 
 /* Schnellstarttaste */
 typedef struct hotkey {
 	struct hotkey *prev, *next;
-	int key; /* ASCII-Wert */
+	short key; /* ASCII-Wert */
 	char object[MAX_PLEN + MAX_FLEN];
 } HOTKEY;
 
 /* Globale Daten */
 typedef struct {
 	char langdec; /* Punkt fuer '1.000.000' */
-	int tmp; /* Temporaere Konfiguration geladen */
+	short tmp; /* Temporaere Konfiguration geladen */
 	char cpath[MAX_PLEN]; /* Pfad der Konfigurationsdateien */
 	char rname[10]; /* Name Datei fuer Desktop - aufloesungsabh. */
 	char rnamesfx[4]; /* Suffix der Datei fuer Desktop */
 	char rnamefb[14]; /* Name Fallback-Datei fuer Desktop */
-	int done; /* 1: main_loop() wird beendet */
-	int menu; /* 1: Menue gesetzt (fuer main_exit()) */
-	DTA dta; /* Eigene DTA fuer Fsfirst() */
+	short done; /* 1: main_loop() wird beendet */
+	short menu; /* 1: Menue gesetzt (fuer main_exit()) */
+	_DTA dta; /* Eigene DTA fuer Fsfirst() */
 	char cmd[MAX_CMDLEN]; /* Zeiger auf globale Kommandozeile */
-	int argv; /* AES kann ARGV-Verfahren */
+	short argv; /* AES kann ARGV-Verfahren */
 	/* Fenster */
-	int fmode, fdraw; /* Cursor in Verzeichnissen ja/nein, sichtbar */
+	short fmode, fdraw; /* Cursor in Verzeichnissen ja/nein, sichtbar */
 	WININFO *fwin; /* Fenster, das gerade den Cursor enthaelt */
 	/* Sonstige Dinge */
 	WININFO win[MAX_PWIN]; /* Verzeichnisfenster */
@@ -604,37 +603,37 @@ typedef struct {
 	char gcmd[MAX_CLEN]; /* Buffer fuer Parameterabfrage im Dialog */
 	OBJECT *rtree; /* Zeiger auf Baum mit den Icons */
 	OBJECT *srtree; /* Dito - Mini-Icons */
-	int sheight; /* Hoehe der Mini-Icons */
+	short sheight; /* Hoehe der Mini-Icons */
 	RSINFO rinfo; /* Resourceinfo */
 #ifdef _DEBUG
-	int debug_level; /* Debug-Level fuer DEBUG.LOG */
+	short debug_level; /* Debug-Level fuer DEBUG.LOG */
 	char debug_name[MAX_PLEN];
 #endif
 	/* Semaphores fuer Dialoge */
-	int sm_selapp; /* Auswahl der zustaendigen Applikation */
-	int sm_fontsel; /* Darstellung (Fontselector) */
-	int sm_copy; /* Kopieren, Verschieben, Loeschen */
-	int sm_info; /* Info anzeigen */
-	int sm_format; /* Formatieren */
-	int mode_config; /* Aktuelle Seiten bei mehrseitigen Dialogen */
-	int gtimer; /* Timer fuer Gruppensicherungen */
-	int toserr; /* Flag fuer Fehlermeldung bei TOSWIN-Pipe */
+	short sm_selapp; /* Auswahl der zustaendigen Applikation */
+	short sm_fontsel; /* Darstellung (Fontselector) */
+	short sm_copy; /* Kopieren, Verschieben, Loeschen */
+	short sm_info; /* Info anzeigen */
+	short sm_format; /* Formatieren */
+	short mode_config; /* Aktuelle Seiten bei mehrseitigen Dialogen */
+	short gtimer; /* Timer fuer Gruppensicherungen */
+	short toserr; /* Flag fuer Fehlermeldung bei TOSWIN-Pipe */
 	/* Alice */
 	ALICE_COOKIE *alice;
 	ALICE_WIN *alicewin;
 	/* ThingImg */
-	int img_ok;
+	short img_ok;
 	THINGIMG img_info;
-	int dir_ok;
+	short dir_ok;
 	THINGIMG dir_img;
 	/* NAES */
 	NAESCOOK *naesinfo;
 	/* Vermischtes */
-	int initialisation; /* Thing ist noch in der Initiailierungsphase */
-	int autoclose; /* Aktuelle Gruppe wird automatisch geschlossen */
-	int closeall; /* Alle Fenster werden gerade geschlossen */
-	int placement; /* Fenster interaktiv plazieren (1 = ja, 0 = nein)*/
-	unsigned int umask; /* Zugriffsbiterzeugungsmaske */
+	short initialisation; /* Thing ist noch in der Initiailierungsphase */
+	short autoclose; /* Aktuelle Gruppe wird automatisch geschlossen */
+	short closeall; /* Alle Fenster werden gerade geschlossen */
+	short placement; /* Fenster interaktiv plazieren (1 = ja, 0 = nein)*/
+	unsigned short umask; /* Zugriffsbiterzeugungsmaske */
 	char *dateformat; /* Datumsformat */
 	char *timeformat; /* Zeitformat */
 	UGNAME *usernames; /* Usernamen aus /etc/passwd */
@@ -646,63 +645,63 @@ typedef struct {
 
 /* Aktuelle Einstellungen */
 typedef struct {
-	int wdial, cdial; /* Dialoge im Fenster, zentrieren */
-	int userdef; /* Dialoge zentrieren */
-	int hotkeys; /* Hotkeys (1) oder Autolocator (0) */
-	int autosave; /* Einstellungen automatisch sichern */
-	int texit; /* Beim Programmstart unter Single-TOS auslagern */
-	int bsel; /* Mausklick auch in Hintergrundfenster */
-	int hscr; /* Horizontale Scrollbalken */
-	int closebox; /* Closebox schliesst Fenster immer */
-	int nohotcloser; /* Kein Hotcloser bei MagiC? */
-	int altapp; /* PRX und ACX auch als Programme akzeptieren */
-	int altcpx; /* CPX als Programme akzeptieren */
-	int askacc; /* Vor ACC-Start nachfragen */
-	int vastart; /* Leeres VA_START an Programme zulassen */
-	int cdel; /* Bestaetigung fuer Loeschen */
-	int ccopy; /* Bestaetigung fuer Kopieren */
-	int creplace; /* Bestaetigung fuer šberschreiben */
+	short wdial, cdial; /* Dialoge im Fenster, zentrieren */
+	short userdef; /* Dialoge zentrieren */
+	short hotkeys; /* Hotkeys (1) oder Autolocator (0) */
+	short autosave; /* Einstellungen automatisch sichern */
+	short texit; /* Beim Programmstart unter Single-TOS auslagern */
+	short bsel; /* Mausklick auch in Hintergrundfenster */
+	short hscr; /* Horizontale Scrollbalken */
+	short closebox; /* Closebox schliesst Fenster immer */
+	short nohotcloser; /* Kein Hotcloser bei MagiC? */
+	short altapp; /* PRX und ACX auch als Programme akzeptieren */
+	short altcpx; /* CPX als Programme akzeptieren */
+	short askacc; /* Vor ACC-Start nachfragen */
+	short vastart; /* Leeres VA_START an Programme zulassen */
+	short cdel; /* Bestaetigung fuer Loeschen */
+	short ccopy; /* Bestaetigung fuer Kopieren */
+	short creplace; /* Bestaetigung fuer šberschreiben */
 	long cbuf; /* Kopierbuffer - 0=unbegrenzt */
-	int dcolor; /* Farbe des Desktops */
-	int dpattern; /* Muster des Desktops */
+	short dcolor; /* Farbe des Desktops */
+	short dpattern; /* Muster des Desktops */
 	GFONT font; /* Schriftart in Fenstern */
-	int bpat; /* Muster in Fenstern */
+	short bpat; /* Muster in Fenstern */
 	INDEX index; /* Art der Darstellung in Fenstern */
-	int tosmode; /* TOS-Dateisysteme als '8+3' */
+	short tosmode; /* TOS-Dateisysteme als '8+3' */
 	char fkey[40][MAX_PLEN]; /* Funktionstastenbelegung */
 	char tobj[10][MAX_PLEN]; /* Toolmenue - Objekte */
 	char ttxt[10][18]; /* Toolmenue - Texte */
-	int clickms; /* Zeitspanne fuer Verzoegerung bei Mausklicks, bevor
+	short clickms; /* Zeitspanne fuer Verzoegerung bei Mausklicks, bevor
 					der Status nochmal abgefragt wird um Drag&Drop oder
 					Gummiband zu aktivieren */
-	int scroll; /* Faktor fuer Echtzeitscrolling */
-	int isnap; /* Icons auf dem Desktop einrasten */
-	int snapx, snapy; /* Raster X/Y */
-	int nowin; /* Offene Fenster nicht sichern */
-	int autocon; /* Console automatisch schliessen */
-	int toswait; /* Nach TOS/TTP auf Tastendruck warten */
-	int uset2g; /* TOS2GEM benutzen */
-	int autoupdate; /* Fenster automatisch aktualisieren */
-	int autocomp; /* Autolocator mit 'Filenamecompletion' */
-	int hidden; /* Versteckte Dateien anzeigen */
-	int vert; /* Verzeichnisse spaltenweise */
-	int qread; /* Keine Iconzuordnungen im Textmodus */
-	int relwin; /* 'relative' Verzeichnisse zulassen */
-	int autosel; /* Cursor mit automatischer Selektion */
-	int autosize; /* Fenstergroessen automatisch anpassen */
+	short scroll; /* Faktor fuer Echtzeitscrolling */
+	short isnap; /* Icons auf dem Desktop einrasten */
+	short snapx, snapy; /* Raster X/Y */
+	short nowin; /* Offene Fenster nicht sichern */
+	short autocon; /* Console automatisch schliessen */
+	short toswait; /* Nach TOS/TTP auf Tastendruck warten */
+	short uset2g; /* TOS2GEM benutzen */
+	short autoupdate; /* Fenster automatisch aktualisieren */
+	short autocomp; /* Autolocator mit 'Filenamecompletion' */
+	short hidden; /* Versteckte Dateien anzeigen */
+	short vert; /* Verzeichnisse spaltenweise */
+	short qread; /* Keine Iconzuordnungen im Textmodus */
+	short relwin; /* 'relative' Verzeichnisse zulassen */
+	short autosel; /* Cursor mit automatischer Selektion */
+	short autosize; /* Fenstergroessen automatisch anpassen */
 	/* !!! */
-	int autosizex; /* Fenster in x-Richtung automatisch anpassen */
-	int autosizey; /* Fenster in y-Richtung automatisch anpassen */
-	int autoplace; /* Fenster "intelligent" plazieren */
-	int interactive; /* Fenster im Notfall interaktiv plazieren */
-	int casesort; /* Case-sensitive sortieren */
-	int caseloc; /* Auto-Locator ist case-sensitive */
-	int rdouble; /* rechte Maustaste = Doppelklick */
-	int imguse; /* Hintergrundbild verwenden */
-	int imgcenter; /* Hintergrundbild zentrieren */
-	int imgpal; /* Hintergrundbild - Palette setzen */
-	int imgtrans; /* Hintergrundbild transpararent kopieren */
-	int usedel; /* DEL auch als Shortcut fuer Shift-DEL */
+	short autosizex; /* Fenster in x-Richtung automatisch anpassen */
+	short autosizey; /* Fenster in y-Richtung automatisch anpassen */
+	short autoplace; /* Fenster "intelligent" plazieren */
+	short interactive; /* Fenster im Notfall interaktiv plazieren */
+	short casesort; /* Case-sensitive sortieren */
+	short caseloc; /* Auto-Locator ist case-sensitive */
+	short rdouble; /* rechte Maustaste = Doppelklick */
+	short imguse; /* Hintergrundbild verwenden */
+	short imgcenter; /* Hintergrundbild zentrieren */
+	short imgpal; /* Hintergrundbild - Palette setzen */
+	short imgtrans; /* Hintergrundbild transpararent kopieren */
+	short usedel; /* DEL auch als Shortcut fuer Shift-DEL */
 	char imgname[MAX_PLEN]; /* Dateiname des Hintergrundbildes */
 	char dirimg[MAX_PLEN]; /* Dateiname des Fensterhintergrundbildes */
 	/* Externe Programme */
@@ -710,15 +709,15 @@ typedef struct {
 	char format[MAX_PLEN];
 	/* Kobold 2-Einstellung */
 	char kb_prog[MAX_PLEN]; /* Programm */
-	int kb_tosonly; /* Nur bei TOS-Filesystemen verwenden */
-	int kbf_use; /* Formatieren ja/nein */
-	int kbc_use; /* Kopieren ja/nein */
-	int kbc_files; /* Anzahl der Dateien, ab der kopiert wird */
+	short kb_tosonly; /* Nur bei TOS-Filesystemen verwenden */
+	short kbf_use; /* Formatieren ja/nein */
+	short kbc_use; /* Kopieren ja/nein */
+	short kbc_files; /* Anzahl der Dateien, ab der kopiert wird */
 	long kbc_size; /* ... oder Umfang in kB */
-	int kbd_use; /* Loeschen ja/nein */
-	int kbd_files; /* Anzahl der Dateien, ab der geloescht wird */
-	int kbd_two; /* Kompatibilitaetsmodus Kobold 2.0 */
-	int nicelines; /* Nicelines zeichnen? */
+	short kbd_use; /* Loeschen ja/nein */
+	short kbd_files; /* Anzahl der Dateien, ab der geloescht wird */
+	short kbd_two; /* Kompatibilitaetsmodus Kobold 2.0 */
+	short nicelines; /* Nicelines zeichnen? */
 } CONF;
 
 /* Console-Fenster fuer Single-TOS */
@@ -726,15 +725,15 @@ typedef struct {
 	TOS2GEM_COOKIE *tos2gem;
 	GFONT font; /* Darstellung */
 	WININFO win; /* Fenster */
-	int vdi_handle; /* VDI-Handle fuer Text */
-	int vdi_chandle; /* VDI-Handle fuer Cursor */
-	int cw, ch; /* Ausmasse des Zeichensatzes */
-	int xoff; /* X-Offset */
-	int col, line, hist; /* Spalten, Zeilen, History */
-	int color; /* Farbsupport 0=kein, 1=VT52, 2=VDI */
-	int buffer; /* Bufferung 0=kein, 1=Groesse, 2=Zeit */
-	int buftime; /* Zeit fuer Bufferung=2 */
-	int flags; /* Fenster: 0x1=Titel, 0x2=VSlide, 0x4=HSlide */
+	short vdi_handle; /* VDI-Handle fuer Text */
+	short vdi_chandle; /* VDI-Handle fuer Cursor */
+	short cw, ch; /* Ausmasse des Zeichensatzes */
+	short xoff; /* X-Offset */
+	short col, line, hist; /* Spalten, Zeilen, History */
+	short color; /* Farbsupport 0=kein, 1=VT52, 2=VDI */
+	short buffer; /* Bufferung 0=kein, 1=Groesse, 2=Zeit */
+	short buftime; /* Zeit fuer Bufferung=2 */
+	short flags; /* Fenster: 0x1=Titel, 0x2=VSlide, 0x4=HSlide */
 	char *buf; /* Zeiger auf Textbuffer */
 	char *tmp; /* Temporaerer Buffer fuer Sicherung beim Init */
 } CONSOLE;
@@ -744,7 +743,7 @@ typedef struct {
 	APPLINFO **appllist;
 	char *ltext;
 	char **list;
-	int num;
+	short num;
 } APLIST;
 
 /*-------------------------------------------------------------------------
@@ -753,13 +752,13 @@ typedef struct {
 /* Voreinstellung */
 typedef struct {
 	CARD *configCard;
-	int mode;
-	int imguse, imgcenter, imgpal, imgtrans;
+	short mode;
+	short imguse, imgcenter, imgpal, imgtrans;
 	char imgname[MAX_PLEN];
-	int tosmode, dcol, dpat, hidden, vert, bsel;
+	short tosmode, dcol, dpat, hidden, vert, bsel;
 	char finder[MAX_PLEN], format[MAX_PLEN];
 	char kprog[MAX_PLEN];
-	int altapp, altcpx, ccolor, chist, cflags, use3d;
+	short altapp, altcpx, ccolor, chist, cflags, use3d;
 } DCONF;
 
 #define WLMAX 50
@@ -777,10 +776,10 @@ typedef struct {
 typedef struct {
 	CARD *appInfoCard;
 	APPLINFO *appl;
-	int mode;
+	short mode;
 	char apname[MAX_PLEN], aparam[MAX_PLEN];
 	char *evar[MAX_EVAR], *ebuf;
-	int new;
+	short new;
 	char ftxt[5][61];
 	char fval[5][61];
 	char ftmp[5][61];
@@ -788,11 +787,11 @@ typedef struct {
 
 /* Formatieren */
 typedef struct {
-	int track, side, drive, sec;
+	short track, side, drive, sec;
 	unsigned char *buf;
 	char label[16];
-	int fast;
-	int j_step;
+	short fast;
+	short j_step;
 } DFORMAT;
 
 /* Neuer Ordner */
@@ -807,7 +806,7 @@ typedef struct {
 	char txt[10][61];
 	char tmp[10][61];
 	char val[10][61];
-	int off;
+	short off;
 } DFUNC;
 
 /* Info - Gruppenobjekt */
@@ -819,7 +818,7 @@ typedef struct {
 
 /* Eintrag fuer DCOPY.stack */
 typedef struct dstk {
-	int class; /* 0 = Datei, 1 = Ordner */
+	short class; /* 0 = Datei, 1 = Ordner */
 	char *src; /* Quelle */
 	char *dst; /* Ziel */
 	struct dstk *prev, *next; /* Verkettung */
@@ -827,26 +826,26 @@ typedef struct dstk {
 
 /* Kopieren/Verschieben/Loeschen */
 typedef struct {
-	int mode, /* Modus (0 = Copy, 1 = Move, 2 = Link) */
+	short mode, /* Modus (0 = Copy, 1 = Move, 2 = Link) */
 	avid; /* AV-Client (>-1) */
-	int follow; /* Links verfolgen? */
-	int backup; /* Backupmodus? */
+	short follow; /* Links verfolgen? */
+	short backup; /* Backupmodus? */
 	DSTK *stack, *curr; /* Filestack */
-	int nfiles, nfolders; /* Anzahl Dateien/Ordner */
+	short nfiles, nfolders; /* Anzahl Dateien/Ordner */
 	unsigned long total, ready, size, bsrc, bdst; /* Anzahl Bytes gelesen/geschrieben */
-	int del, ren, crepl; /* Flags fuer Verschieben/Umbenennen etc. */
+	short del, ren, crepl; /* Flags fuer Verschieben/Umbenennen etc. */
 	long infh, outfh; /* Filehandles */
 	char *buf; /* Kopierbuffer */
 	unsigned long buflen; /* Anzahl der gelesenen Bytes im Buffer */
 	char dlst[32]; /* Liste der betroffenen Laufwerke fuer Updates */
-	int j_step;
+	short j_step;
 } DCOPY;
 
 /* Darstellung/Fontselektor */
 typedef struct {
-	int fmsg[8];
-	int class, intern;
-	int bpat;
+	short fmsg[8];
+	short class, intern;
+	short bpat;
 	WININFO *fwin;
 	char *sizename, **sizelist;
 	GFONT lfont, mfont, *font;
@@ -874,7 +873,7 @@ extern CONF conf;
 extern GDOS gdos;
 extern DESKINFO desk;
 extern char almsg[256], *altitle;
-extern int aesmsg[8];
+extern short aesmsg[8];
 extern char *aesbuf;
 extern char *aesapname;
 extern CONSOLE con;
@@ -889,16 +888,16 @@ extern DMASK *dmask;
 extern char *lbuf;
 
 extern RSINFO rinfo, rinfo2, mrinfo;
-extern int rcw, rch;
+extern short rcw, rch;
 extern OBJECT **rs_trindex;
 extern char **rs_frstr;
 
 extern long cdecl(*call_thingimg)
-(long magic, int what, THINGIMG *img_info);
+(long magic, short what, THINGIMG *img_info);
 
 #if 0
-extern int is_wild[];
+extern short is_wild[];
 #endif
-extern int (*strcompare)(const char *, const char *);
+extern short (*strcompare)(const char *, const char *);
 
 #endif

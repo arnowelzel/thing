@@ -25,9 +25,10 @@
  * MultiTOS Drag&Drop
  */
 
-#include <aes.h>
+#include <gem.h>
 #include <string.h>
-#include <tos.h>
+#include <mintbind.h>
+#include <signal.h>
 #include "..\include\dragdrop.h"
 
 #define DD_TIMEOUT 1000    /* Timeout fuer Antwort auf D&D-Anfrage */
@@ -50,10 +51,10 @@
  *          -1 - keine Antwort oder DD_NAK vom Empfaenger
  *          -2 - AP_DRAGDROP konnte nicht gesendet werden
  */
-int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate,
+short ddcreate(short myid, short apid, short winid, short msx, short msy, short kstate,
 		void *ext, void **oldpipesig) {
-	int handle, i;
-	int buf[8];
+	short handle, i;
+	short buf[8];
 	long handle_mask;
 	char c;
 	char *pipe;
@@ -70,7 +71,7 @@ int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate,
 			if (pipe[17] > 'Z')
 				break;
 		}
-		handle = (int) Fcreate(pipe, FA_HIDDEN);
+		handle = (short) Fcreate(pipe, FA_HIDDEN);
 	} while (handle == -36);
 
 	if (handle < 0)
@@ -100,7 +101,7 @@ int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate,
 	}
 
 	/* Antwort entgegennehmen */
-	i = (int) Fread(handle, 1L, &c);
+	i = (short) Fread(handle, 1L, &c);
 	if (i != 1 || c != DD_OK) {
 		Fclose(handle);
 		return (-1);
@@ -112,7 +113,7 @@ int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate,
 		return (-1);
 	}
 
-	*oldpipesig = Psignal(SIGPIPE, (void *) SIG_IGN);
+	*oldpipesig = Psignal(SIGPIPE, (long) SIG_IGN);
 
 	return handle;
 }
@@ -130,20 +131,20 @@ int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate,
  *         DD_LEN - Empfaenger akzeptiert den Umfang nicht
  *         DD_NAK - Empfaenger wurde vorher beendet
  */
-int ddstry(int handle, unsigned long ext, char *name, long size) {
-	int hdrlen, i;
+short ddstry(short handle, unsigned long ext, char *name, long size) {
+	short hdrlen, i;
 	char c;
 
 	/* 4 byte fuer 'ext', 4 byte for 'size', 2 byte fuer abschliessende Nullbytes */
-	hdrlen = 10 + (int) strlen(name);
+	hdrlen = 10 + (short) strlen(name);
 	if (Fwrite(handle, 2L, &hdrlen) != 2)
 		return (DD_NAK);
 
 	c = 0;
-	i = (int) Fwrite(handle, 4L, &ext);
-	i += (int) Fwrite(handle, 4L, &size);
-	i += (int) Fwrite(handle, 1L, &c);
-	i += (int) Fwrite(handle, (long) strlen(name) + 1, name);
+	i = (short) Fwrite(handle, 4L, &ext);
+	i += (short) Fwrite(handle, 4L, &size);
+	i += (short) Fwrite(handle, 1L, &c);
+	i += (short) Fwrite(handle, (long) strlen(name) + 1, name);
 	if (i != hdrlen)
 		return (DD_NAK);
 
@@ -151,7 +152,7 @@ int ddstry(int handle, unsigned long ext, char *name, long size) {
 	if (Fread(handle, 1L, &c) != 1L)
 		return (DD_NAK);
 
-	return ((int) c);
+	return ((short) c);
 }
 
 /**
@@ -160,8 +161,8 @@ int ddstry(int handle, unsigned long ext, char *name, long size) {
  * @param handle Handle der Pipe von ddcreate()
  * @param
  */
-void ddclose(int handle, void *oldpipesig) {
-	Psignal(SIGPIPE, oldpipesig);
+void ddclose(short handle, void *oldpipesig) {
+	Psignal(SIGPIPE, (long) oldpipesig);
 	Fclose(handle);
 }
 
@@ -174,12 +175,12 @@ void ddclose(int handle, void *oldpipesig) {
  *
  * @return > 0 - file handle der Pipe, Fehlercode sonst
  */
-int ddopen(char *pipe, unsigned long *ext, void **oldpipesig) {
-	int handle;
+short ddopen(char *pipe, unsigned long *ext, void **oldpipesig) {
+	short handle;
 	char outbuf[DD_EXTSIZE + 1];
 
 	 /* Handle der Pipe erfragen */
-	handle = (int) Fopen(pipe, 2);
+	handle = (short) Fopen(pipe, 2);
 	if (handle < 0)
 		return (handle);
 
@@ -190,7 +191,7 @@ int ddopen(char *pipe, unsigned long *ext, void **oldpipesig) {
 	strncpy(outbuf + 1, (char *) ext, DD_EXTSIZE);
 
 	/* Signal ignorieren */
-	*oldpipesig = Psignal(SIGPIPE, (void *) SIG_IGN);
+	*oldpipesig = Psignal(SIGPIPE, (long)SIG_IGN);
 
 	if (Fwrite(handle, (long) DD_EXTSIZE + 1, outbuf) != DD_EXTSIZE + 1) {
 		ddclose(handle, *oldpipesig);

@@ -26,8 +26,8 @@
  */
 
 #include <string.h>
-#include <aes.h>
-#include <tos.h>
+#include <gem.h>
+#include <mintbind.h>
 #include <nkcc.h>
 #include "..\include\thingtbx.h"
 
@@ -77,11 +77,11 @@ void comp2full(char *full, char *path, char *file) {
  *
  * @return 1 - alles OK, 0 - sonst
  */
-int isValidPath(char *path) {
+short isValidPath(char *path) {
 	char drv;
 
 	/* Weniger als 3 Zeichen ("X:\")? */
-	if ((int) strlen(path) < 3)
+	if ((short) strlen(path) < 3)
 		return (FALSE);
 
 	/* Laufwerk unzulaessig? */
@@ -109,11 +109,11 @@ int isValidPath(char *path) {
  *
  * @return TRUE - alles OK, FALSE - sonst
  */
-int isValidFileMask(char *mask, int wild) {
-	int length, i;
+short isValidFileMask(char *mask, short wild) {
+	short length, i;
 
 	/* Nur pruefen, wenn Maske vorhanden */
-	length = (int) strlen(mask);
+	length = (short) strlen(mask);
 	if (length) {
 		for (i = 0; i < length; i++) {
 			/* Unzulaessiges Zeichen in der Maske? */
@@ -140,11 +140,11 @@ int isValidFileMask(char *mask, int wild) {
  *
  * @return 1 - alles OK, 0 - sonst
  */
-int isValidFileExtension(char *ext) {
-	int length, i;
+short isValidFileExtension(char *ext) {
+	short length, i;
 
 	/* Nur pruefen, wenn Extension vorhanden */
-	length = (int) strlen(ext);
+	length = (short) strlen(ext);
 	if (length) {
 		for (i = 0; i < length; i++) {
 			/* Unzulaessiges Zeichen in der Extension? */

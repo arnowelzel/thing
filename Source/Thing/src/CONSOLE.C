@@ -52,8 +52,8 @@
  *
  */
 void cw_update(struct wininfo *win) {
-	con.tos2gem->x_off = win->work.x;
-	con.tos2gem->y_off = win->work.y;
+	con.tos2gem->x_off = win->work.g_x;
+	con.tos2gem->y_off = win->work.g_y;
 }
 
 /**
@@ -73,35 +73,35 @@ void cw_prepare(struct wininfo *win) {
 /**
  *
  */
-void cw_redraw(struct wininfo *win, RECT *area) {
-	int x1, x2, y1, y2, pxy[4], start, i, j, k;
-	RECT to_draw;
+void cw_redraw(struct wininfo *win, GRECT *area) {
+	short x1, x2, y1, y2, pxy[4], start, i, j, k;
+	GRECT to_draw;
 	char temp[513], remember;
 	unsigned char color;
 
 	/* Sichtbaren Bereich ermitteln */
-	x1 = (area->x - con.tos2gem->x_off) / con.tos2gem->char_w;
+	x1 = (area->g_x - con.tos2gem->x_off) / con.tos2gem->char_w;
 	if (x1 < 0)
 		x1 = 0;
-	x2 = (area->x + area->w - 1 - con.tos2gem->x_off) / con.tos2gem->char_w;
+	x2 = (area->g_x + area->g_w - 1 - con.tos2gem->x_off) / con.tos2gem->char_w;
 	if (x2 >= con.tos2gem->x_vis)
 		x2 = con.tos2gem->x_vis - 1;
-	y1 = (area->y - con.tos2gem->y_off) / con.tos2gem->char_h;
+	y1 = (area->g_y - con.tos2gem->y_off) / con.tos2gem->char_h;
 	if (y1 < 0)
 		y1 = 0;
-	y2 = (area->y + area->h - 1 - con.tos2gem->y_off) / con.tos2gem->char_h;
+	y2 = (area->g_y + area->g_h - 1 - con.tos2gem->y_off) / con.tos2gem->char_h;
 	if (y2 >= con.tos2gem->y_vis)
 		y2 = con.tos2gem->y_vis;
-	to_draw.x = con.tos2gem->x_off + x1 * con.tos2gem->char_w;
-	to_draw.y = con.tos2gem->y_off + y1 * con.tos2gem->char_h;
-	to_draw.w = (x2 - x1 + 1) * con.tos2gem->char_w;
-	to_draw.h = (y2 - y1 + 1) * con.tos2gem->char_h;
+	to_draw.g_x = con.tos2gem->x_off + x1 * con.tos2gem->char_w;
+	to_draw.g_y = con.tos2gem->y_off + y1 * con.tos2gem->char_h;
+	to_draw.g_w = (x2 - x1 + 1) * con.tos2gem->char_w;
+	to_draw.g_h = (y2 - y1 + 1) * con.tos2gem->char_h;
 
-	rc_intersect(area, &to_draw);
-	pxy[0] = to_draw.x;
-	pxy[1] = to_draw.y;
-	pxy[2] = pxy[0] + to_draw.w - 1;
-	pxy[3] = pxy[1] + to_draw.h - 1;
+	rc_intersect( area, &to_draw);
+	pxy[0] = to_draw.g_x;
+	pxy[1] = to_draw.g_y;
+	pxy[2] = pxy[0] + to_draw.g_w - 1;
+	pxy[3] = pxy[1] + to_draw.g_h - 1;
 	vs_clip(con.vdi_handle, 1, pxy);
 
 	for (i = y1; i <= y2; i++) {
@@ -140,9 +140,9 @@ void cw_redraw(struct wininfo *win, RECT *area) {
 		/* Rand des Terminalbereichs markieren */
 		if (i + con.tos2gem->text_offset + con.tos2gem->y_offset + 1
 				== con.tos2gem->text_offset) {
-			pxy[0] = win->work.x;
-			pxy[2] = pxy[0] + win->work.w - 1;
-			pxy[1] = pxy[3] = win->work.y + (i + 1) * con.tos2gem->char_h - 1;
+			pxy[0] = win->work.g_x;
+			pxy[2] = pxy[0] + win->work.g_w - 1;
+			pxy[1] = pxy[3] = win->work.g_y + (i + 1) * con.tos2gem->char_h - 1;
 			vswr_mode(con.vdi_handle, MD_XOR);
 			v_pline(con.vdi_handle, 2, pxy);
 			vswr_mode(con.vdi_handle, MD_REPLACE);
@@ -154,10 +154,10 @@ void cw_redraw(struct wininfo *win, RECT *area) {
 /**
  *
  */
-void cw_slide(struct wininfo *win, int mode, int h, int v) {
+void cw_slide(struct wininfo *win, short mode, short h, short v) {
 	long hsize, vsize, hpos, vpos;
-	int xvis, yvis, xsize, ysize, xpos, ypos;
-	int dx, dy, xposn, yposn;
+	short xvis, yvis, xsize, ysize, xpos, ypos;
+	short dx, dy, xposn, yposn;
 
 	xvis = con.tos2gem->x_vis;
 	xsize = con.tos2gem->x_size;
@@ -184,24 +184,24 @@ void cw_slide(struct wininfo *win, int mode, int h, int v) {
 			vpos = 0;
 		/* Slider setzen */
 		if (con.win.flags & HSLIDE) {
-			wind_set(win->handle, WF_HSLIDE, (int) hpos);
-			wind_set(win->handle, WF_HSLSIZE, (int) hsize);
+			wind_set(win->handle, WF_HSLIDE, (short) hpos, 0, 0, 0 );
+			wind_set(win->handle, WF_HSLSIZE, (short) hsize, 0, 0, 0 );
 		}
 		if (con.win.flags & VSLIDE) {
-			wind_set(win->handle, WF_VSLIDE, (int) vpos);
-			wind_set(win->handle, WF_VSLSIZE, (int) vsize);
+			wind_set(win->handle, WF_VSLIDE, (short) vpos, 0, 0, 0 );
+			wind_set(win->handle, WF_VSLSIZE, (short) vsize, 0 ,0, 0);
 		}
 		break;
 	case S_ABS:
 		/* Position auf Offset umrechnen */
 		dx = dy = 0;
 		if (h != -1 && xsize > xvis) {
-			xposn = (int) ((long) (xsize - xvis) * (long) h / 1000L);
+			xposn = (short) ((long) (xsize - xvis) * (long) h / 1000L);
 			dx = xpos - xposn;
 		} else
 			xposn = xpos;
 		if (v != -1 && ysize > yvis) {
-			yposn = (int) ((long) (ysize - yvis) * (long) v / 1000L);
+			yposn = (short) ((long) (ysize - yvis) * (long) v / 1000L);
 			dy = ypos - yposn;
 		} else
 			yposn = ypos;
@@ -291,7 +291,7 @@ void cw_slide(struct wininfo *win, int mode, int h, int v) {
  */
 void cwin_cls(void) {
 	long bsize;
-	int i;
+	short i;
 
 	bsize = (long) (con.col + 1) * (long) (con.line + con.hist);
 	/* Textseite initialisieren */
@@ -310,7 +310,7 @@ void cwin_cls(void) {
 /**
  *
  */
-int cwin_init(void) {
+short cwin_init(void) {
 	long bsize;
 	char *p;
 
@@ -393,8 +393,8 @@ void cwin_exit(void) {
  *
  */
 void cwin_attr(void) {
-	int dummy, x, y, w, h, cx, cy, cw, ch;
-	int columns, lines, mcol, mlin, max, draw;
+	short dummy, x, y, w, h, cx, cy, cw, ch;
+	short columns, lines, mcol, mlin, max, draw;
 
 	/* Attribute setzen */
 	vst_font(con.vdi_handle, con.font.id);
@@ -405,14 +405,14 @@ void cwin_attr(void) {
 	vst_alignment(con.vdi_handle, 0, 5, &dummy, &dummy);
 
 	/* Maximale Zeilen/Spalten auf dem Desktop ermitteln */
-	wind_calc(WC_WORK, con.win.flags, tb.desk.x, tb.desk.y, tb.desk.w,
-			tb.desk.h, &x, &y, &w, &h);
+	wind_calc(WC_WORK, con.win.flags, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w,
+			tb.desk.g_h, &x, &y, &w, &h);
 	mlin = h / con.ch;
 	mcol = w / con.cw;
 
 	/* Anzahl darstellbarer Zeilen/Spalten ermitteln */
-	wind_calc(WC_WORK, con.win.flags, con.win.curr.x, con.win.curr.y,
-			con.win.curr.w, con.win.curr.h, &x, &y, &w, &h);
+	wind_calc(WC_WORK, con.win.flags, con.win.curr.g_x, con.win.curr.g_y,
+			con.win.curr.g_w, con.win.curr.g_h, &x, &y, &w, &h);
 
 	columns = w / con.cw;
 	if (w - columns * con.cw > 0)
@@ -450,16 +450,16 @@ void cwin_attr(void) {
 	wind_calc(WC_BORDER, con.win.flags, x, y, w, h, &cx, &cy, &cw, &ch);
 
 	/* Werte eintragen */
-	con.win.curr.x = cx;
-	con.win.curr.y = cy;
-	con.win.curr.w = cw;
-	con.win.curr.h = ch;
-	wind_calc(WC_WORK, con.win.flags, cx, cy, cw, ch, &con.win.work.x,
-			&con.win.work.y, &con.win.work.w, &con.win.work.h);
+	con.win.curr.g_x = cx;
+	con.win.curr.g_y = cy;
+	con.win.curr.g_w = cw;
+	con.win.curr.g_h = ch;
+	wind_calc(WC_WORK, con.win.flags, cx, cy, cw, ch, &con.win.work.g_x,
+			&con.win.work.g_y, &con.win.work.g_w, &con.win.work.g_h);
 
 	/* Ggf. Redraw */
 	if (draw && con.win.state & WSOPEN) {
-		win_redraw(&con.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		win_redraw(&con.win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		win_slide(&con.win, S_INIT, 0, 0);
 	}
 
@@ -470,8 +470,8 @@ void cwin_attr(void) {
 	con.tos2gem->y_size = con.line;
 	con.tos2gem->x_vis = columns;
 	con.tos2gem->y_vis = lines;
-	con.tos2gem->x_off = con.win.work.x;
-	con.tos2gem->y_off = con.win.work.y;
+	con.tos2gem->x_off = con.win.work.g_x;
+	con.tos2gem->y_off = con.win.work.g_y;
 	con.tos2gem->char_w = con.cw;
 	con.tos2gem->char_h = con.ch;
 	con.tos2gem->vdi_handle = con.vdi_handle;
@@ -510,17 +510,17 @@ void cwin_attr(void) {
 /**
  *
  */
-int cwin_open(void) {
+short cwin_open(void) {
 	long bsize;
-	int work_in[11], work_out[57];
-	int dummy;
-	int i, toff;
+	short work_in[11], work_out[57];
+	short dummy;
+	short i, toff;
 
 	/* Fenster schon auf? */
 	if (con.win.state & WSOPEN) {
 		if (con.win.state & WSICON)
-			win_unicon(&con.win, con.win.save.x, con.win.save.y,
-					con.win.save.w, con.win.save.h);
+			win_unicon(&con.win, con.win.save.g_x, con.win.save.g_y,
+					con.win.save.g_w, con.win.save.g_h);
 		win_top(&con.win);
 		return (1);
 	}
@@ -621,7 +621,7 @@ int cwin_open(void) {
 void cwin_update(void) {
 	con.win.state &= ~WSFULL;
 	cwin_attr();
-	win_redraw(&con.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+	win_redraw(&con.win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 	win_slide(&con.win, S_INIT, 0, 0);
 }
 
@@ -629,7 +629,7 @@ void cwin_update(void) {
  * Console-Fenster schliessen.
  */
 void cwin_close(void) {
-	int whandle;
+	short whandle;
 
 	con.tos2gem->deinit();
 	win_close(&con.win);
@@ -649,30 +649,30 @@ void cwin_close(void) {
  * Ein-/Ausgabeumleitung in das Console-Fenster starten.
  */
 void cwin_startio(void) {
-	int x, y, w, h, d;
+	short x, y, w, h, d;
 
 	/* Bei Bedarf Fenster un-ikonifizieren */
 	if (con.win.state & WSICON)
-		win_unicon(&con.win, con.win.save.x, con.win.save.y, con.win.save.w,
-				con.win.save.h);
+		win_unicon(&con.win, con.win.save.g_x, con.win.save.g_y, con.win.save.g_w,
+				con.win.save.g_h);
 
 	/* Ggf. Fenster-Arbeitsbereich vorher auf Desktop begrenzen */
-	wind_calc(WC_WORK, con.win.flags, con.win.curr.x, con.win.curr.y,
-			con.win.curr.w, con.win.curr.h, &x, &y, &w, &h);
-	if (x + w > tb.desk.x + tb.desk.w) {
-		d = (tb.desk.x + tb.desk.w) - (x + w);
+	wind_calc(WC_WORK, con.win.flags, con.win.curr.g_x, con.win.curr.g_y,
+			con.win.curr.g_w, con.win.curr.g_h, &x, &y, &w, &h);
+	if (x + w > tb.desk.g_x + tb.desk.g_w) {
+		d = (tb.desk.g_x + tb.desk.g_w) - (x + w);
 		x += d;
 	}
-	if (y + h > tb.desk.y + tb.desk.h) {
-		d = (tb.desk.y + tb.desk.h) - (y + h);
+	if (y + h > tb.desk.g_y + tb.desk.g_h) {
+		d = (tb.desk.g_y + tb.desk.g_h) - (y + h);
 		y += d;
 	}
-	wind_calc(WC_BORDER, con.win.flags, x, y, w, h, &con.win.curr.x,
-			&con.win.curr.y, &con.win.curr.w, &con.win.curr.h);
-	if (con.win.curr.x < tb.desk.x)
-		con.win.curr.x = tb.desk.x;
-	if (con.win.curr.y < tb.desk.y)
-		con.win.curr.y = tb.desk.y;
+	wind_calc(WC_BORDER, con.win.flags, x, y, w, h, &con.win.curr.g_x,
+			&con.win.curr.g_y, &con.win.curr.g_w, &con.win.curr.g_h);
+	if (con.win.curr.g_x < tb.desk.g_x)
+		con.win.curr.g_x = tb.desk.g_x;
+	if (con.win.curr.g_y < tb.desk.g_y)
+		con.win.curr.g_y = tb.desk.g_y;
 	cwin_attr();
 	graf_mouse(M_OFF, 0L);
 	wind_update( BEG_UPDATE);

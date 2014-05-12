@@ -24,8 +24,9 @@
 #ifndef __TOOLBOX__
 #define __TOOLBOX__
 
-#include <aes.h>
-#include <tos.h>
+#include <gem.h>
+#include <mintbind.h>
+#include <sysvars.h>
 #include <portab.h>
 #include <magx.h>
 #include <fdmproto.h>
@@ -52,13 +53,6 @@
 #define min(a,b)    (((a) < (b)) ? (a) : (b)) /* Minimum Funktion */
 
 /*-------------------------------------------------------------------------
- WINX/MTOS-Anpassung
- -------------------------------------------------------------------------*/
-#define WM_BOTTOMED 33 /* AES-Message unter WINX/MultiTOS:
-                          Fenster mit wind_set(handle, WF_BOTTOM, 0, 0, 0, 0)
-                          nach hinten stellen */
-
-/*-------------------------------------------------------------------------
  Weitere Protokolle
  -------------------------------------------------------------------------*/
 /* Font-Protokoll von Christian Grunenberg
@@ -70,9 +64,52 @@
 #define XFONT_CHANGED 0x7a1b
 
 /*-------------------------------------------------------------------------
- Verschiedene Definitionen, die in VDI.H bzw. AES.H von Pure C fehlen
+ Verschiedene Definitionen, die in der MiNTLib fehlen
  -------------------------------------------------------------------------*/
-#define WF_BOTTOM       25
+
+/* attributes for Fcreate/Fsfirst/Fsnext: */
+
+#define FA_READONLY     0x01
+#define FA_HIDDEN       0x02
+#define FA_SYSTEM       0x04
+#define FA_VOLUME       0x08
+#define FA_SUBDIR       0x10
+#define FA_ARCHIVE      0x20
+
+/* Fopen modes: */
+
+#define FO_READ         0
+#define FO_WRITE        1
+#define FO_RW           2
+
+/*-------------------------------------------------------------------------
+ Verschiedene Definitionen, die in der gemlib fehlen
+ -------------------------------------------------------------------------*/
+
+/* Object flags */
+
+#define NONE            0x0000
+#define SELECTABLE      0x0001
+#define DEFAULT         0x0002
+#define EXIT            0x0004
+#define EDITABLE        0x0008
+#define RBUTTON         0x0010
+#define LASTOB          0x0020
+#define TOUCHEXIT       0x0040
+#define HIDETREE        0x0080
+#define INDIRECT        0x0100
+
+
+/* Object states */
+
+#define NORMAL          0x00
+#define SELECTED        0x01
+#define CROSSED         0x02
+#define CHECKED         0x04
+#define DISABLED        0x08
+#define OUTLINED        0x10
+#define SHADOWED        0x20
+
 
 #define ALI_LEFT         0 /* horizontal text alignment */
 #define ALI_CENTER       1
@@ -85,16 +122,26 @@
 #define ALI_DESCENT      4
 #define ALI_TOP          5
 
-typedef struct {
-	WORD x;
-	WORD y;
-	WORD w;
-	WORD h;
-} RECT;
-
 #define FMD_BACKWARD -1
 #define FMD_FORWARD -2
 #define FMD_DEFLT -3
+
+/* this is our special invention to increase evnt_multi performance */
+
+typedef struct /* Special type for EventMulti */
+{
+        /* input parameters */
+        short     ev_mflags, ev_mbclicks, ev_bmask, ev_mbstate, ev_mm1flags,
+                ev_mm1x, ev_mm1y, ev_mm1width, ev_mm1height, ev_mm2flags,
+                ev_mm2x, ev_mm2y, ev_mm2width, ev_mm2height, ev_mtlocount,
+                ev_mthicount;
+        /* output parameters */
+        short     ev_mwich, ev_mmox, ev_mmoy, ev_mmobutton, ev_mmokstate,
+                ev_mkreturn, ev_mbreturn;
+        /* message buffer */
+        short     ev_mmgpbuf[8];
+} EVENT;
+
 
 /*-------------------------------------------------------------------------
  Fensterverwaltung
@@ -102,18 +149,18 @@ typedef struct {
 /* WININFO-Struktur */
 typedef struct wininfo {
 	/* Fensterparameter */
-	int flags; /* AES-Flags fÅr das ôffnen */
-	int state; /* Status vor/nach dem ôffnen */
-	int class; /* Fensterklasse */
+	short flags; /* AES-Flags fÅr das ôffnen */
+	short state; /* Status vor/nach dem ôffnen */
+	short class; /* Fensterklasse */
 	char name[128], info[128]; /* Text der Titel- und Infozeile */
 	void *user; /* Zeiger auf beliebige User-Daten */
-	int handle; /* AES-Handle */
-	RECT curr, full, work, save; /* Grîûe, Volle Grîûe und Arbeitsbereich */
+	short handle; /* AES-Handle */
+	GRECT curr, full, work, save; /* Grîûe, Volle Grîûe und Arbeitsbereich */
 	/* Zeiger auf die Handle-Routinen, vom Programm zu initialisieren ! */
 	void (*update)(struct wininfo *win);
 	void (*prepare)(struct wininfo *win);
-	void (*redraw)(struct wininfo *win, RECT *area);
-	void (*slide)(struct wininfo *win, int mode, int h, int v);
+	void (*redraw)(struct wininfo *win, GRECT *area);
+	void (*slide)(struct wininfo *win, short mode, short h, short v);
 	/* Zeiger auf einen Objektbaum fÅr Iconify-Darstellung */
 	OBJECT *ictree;
 	/* Verkettung aller Fenster durch die Toolbox */
@@ -150,66 +197,66 @@ struct sub;
 /* POPMENU-Struktur, Beschreibung eines Popup-MenÅs */
 typedef struct {
 	OBJECT *tree; /* Tree, in dem sich das MenÅ befindet */
-	int formobj; /* Nummer des Auslîsers */
-	int formshort; /* Nummer des Shortcuts */
-	int take; /* Falls 1, dann wird die Auswahl in den Dialog Åber-
+	short formobj; /* Nummer des Auslîsers */
+	short formshort; /* Nummer des Shortcuts */
+	short take; /* Falls 1, dann wird die Auswahl in den Dialog Åber-
 	 nommen */
-	int sel; /* Aktuelle Auswahl */
-	int offx, offy; /* Offset um den das MenÅ ggf. verschoben werden muû */
-	int formtype; /* GewÅnschter Objekttyp im Dialog oder -1 */
-	int objoff; /* Offset zur verwendenden Objektnummer aus dem MenÅ */
+	short sel; /* Aktuelle Auswahl */
+	short offx, offy; /* Offset um den das MenÅ ggf. verschoben werden muû */
+	short formtype; /* GewÅnschter Objekttyp im Dialog oder -1 */
+	short objoff; /* Offset zur verwendenden Objektnummer aus dem MenÅ */
 	struct sub *subs;/* Eventuelle UntermenÅs, NULL-Abschluû */
 } POPMENU;
 
 /* POPLIST-Struktur, Beschreibung einer PopUp-Liste */
 typedef struct {
-	int formset; /* Nummer des Eingabefelds/Buttons */
-	int formobj; /* Nummer des Auslîsers */
-	int formshort; /* Nummer des Shortcuts */
-	int sel; /* Aktuelle Auswahl oder -1, falls keine Auswahl */
-	int num; /* Anzahl der EintrÑge */
-	int len; /* LÑnge der EintrÑge */
+	short formset; /* Nummer des Eingabefelds/Buttons */
+	short formobj; /* Nummer des Auslîsers */
+	short formshort; /* Nummer des Shortcuts */
+	short sel; /* Aktuelle Auswahl oder -1, falls keine Auswahl */
+	short num; /* Anzahl der EintrÑge */
+	short len; /* LÑnge der EintrÑge */
 	char **list; /* Zeiger auf String-Array fÅr die EintrÑge */
 	OBJECT *copy; /* Interner Gebrauch */
 } POPLIST;
 
 /* POPSUBMENU-Struktur, Beschreibung eines Unter-Popup-MenÅs */
 typedef struct sub {
-	int type; /* 0: Popup, 1: Popup-Liste */
+	short type; /* 0: Popup, 1: Popup-Liste */
 	union {
 		POPMENU *popup; /* Zugehîriges Popup-MenÅ ... */
 		POPLIST *poplist; /* ... oder zugehîrige Popup-Liste */
 	} data;
-	int obj; /* Objekt-Nummer des Auslîsers im "Vater"-MenÅ */
+	short obj; /* Objekt-Nummer des Auslîsers im "Vater"-MenÅ */
 } POPSUBMENU;
 
 /* FORMINFO-Struktur, Grundlage fÅr jeden Dialog */
 typedef struct forminfo {
 	OBJECT *tree; /* Zeiger auf Objektbaum */
-	int bub_id; /* BubbleGEM-ID des Dialogs, oder -1 */
-	int open; /* 1 = Dialog geîffnet */
-	int start_obj; /* Nummer des ersten Editfeldes oder ROOT */
-	int edit_obj; /* Nummer des aktuellen Eingabefeldes nach xform_do() */
-	int edit_idx; /* Cursorposition des aktuellen Eingabefeldes */
-	int exit_obj; /* Nummer des Exit-Objekts nach xform_do() */
-	int state; /* Status (Normal, MyDial, Fenster) */
+	short bub_id; /* BubbleGEM-ID des Dialogs, oder -1 */
+	short open; /* 1 = Dialog geîffnet */
+	short start_obj; /* Nummer des ersten Editfeldes oder ROOT */
+	short edit_obj; /* Nummer des aktuellen Eingabefeldes nach xform_do() */
+	short edit_idx; /* Cursorposition des aktuellen Eingabefeldes */
+	short exit_obj; /* Nummer des Exit-Objekts nach xform_do() */
+	short state; /* Status (Normal, MyDial, Fenster) */
 	POPMENU **popup; /* Zeiger auf ein nullterminiertes Zeiger-Array mit
 	 allen Popup-MenÅs oder 0L, falls keine Popups
 	 enthalten sind */
 	POPLIST **poplist; /* Wie popup, jedoch fÅr Popup-Listen */
-	int keyflag; /* Falls 1 werden NKCC-Tastaturcodes bestimmter Tasten in normkey mit exit_obj=0x8000 zurÅckgeliefert */
+	short keyflag; /* Falls 1 werden NKCC-Tastaturcodes bestimmter Tasten in normkey mit exit_obj=0x8000 zurÅckgeliefert */
 	void *userinfo; /* Zeiger auf beliebige Benutzerdaten fÅr ein Hilfesystem */
-	int undo_obj; /* UNDO-Button oder -1, falls keiner vorhanden ist */
-	int help_obj; /* HELP-Button oder -1, falls keiner vorhanden ist */
-	unsigned int normkey;
+	short undo_obj; /* UNDO-Button oder -1, falls keiner vorhanden ist */
+	short help_obj; /* HELP-Button oder -1, falls keiner vorhanden ist */
+	unsigned short normkey;
 	WININFO win; /* WININFO-Struktur fÅr Fensterdialoge */
-	int drobj; /* FÅr Teilredraw in Fenstern: Nummer des Objekts */
+	short drobj; /* FÅr Teilredraw in Fenstern: Nummer des Objekts */
 	char *title; /* Fenstertitel, falls Dialogbox keinen Titel enthÑlt */
-	int ty, wy; /* Y-Koordinaten fÅr Sicherung bei Fensterdialog */
-	int cx, cy, cw, ch; /* Aussenrechteck */
-	int cont; /* 1 = Keine Verarbeitung, 0 = Exit-Objekt */
+	short ty, wy; /* Y-Koordinaten fÅr Sicherung bei Fensterdialog */
+	short cx, cy, cw, ch; /* Aussenrechteck */
+	short cont; /* 1 = Keine Verarbeitung, 0 = Exit-Objekt */
 	void (*init)(void); /* Zeiger auf Init-Funktion */
-	void (*exit)(int mode, int ret); /* Zeiger auf Exit-Funktion */
+	void (*exit)(short mode, short ret); /* Zeiger auf Exit-Funktion */
 	struct forminfo *oldtop; /* Bisheriger Dialog, falls ohne Fenster */
 	struct forminfo *prev, *next; /* Listenverkettung */
 } FORMINFO;
@@ -224,14 +271,14 @@ typedef struct forminfo {
 typedef struct {
 	FORMINFO *fi;
 	char **text;
-	int ob_list;
-	int ob_slide, ob_box;
-	int ob_up, ob_down;
-	int num;
-	int sel;
-	int view;
-	int len;
-	int offset;
+	short ob_list;
+	short ob_slide, ob_box;
+	short ob_up, ob_down;
+	short num;
+	short sel;
+	short view;
+	short len;
+	short offset;
 } LISTINFO;
 
 /*
@@ -239,7 +286,7 @@ typedef struct {
  */
 typedef struct bhelp {
 	struct bhelp *lt, *ge;
-	int bal;
+	short bal;
 	long id_and_obj;
 	char txt[1];
 } BHELP;
@@ -255,39 +302,39 @@ typedef struct {
 	FORMINFO *topfi; /* Zeiger auf aktuellen Dialog, falls vorhanden */
 	OBJECT *ictree; /* Objektbaum fÅr All-Iconify */
 	OBJECT *ictreed; /* Objektbaum fÅr Dialog-Iconify */
-	int app_id; /* AES-ID der Applikation */
-	int scr_id; /* AES-ID des Screen-Managers */
-	int vdi_handle; /* VDI-Handle der Applikation */
-	int fn_id, fn_size; /* Font-ID/Grîsse des AES-Font "normal" */
-	int ch_w, ch_h, ch_wb, ch_hb; /* Breite und Hîhe des Systemzeichensatzes */
-	int fs_id, fs_size; /* Font-ID/Grîsse des AES-Font "klein" */
-	int fs_cw, fs_ch; /* Zeichenzellengrîûe des kleinen AES-Fonts */
-	int gdos; /* GDOS vorhanden */
-	int numfonts; /* Anzahl verfÅgbarer Fonts */
+	short app_id; /* AES-ID der Applikation */
+	short scr_id; /* AES-ID des Screen-Managers */
+	short vdi_handle; /* VDI-Handle der Applikation */
+	short fn_id, fn_size; /* Font-ID/Grîsse des AES-Font "normal" */
+	short ch_w, ch_h, ch_wb, ch_hb; /* Breite und Hîhe des Systemzeichensatzes */
+	short fs_id, fs_size; /* Font-ID/Grîsse des AES-Font "klein" */
+	short fs_cw, fs_ch; /* Zeichenzellengrîûe des kleinen AES-Fonts */
+	short gdos; /* GDOS vorhanden */
+	short numfonts; /* Anzahl verfÅgbarer Fonts */
 	void (*msg_handler)(EVENT *mevent, FORMINFO *fi); /* Message-Handler fÅr Fenster-Dialoge */
-	RECT desk; /* Desktop-Koordinaten */
-	int planes; /* Farbtiefe */
-	int truecolor; /* "True-Color"-Display? */
+	GRECT desk; /* Desktop-Koordinaten */
+	short planes; /* Farbtiefe */
+	short truecolor; /* "True-Color"-Display? */
 	BHELP *hlp; /* Zeiger auf die BubbleGEM-Hilfe der Applikation */
-	int resx, resy; /* Auflîsung */
+	short resx, resy; /* Auflîsung */
 	long colors; /* Anzahl der Farben */
 	MAGX_COOKIE *magx; /* MagiC-Cookie oder 0L */
 	long sys; /* Verschiedene Systemeigenschaften */
-	int sysLanguageId; /* System-Sprache */
+	short sysLanguageId; /* System-Sprache */
 	char sysLanguageCode[3]; /* System-Sprache ('de', 'en', ...) */
 	char sysLanguageCodeLong[10]; /* System-Sprache ('german', 'english', ...) */
 	char apname[13]; /* Dateiname der Applikation */
 	char homepath[256]; /* Startverzeichnis der Applikation */
-	int mform, mbusy; /* Aktuelle Mausform, Busy-Flag */
-	int use3d; /* 3D-Effekte fÅr Dialoge */
-	int backwin; /* MagiC-Workaround (Fenster vor Schlieûen nach hinten) */
-	int fleft, /* AbstÑnde fÅr automatisches Fensterplazieren */
+	short mform, mbusy; /* Aktuelle Mausform, Busy-Flag */
+	short use3d; /* 3D-Effekte fÅr Dialoge */
+	short backwin; /* MagiC-Workaround (Fenster vor Schlieûen nach hinten) */
+	short fleft, /* AbstÑnde fÅr automatisches Fensterplazieren */
 	fupper, fright, flower, fhor, fvert;
 	/* Semaphores (>0 = gesetzt) */
-	int sm_alert; /* Alertbox offen */
-	int sm_nowdial; /* Systemmodale Dialogbox offen */
-	int sm_dial; /* Dialog auf */
-	int sm_modal; /* Modaler Dialog/Alert auf */
+	short sm_alert; /* Alertbox offen */
+	short sm_nowdial; /* Systemmodale Dialogbox offen */
+	short sm_dial; /* Dialog auf */
+	short sm_modal; /* Modaler Dialog/Alert auf */
 	void (*modal_on)(void); /* Zeiger auf Routine MenÅ-Disable etc. */
 	void (*modal_off)(void); /* GegenstÅck zu modal_on() */
 } TOOLINFO;
@@ -336,7 +383,7 @@ extern TOOLINFO tb;
  * 'debug.c'
  *-------------------------------------------------------------------------*/
 #ifdef DEBUG
-void debugLog(int init, char *logFile, const char *format, ...);
+void debugLog(short init, char *logFile, const char *format, ...);
 #define DEBUGLOG(x) debugLog x
 #else
 #define DEBUGLOG(x)
@@ -345,23 +392,23 @@ void debugLog(int init, char *logFile, const char *format, ...);
 /*-------------------------------------------------------------------------
  * 'avclient.c'
  *-------------------------------------------------------------------------*/
-void avcWindowOpen(int avId, int handle);
-void avcWindowClose(int avId, int handle);
+void avcWindowOpen(short avId, short handle);
+void avcWindowClose(short avId, short handle);
 
 /*-------------------------------------------------------------------------
  * 'convert.c'
  *-------------------------------------------------------------------------*/
 #if 0
-void long2int(long lword, int *hi, int *lo);
-unsigned long int2long(unsigned int hi, unsigned int lo);
+void long2int(long lword, short *hi, short *lo);
+unsigned long int2long(unsigned short hi, unsigned short lo);
 #endif
-int abs2rel(int rel, int abs, int value);
+short abs2rel(short rel, short abs, short value);
 
 /*-------------------------------------------------------------------------
  * 'converta.s'
  *-------------------------------------------------------------------------*/
-extern void long2int(long lword, int *iword1, int *iword2);
-extern long int2long(int *iword1, int *iword2);
+extern void long2int(long lword, short *iword1, short *iword2);
+extern long int2long(short *iword1, short *iword2);
 
 /*-------------------------------------------------------------------------
  * 'dragdrop.c'
@@ -373,10 +420,10 @@ void ddnak(EVENT *mevent);
  *-------------------------------------------------------------------------*/
 void full2comp(char *full, char *path, char *file);
 void comp2full(char *full, char *path, char *file);
-int isValidPath(char *path);
-int isValidFileMask(char *mask, int wild);
+short isValidPath(char *path);
+short isValidFileMask(char *mask, short wild);
 /*int isValidFileExtension(char *ext);*/
-int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title, int freedret, int freedid, FORMINFO *fi);
+short full_fselect(char *full, char *deflt, char *ext, short dironly, char *title, short freedret, short freedid, FORMINFO *fi);
 
 /*-------------------------------------------------------------------------
  * 'help.c'
@@ -388,110 +435,107 @@ void free_hlp(BHELP *root);
 /*-------------------------------------------------------------------------
  * 'string.c'
  *-------------------------------------------------------------------------*/
-void strShortener(char *dest, char *src, int limit);
-int isWildcard(char c);
-int hasWildcards(char *str);
-int patternMatching(register char *pattern, register char *str);
-char *get_text(char *str, char *buf, int maxlen);
+void strShortener(char *dest, char *src, short limit);
+short isWildcard(char c);
+short hasWildcards(char *str);
+short patternMatching(register char *pattern, register char *str);
+char *get_text(char *str, char *buf, short maxlen);
 
 /*-------------------------------------------------------------------------
  * 'system.c'
  *-------------------------------------------------------------------------*/
-WORD getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong);
+short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong);
 
 /*-------------------------------------------------------------------------
  * 'toolbox.c'
  *-------------------------------------------------------------------------*/
-int new_wind_get(int win, int cmd, int *out1, int *out2, int *out3, int *out4);
 void mybeep(void);
-int getCookie(long cookie, long *p_value);
-unsigned int normkey(int ks, int kr);
-int rel2abs(char *path, char **dest);
-int menu_key(OBJECT *tree, int key, int *title, int *item);
+short getCookie(long cookie, long *p_value);
+unsigned short normkey(short ks, short kr);
+short rel2abs(char *path, char **dest);
+short menu_key(OBJECT *tree, short key, short *title, short *item);
 
-int tool_init(char *apname);
+short tool_init(char *apname);
 void tool_exit(void);
 
-int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
-		int *ob_edidx, int ob_edkind, int whandle);
+short obj_edit(OBJECT *ob_edtree, short ob_edobject, short ob_edchar, short ob_edstate,
+		short *ob_edidx, short ob_edkind, short whandle);
 
-int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
+short popup_menu(POPMENU *menu, short x, short y, short center_obj, short *ok,
 		OBJECT *father);
 void pop_set(FORMINFO *fi, POPMENU *pop);
 void poplist_set(FORMINFO *fi, POPLIST *pop);
 void poplist_get(FORMINFO *fi, POPLIST *pop);
-int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
-		int *idx, int whandle, int *exit_obj);
-int poplist_handle(POPLIST *pop, int x, int y, int width, int oh, int *pok,
+short poplist_do(short mode, FORMINFO *fi, short obj, short ks, short kr, short *edit_obj,
+		short *idx, short whandle, short *exit_obj);
+short poplist_handle(POPLIST *pop, short x, short y, short width, short oh, short *pok,
 		OBJECT *father);
 
 void frm_restore(FORMINFO *fi);
-void frm_edstring(FORMINFO *fi, int obj, char *str);
-void frm_gotoedit(FORMINFO *fi, int obj);
+void frm_edstring(FORMINFO *fi, short obj, char *str);
+void frm_gotoedit(FORMINFO *fi, short obj);
 void frm_norm(FORMINFO *fi);
-void frm_start(FORMINFO *fi, int wd, int cd, int mode);
+void frm_start(FORMINFO *fi, short wd, short cd, short mode);
 void frm_end(FORMINFO *fi);
-void frm_redraw(FORMINFO *fi, int obj);
+void frm_redraw(FORMINFO *fi, short obj);
 void frm_event(FORMINFO *fi, EVENT *mevent);
-int frm_ecopy(FORMINFO *fi);
+short frm_ecopy(FORMINFO *fi);
 void frm_epaste(FORMINFO *fi);
 void frm_ecut(FORMINFO *fi);
-int frm_do(FORMINFO *fi, EVENT *mevent);
-int frm_dial(FORMINFO *fi, EVENT *mevent);
-int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo);
+short frm_do(FORMINFO *fi, EVENT *mevent);
+short frm_dial(FORMINFO *fi, EVENT *mevent);
+short frm_alert(short defbut, char *alstr, char *altitle, short wd, void *userinfo);
 
 void lst_prepare(LISTINFO *li, OBJECT *tree);
-void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide);
-int lst_handle(LISTINFO *li, int ret, int *dclick);
-void lst_move(LISTINFO *li, int delta);
+void lst_init(LISTINFO *li, short ilist, short islide, short dlist, short dslide);
+short lst_handle(LISTINFO *li, short ret, short *dclick);
+void lst_move(LISTINFO *li, short delta);
 void lst_slide(LISTINFO *li);
 void lst_up(LISTINFO *li);
 void lst_down(LISTINFO *li);
-void lst_select(LISTINFO *li, int sel);
-void lst_key(LISTINFO *li, int key);
+void lst_select(LISTINFO *li, short sel);
+void lst_key(LISTINFO *li, short key);
 
-int rc_intersect(RECT *p1, RECT *p2);
-
-void win_icon(WININFO *win, int x, int y, int w, int h);
-void win_unicon(WININFO *win, int x, int y, int w, int h);
-int win_open(WININFO *win, int mode);
+void win_icon(WININFO *win, short x, short y, short w, short h);
+void win_unicon(WININFO *win, short x, short y, short w, short h);
+short win_open(WININFO *win, short mode);
 void win_close(WININFO *win);
-void win_redraw(WININFO *win, int x, int y, int w, int h);
-void win_scroll(WININFO *win, int x, int y);
+void win_redraw(WININFO *win, short x, short y, short w, short h);
+void win_scroll(WININFO *win, short x, short y);
 void win_pupdate(WININFO *win);
-void win_size(WININFO *win, int x, int y, int w, int h);
+void win_size(WININFO *win, short x, short y, short w, short h);
 void win_full(WININFO *win);
 void win_newtop(WININFO *win);
 void win_top(WININFO *win);
 void win_updtinfo(WININFO *win);
-void win_slide(WININFO *win, int mode, int h, int v);
-WININFO *win_getwinfo(int handle);
+void win_slide(WININFO *win, short mode, short h, short v);
+WININFO *win_getwinfo(short handle);
 
 void rs_user(OBJECT *tree);
-void rs_fix(OBJECT *tree, int orig_cw, int orig_ch);
-void rs_textadjust(OBJECT *tree, int bg);
-void tree_win(OBJECT *tree, int mode);
+void rs_fix(OBJECT *tree, short orig_cw, short orig_ch);
+void rs_textadjust(OBJECT *tree, short bg);
+void tree_win(OBJECT *tree, short mode);
 
 void scrap_clear(void);
-void mn_tnormal(OBJECT *tree, int title, int normal);
+void mn_tnormal(OBJECT *tree, short title, short normal);
 
-int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel, int fret, int fid);
-void magx_switch(int id, int top);
-int Screen2Buffer(int x, int y, int w, int h, int flag);
-void grf_ghostbox(int *pxy, int n);
-int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy, int *dx, int *dy);
+short fselect(char *fs_einpath, char *fs_einsel, short *fs_eexbutton, char *elabel, short fret, short fid);
+void magx_switch(short id, short top);
+short Screen2Buffer(short x, short y, short w, short h, short flag);
+void grf_ghostbox(short *pxy, short n);
+short grf_dragbox(short w, short h, short bx, short by, short bw, short bh, short sx, short sy, short *dx, short *dy);
 
-void _v_opnvwk(int *work_in, int *handle, int *work_out);
-int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4);
-char *appl_name(int id, char *deflt);
-void appl_send(int id, int message, int pointers, long par1, long par2, long par3, long par4, long par5);
-int calc_small_text_width(char *text);
-int win_update(int mode);
+void _v_opnvwk(short *work_in, short *handle, short *work_out);
+short EvntMulti( EVENT *evnt_data );
+char *appl_name(short id, char *deflt);
+void appl_send(short id, short message, short pointers, long par1, long par2, long par3, long par4, long par5);
+short calc_small_text_width(char *text);
+short win_update(short mode);
 
 /*-------------------------------------------------------------------------
  Aus TOOLMCOD.S
  -------------------------------------------------------------------------*/
-extern SYSHDR *get_oshdr(void);
-extern void get_twin(int *handle);
+extern OSHEADER *get_oshdr(void);
+extern void get_twin(short *handle);
 
 #endif

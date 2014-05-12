@@ -16,7 +16,7 @@
 #define _NEW_RSC_H_INCLUDED
 
 #include "drawcicn.h"
-#include <tos.h>
+#include <mintbind.h>
 
 typedef struct
 {

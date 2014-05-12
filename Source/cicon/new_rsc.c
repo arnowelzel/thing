@@ -98,13 +98,8 @@ WORD rsc_load(char *rname,RSINFO *rinfo)
 				err;
 	LONG		*extension,
 				length;
-#ifdef __MINT__
 	_DTA		*old_dta,
-				my_dta;
-#else
-	DTA			*old_dta,
-				my_dta;
-#endif
+  				my_dta;
 
 /* If not, try to locate the file and determine its length */
 	strcpy(filename, rname);
@@ -116,11 +111,7 @@ WORD rsc_load(char *rname,RSINFO *rinfo)
 	Fsetdta(old_dta);
 	if (err)
 		return(0);
-#ifdef __MINT__
 	length = my_dta.dta_size;
-#else
-	length = my_dta.d_length;
-#endif
 /* Open the file, allocate memory for it and load it */
 	if ((handle = (WORD)Fopen(filename, 0)) < 6)
 		return(0);

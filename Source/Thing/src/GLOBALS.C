@@ -176,7 +176,7 @@ WININFO *popwin, *topwin; /* Aktives Fenster */
 char almsg[256]; /* Fuer variable Alerts */
 char *altitle = "Thing"; /* Titel fuer Alertboxen */
 
-int aesmsg[8]; /* Nachrichtenaustausch mit anderen Applikationen */
+short aesmsg[8]; /* Nachrichtenaustausch mit anderen Applikationen */
 char *aesbuf;
 char *aesapname;
 
@@ -222,16 +222,16 @@ DMASK *dmask;
 char *lbuf; /* Lokaler Buffer fuer Dateinamen beim Kopieren etc. */
 
 RSINFO rinfo, rinfo2; /* Globale Resourceinfo */
-int rcw, rch; /* Font-Ausmasse */
+short rcw, rch; /* Font-Ausmasse */
 OBJECT **rs_trindex;
 char **rs_frstr;
 
 /* Prototyp-Variable der Hauptfunktion von ThingImg */
-long cdecl (*call_thingimg)(long magic, int what, THINGIMG *img_info);
+long cdecl (*call_thingimg)(long magic, short what, THINGIMG *img_info);
 
 #if 0
 /* Tabelle fuer schnelles Wildcard-Erkennung */
-int is_wild[256];
+short is_wild[256];
 #endif
 
 /*
@@ -239,6 +239,6 @@ int is_wild[256];
  * Autolocator
  */
 
-int (*strcompare)(const char *, const char *);
+short (*strcompare)(const char *, const char *);
 
 /* EOF */

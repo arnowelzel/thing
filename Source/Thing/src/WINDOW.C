@@ -34,11 +34,11 @@
 #include "rsrc\thgtxt.h"
 #include <math.h>
 
-static void wd_ficon(int x, int y, int iw, int ih);
-static void draw_minicicon(ICONIMG *ic, int *pxy, int sel);
-static void winRedraw(struct wininfo *win, int type, RECT *area);
-static void winSlide(struct wininfo *win, int mode, int h, int v, int type);
-static void winUpdate(struct wininfo *win, int type);
+static void wd_ficon(short x, short y, short iw, short ih);
+static void draw_minicicon(ICONIMG *ic, short *pxy, short sel);
+static void winRedraw(struct wininfo *win, short type, GRECT *area);
+static void winSlide(struct wininfo *win, short mode, short h, short v, short type);
+static void winUpdate(struct wininfo *win, short type);
 
 #define WPATH	1
 #define WGROUP	2
@@ -47,10 +47,10 @@ static void winUpdate(struct wininfo *win, int type);
  *
  */
 static void winDrawPicture(WININFO *win, THINGIMG *timg, OBJECT *tree,
-		RECT *area, int offx, int offy, int fcol, int bcol) {
+		GRECT *area, short offx, short offy, short fcol, short bcol) {
 	MFDB scr_mfdb;
-	int pxy[8], cindx[2], sx, sy, x, y;
-	RECT trect;
+	short pxy[8], cindx[2], sx, sy, x, y;
+	GRECT trect;
 
 	scr_mfdb.fd_addr = 0L;
 	if (tree)
@@ -59,19 +59,19 @@ static void winDrawPicture(WININFO *win, THINGIMG *timg, OBJECT *tree,
 	pxy[2] = timg->picture.fd_w - 1;
 	pxy[3] = timg->picture.fd_h - 1;
 #ifdef OFFSET
-	sx = win->work.x - (win->offx % pxy[2]);
-	sy = win->work.y - (win->offy % pxy[3]);
+	sx = win->work.g_x - (win->offx % pxy[2]);
+	sy = win->work.g_y - (win->offy % pxy[3]);
 #else
-	sx = win->work.x - (offx % pxy[2]);
-	sy = win->work.y - (offy % pxy[3]);
+	sx = win->work.g_x - (offx % pxy[2]);
+	sy = win->work.g_y - (offy % pxy[3]);
 #endif
-	for (y = sy; y < (win->work.y + win->work.h); y += pxy[3]) {
+	for (y = sy; y < (win->work.g_y + win->work.g_h); y += pxy[3]) {
 		pxy[5] = y;
-		for (x = sx; x < (win->work.x + win->work.w); x += pxy[2]) {
-			trect.x = x;
-			trect.y = y;
-			trect.w = pxy[2] + 1;
-			trect.h = pxy[3] + 1;
+		for (x = sx; x < (win->work.g_x + win->work.g_w); x += pxy[2]) {
+			trect.g_x = x;
+			trect.g_y = y;
+			trect.g_w = pxy[2] + 1;
+			trect.g_h = pxy[3] + 1;
 			if (rc_intersect(area, &trect)) {
 				pxy[4] = x;
 				pxy[6] = x + pxy[2];
@@ -91,41 +91,41 @@ static void winDrawPicture(WININFO *win, THINGIMG *timg, OBJECT *tree,
 /**
  *
  */
-static void winRedraw(struct wininfo *win, int type, RECT *area) {
+static void winRedraw(struct wininfo *win, short type, GRECT *area) {
 	OBJECT *tree;
 	MFDB scr_mfdb, sym_mfdb;
-	int pxy[8], cindx[2], mindx[2], sh;
-	int ix, iy, imx, x, y;
-	int ty;
-	int i;
-	int tcol; /* gewÅnschte Font-Farbe */
-	int thefcol; /* Default-Font-Farbe */
-	int fcol; /* tatsÑchliche Font-Farbe (bcol != tcol) */
-	int bcol; /* Hintergrund-Farbe */
-	int pat; /* Hintergrund-Pattern */
-	int text; /* Textdarstellung */
-	int fontId; /* Font-ID */
-	int fontSize; /* Font-Groesse */
-	int anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
-	int tlen; /* LÑnge eines Eintrags */
-	int clw, clh; /* Breite/Hîhe einer Textzelle */
-	int class; /* Art des Eintrags */
-	int selected; /* selektiert? */
-	int du;
-	int hasimg = 0;
+	short pxy[8], cindx[2], mindx[2], sh;
+	short ix, iy, imx, x, y;
+	short ty;
+	short i;
+	short tcol; /* gewÅnschte Font-Farbe */
+	short thefcol; /* Default-Font-Farbe */
+	short fcol; /* tatsÑchliche Font-Farbe (bcol != tcol) */
+	short bcol; /* Hintergrund-Farbe */
+	short pat; /* Hintergrund-Pattern */
+	short text; /* Textdarstellung */
+	short fontId; /* Font-ID */
+	short fontSize; /* Font-Groesse */
+	short anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
+	short tlen; /* LÑnge eines Eintrags */
+	short clw, clh; /* Breite/Hîhe einer Textzelle */
+	short class; /* Art des Eintrags */
+	short selected; /* selektiert? */
+	short du;
+	short hasimg = 0;
 	char tchar[2];
-	RECT trect;
+	GRECT trect;
 
 	W_GRP *wgrp;
 	WG_ENTRY *WGentry; /* Eintrag in Gruppe */
 
 	W_PATH *wpath;
 	WP_ENTRY *WPentry; /* Eintrag in Verzeichnisfenster */
-	int tos;
-	int f;
-	unsigned int fl;
+	short tos;
+	short f;
+	unsigned short fl;
 	char s[20];
-	int show_tosf;
+	short show_tosf;
 
 	vswr_mode(tb.vdi_handle, MD_REPLACE);
 
@@ -211,7 +211,7 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 	}
 
 	if (tree) {
-		objc_draw(tree, ROOT, MAX_DEPTH, area->x, area->y, area->w, area->h);
+		objc_draw(tree, ROOT, MAX_DEPTH, area->g_x, area->g_y, area->g_w, area->g_h);
 	} else if (!hasimg) {
 		if (pat == 7)
 			vsf_interior(tb.vdi_handle, FIS_SOLID);
@@ -224,16 +224,16 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 		vsf_color(tb.vdi_handle, bcol);
 		vsf_perimeter(tb.vdi_handle, 0);
 
-		pxy[0] = area->x;
-		pxy[1] = area->y;
-		pxy[2] = pxy[0] + area->w - 1;
-		pxy[3] = pxy[1] + area->h - 1;
+		pxy[0] = area->g_x;
+		pxy[1] = area->g_y;
+		pxy[2] = pxy[0] + area->g_w - 1;
+		pxy[3] = pxy[1] + area->g_h - 1;
 		v_bar(tb.vdi_handle, pxy);
 		vsf_interior(tb.vdi_handle, FIS_SOLID);
 	}
 
 	if (text) {
-		int sx, sy;
+		short sx, sy;
 
 		/* Attribute setzen */
 		vst_font(tb.vdi_handle, fontId);
@@ -249,8 +249,8 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 		vswr_mode(tb.vdi_handle, MD_TRANS);
 
 		/* Liste ausgeben */
-		sx = win->work.x + 10;
-		sy = win->work.y + 2;
+		sx = win->work.g_x + 10;
+		sy = win->work.g_y + 2;
 #ifdef OFFSET
 		sx -= win->offx;
 		sy -= win->offy;
@@ -277,12 +277,12 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 				WPentry = wpath->lptr[i];
 
 			/* Nur ausgeben, wenn Åberhaupt sichtbar */
-			trect.x = x;
-			trect.y = y;
-			trect.w = tlen;
-			trect.h = clh;
+			trect.g_x = x;
+			trect.g_y = y;
+			trect.g_w = tlen;
+			trect.g_h = clh;
 
-			if (rc_intersect(area, &trect)) {
+			if (rc_intersect((GRECT *)area, (GRECT *)&trect)) {
 				/*
 				 * FÅr jeden Eintrag testen, ob eine eigene Farbe fÅr dessen
 				 * Darstellung definiert wurde und diese gegebenenfalls
@@ -483,7 +483,7 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 					/* Attribute, falls gewÅnscht */
 					if (wpath->index.show & SHOWATTR) {
 						if (show_tosf && class == EC_FILE) {
-							int attribs[] = { FA_READONLY, FA_HIDDEN, FA_SYSTEM, FA_ARCHIVE };
+							short attribs[] = { FA_READONLY, FA_HIDDEN, FA_SYSTEM, FA_ARCHIVE };
 							char hlp[] = "rhsa";
 
 							for (f = 0; f < 4; f++) {
@@ -586,18 +586,18 @@ static void winRedraw(struct wininfo *win, int type, RECT *area) {
 	}
 }
 
-static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
+static void winSlide(struct wininfo *win, short mode, short h, short v, short type) {
 	OBJECT *tree;
 	long hsize, vsize, hpos, vpos;
-	int dx, dy, lv, lh, offx, offy, imx, imy;
-	int anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
-	int text; /* Textdarstellung */
-	int tlen; /* LÑnge eines Eintrags */
-	int clw, clh; /* Breite/Hîhe einer Textzelle */
-	int pat; /* Hintergrund-Pattern */
-	int width, height; /* Breite und Hîhe des Bereiches (Text oder Icon)*/
-	int ih; /* Hîhe des Ordner-Icons */
-	int correct;
+	short dx, dy, lv, lh, offx, offy, imx, imy;
+	short anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
+	short text; /* Textdarstellung */
+	short tlen; /* LÑnge eines Eintrags */
+	short clw, clh; /* Breite/Hîhe einer Textzelle */
+	short pat; /* Hintergrund-Pattern */
+	short width, height; /* Breite und Hîhe des Bereiches (Text oder Icon)*/
+	short ih; /* Hîhe des Ordner-Icons */
+	short correct;
 
 	W_PATH *wpath;
 	W_GRP *wgrp;
@@ -632,11 +632,11 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 	if (anzahlEintraege == 0 || (!text && !tree)) {
 		if (mode == S_INIT) {
 			if (win->flags & HSLIDE) {
-				wind_set(win->handle, WF_HSLIDE, 0);
-				wind_set(win->handle, WF_HSLSIZE, 1000);
+				wind_set(win->handle, WF_HSLIDE, 0, 0, 0, 0);
+				wind_set(win->handle, WF_HSLSIZE, 1000, 0, 0, 0);
 			}
-			wind_set(win->handle, WF_VSLIDE, 0);
-			wind_set(win->handle, WF_VSLSIZE, 1000);
+			wind_set(win->handle, WF_VSLIDE, 0, 0, 0, 0);
+			wind_set(win->handle, WF_VSLSIZE, 1000, 0, 0, 0);
 #ifdef OFFSET
 			win->offx = 0;
 			win->offy = 0;
@@ -677,8 +677,8 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 	switch (mode) {
 	case S_INIT:
 		/* Grîûe der Slider */
-		hsize = (long) win->work.w * 1000L / (long) width;
-		vsize = (long) win->work.h * 1000L / (long) height;
+		hsize = (long) win->work.g_w * 1000L / (long) width;
+		vsize = (long) win->work.g_h * 1000L / (long) height;
 		hsize = min(hsize, 1000L);
 		vsize = min(vsize, 1000L);
 
@@ -695,13 +695,13 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 			offy = wgrp->offy;
 		}
 #endif
-		if (width - offx < win->work.w) {
-			offx = width - win->work.w;
+		if (width - offx < win->work.g_w) {
+			offx = width - win->work.g_w;
 			if (offx < 0)
 				offx = 0;
 		}
-		if (height - offy < win->work.h) {
-			offy = height - win->work.h;
+		if (height - offy < win->work.g_h) {
+			offy = height - win->work.g_h;
 			if (offy < 0)
 				offy = 0;
 		}
@@ -739,44 +739,44 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 #endif
 
 		/* Slider-Positionen berechnen */
-		if (width > win->work.w) {
+		if (width > win->work.g_w) {
 #ifdef OFFSET
-			hpos = (long)win->offx * 1000L / (long)(width - win->work.w);
+			hpos = (long)win->offx * 1000L / (long)(width - win->work.g_w);
 #else
 			if (type == WPATH)
-				hpos = (long) wpath->offx * 1000L / (long) (width - win->work.w);
+				hpos = (long) wpath->offx * 1000L / (long) (width - win->work.g_w);
 			else
-				hpos = (long) wgrp->offx * 1000L / (long) (width - win->work.w);
+				hpos = (long) wgrp->offx * 1000L / (long) (width - win->work.g_w);
 #endif
 		} else
 			hpos = 0;
 
-		if (height > win->work.h) {
+		if (height > win->work.g_h) {
 #ifdef OFFSET
-			vpos = (long)win->offy * 1000L / (long)(height - win->work.h);
+			vpos = (long)win->offy * 1000L / (long)(height - win->work.g_h);
 #else
 			if (type == WPATH)
-				vpos = (long) wpath->offy * 1000L / (long) (height - win->work.h);
+				vpos = (long) wpath->offy * 1000L / (long) (height - win->work.g_h);
 			else
-				vpos = (long) wgrp->offy * 1000L / (long) (height - win->work.h);
+				vpos = (long) wgrp->offy * 1000L / (long) (height - win->work.g_h);
 #endif
 		} else
 			vpos = 0;
 
 		/* Slider setzen */
 		if (win->flags & HSLIDE) {
-			wind_set(win->handle, WF_HSLIDE, (int) hpos);
-			wind_set(win->handle, WF_HSLSIZE, (int) hsize);
+			wind_set(win->handle, WF_HSLIDE, (short) hpos, 0, 0, 0);
+			wind_set(win->handle, WF_HSLSIZE, (short) hsize, 0, 0, 0);
 		}
-		wind_set(win->handle, WF_VSLIDE, (int) vpos);
-		wind_set(win->handle, WF_VSLSIZE, (int) vsize);
+		wind_set(win->handle, WF_VSLIDE, (short) vpos, 0, 0, 0);
+		wind_set(win->handle, WF_VSLSIZE, (short) vsize, 0, 0, 0);
 		break;
 
 	case S_ABS:
 		/* Offset umrechnen */
 		if (h != -1) {
-			if (width > win->work.w)
-				offx = (int) ((long) (width - win->work.w) * (long) h / 1000L);
+			if (width > win->work.g_w)
+				offx = (short) ((long) (width - win->work.g_w) * (long) h / 1000L);
 			else
 				offx = 0;
 		} else {
@@ -791,8 +791,8 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 		}
 
 		if (v != -1) {
-			if (height > win->work.h)
-				offy = (int) ((long) (height - win->work.h) * (long) v / 1000L);
+			if (height > win->work.g_h)
+				offy = (short) ((long) (height - win->work.g_h) * (long) v / 1000L);
 			else
 				offy = 0;
 		} else {
@@ -852,7 +852,7 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 		imx = (win->work.w - 10 + 2 * clw);
 		else
 #endif
-		imx = win->work.w;
+		imx = win->work.g_w;
 #if 0
 		if (imx/tlen < 1)
 		imx = tlen;
@@ -863,9 +863,9 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 		imx *= clw;
 #endif
 		if (text)
-			imy = (win->work.h - 2) / (clh + 1);
+			imy = (win->work.g_h - 2) / (clh + 1);
 		else
-			imy = win->work.h / ih;
+			imy = win->work.g_h / ih;
 		if (imy < 1)
 			imy = 1;
 		if (text)
@@ -939,17 +939,17 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 		}
 #endif
 
-		if (width > win->work.w) {
+		if (width > win->work.g_w) {
 			offx -= lh;
-			if (offx > width - win->work.w)
-				offx = width - win->work.w;
+			if (offx > width - win->work.g_w)
+				offx = width - win->work.g_w;
 			if (offx < 0)
 				offx = 0;
 		}
-		if (height > win->work.h) {
+		if (height > win->work.g_h) {
 			offy -= lv;
-			if (offy > height - win->work.h)
-				offy = height - win->work.h;
+			if (offy > height - win->work.g_h)
+				offy = height - win->work.g_h;
 			if (offy < 0)
 				offy = 0;
 		}
@@ -995,16 +995,16 @@ static void winSlide(struct wininfo *win, int mode, int h, int v, int type) {
 /**
  *
  */
-static void winUpdate(struct wininfo *win, int type) {
-	int w, h, n, autosize;
-	int asx, asy;
+static void winUpdate(struct wininfo *win, short type) {
+	short w, h, n, autosize;
+	short asx, asy;
 
-	int anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
-	int text; /* Textdarstellung */
-	int tlen; /* LÑnge eines Eintrags */
-	int clw; /* Breite einer Textzelle */
-	int ih; /* Hîhe des Ordner-Icons */
-	int imx, imy;
+	short anzahlEintraege; /* Anzahl der angezeigten EintrÑge im Fenster */
+	short text; /* Textdarstellung */
+	short tlen; /* LÑnge eines Eintrags */
+	short clw; /* Breite einer Textzelle */
+	short ih; /* Hîhe des Ordner-Icons */
+	short imx, imy;
 
 	OBJECT *tree;
 	W_PATH *wpath;
@@ -1044,12 +1044,12 @@ static void winUpdate(struct wininfo *win, int type) {
 		/* Nur wenn Objekte vorhanden sind */
 		if (!text && tree) {
 			/* Bei Icondarstellung */
-			n = win->work.w / tlen;
+			n = win->work.g_w / tlen;
 			if (n > anzahlEintraege)
 			n = anzahlEintraege;
 		} else if (text) {
 			/* Bei Textdarstellung */
-			n = (win->work.w - 10 + 2 * clw) / tlen;
+			n = (win->work.g_w - 10 + 2 * clw) / tlen;
 		}
 
 		if (!n)
@@ -1069,18 +1069,18 @@ static void winUpdate(struct wininfo *win, int type) {
 
 	if (tree) {
 #ifdef OFFSET
-		tree->ob_x = win->work.x - win->offx;
-		tree->ob_y = win->work.y - win->offy;
+		tree->ob_x = win->work.g_x - win->offx;
+		tree->ob_y = win->work.g_y - win->offy;
 #else
 		if (type == WPATH)
 		{
-			tree->ob_x = win->work.x - wpath->offx;
-			tree->ob_y = win->work.y - wpath->offy;
+			tree->ob_x = win->work.g_x - wpath->offx;
+			tree->ob_y = win->work.g_y - wpath->offy;
 		}
 		else
 		{
-			tree->ob_x = win->work.x - wgrp->offx;
-			tree->ob_y = win->work.y - wgrp->offy;
+			tree->ob_x = win->work.g_x - wgrp->offx;
+			tree->ob_y = win->work.g_y - wgrp->offy;
 		}
 #endif
 
@@ -1090,16 +1090,16 @@ static void winUpdate(struct wininfo *win, int type) {
 		 */
 		if (anzahlEintraege > 0) {
 			w = imx * tlen;
-			if (w < win->work.w)
-			w = win->work.w;
+			if (w < win->work.g_w)
+			w = win->work.g_w;
 
 			h = imy * ih;
-			if (h < win->work.h)
-			h = win->work.h;
+			if (h < win->work.g_h)
+			h = win->work.g_h;
 		} else {
 			/* Keine Objekte - Baum immer Fenstergrîûe */
-			w = win->work.w;
-			h = win->work.h;
+			w = win->work.g_w;
+			h = win->work.g_h;
 		}
 		tree->ob_width = w;
 		tree->ob_height = h;
@@ -1119,7 +1119,7 @@ static void winUpdate(struct wininfo *win, int type) {
  -------------------------------------------------------------------------*/
 void w_draw(WININFO *win) {
 	if (win->state & WSOPEN) {
-		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y, win->work.w, win->work.h);
+		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.g_x, win->work.g_y, win->work.g_w, win->work.g_h);
 		/* Slider initialisieren */
 /*		win_slide(win,S_INIT,0,0); */
 	}
@@ -1133,10 +1133,10 @@ void w_draw(WININFO *win) {
  * @param iw
  * @param ih
  */
-static void wd_ficon(int x, int y, int iw, int ih) {
-	int pxy[6];
-	int x1, x2, x3, x4;
-	int y1, y2;
+static void wd_ficon(short x, short y, short iw, short ih) {
+	short pxy[6];
+	short x1, x2, x3, x4;
+	short y1, y2;
 
 	x1 = x + iw * 1 / 16;
 	x2 = x + iw * 13 / 16 - 1;
@@ -1209,11 +1209,11 @@ void pwin_prepare(struct wininfo *win) {
 	(void) win;
 }
 
-void pwin_redraw(struct wininfo *win, RECT *area) {
+void pwin_redraw(struct wininfo *win, GRECT *area) {
 	winRedraw(win, WPATH, area);
 }
 
-void pwin_slide(struct wininfo *win, int mode, int h, int v) {
+void pwin_slide(struct wininfo *win, short mode, short h, short v) {
 	winSlide(win, mode, h, v, WPATH);
 }
 
@@ -1230,11 +1230,11 @@ void gwin_prepare(struct wininfo *win) {
 	(void) win;
 }
 
-void gwin_redraw(struct wininfo *win, RECT *area) {
+void gwin_redraw(struct wininfo *win, GRECT *area) {
 	winRedraw(win, WGROUP, area);
 }
 
-void gwin_slide(struct wininfo *win, int mode, int h, int v) {
+void gwin_slide(struct wininfo *win, short mode, short h, short v) {
 	winSlide(win, mode, h, v, WGROUP);
 }
 
@@ -1256,15 +1256,15 @@ void gwin_slide(struct wininfo *win, int mode, int h, int v) {
  * -1: Kein (sichtbares) Objekt im Fenster
  * sonst: Eintragsnummer des Objekts
  */
-int wf_getfirst(WININFO *win) {
+short wf_getfirst(WININFO *win) {
 	WG_ENTRY *dummy;
 
 	switch (win->class) {
 	case WCPATH:
-		return ((int)wpath_efind(win, -1, 0) - 1);
+		return ((short)wpath_efind(win, -1, 0) - 1);
 
 	case WCGROUP:
-		return ((int)wgrp_efind(win, -1, 0, &dummy) - 1);
+		return ((short)wgrp_efind(win, -1, 0, &dummy) - 1);
 	}
 
 	return (-1);
@@ -1277,7 +1277,7 @@ void wf_set(WININFO *win) {
 	W_PATH *wpath;
 	W_GRP *wgrp;
 	WG_ENTRY *gitem;
-	int i;
+	short i;
 
 	if (glob.fmode && win == glob.fwin)
 		return;
@@ -1372,26 +1372,26 @@ void wf_clear(void) {
  * Cursor setzen/loeschen
  */
 void wf_draw(void) {
-	int whandle;
+	short whandle;
 	WININFO *win;
 	W_PATH *wpath;
 	W_GRP *wgrp;
-	int i, pxy[32], cxy[4];
-	int ix, iy, iw, ih, tx, ty, tw;
-	RECT area, box;
-	int x, y;
+	short i, pxy[32], cxy[4];
+	short ix, iy, iw, ih, tx, ty, tw;
+	GRECT area, box;
+	short x, y;
 #if 0
-	int w, h;
+	short w, h;
 #endif
 	ICONBLK *iblk;
-	int text; /* Textdarstellung */
-	int tlen; /* LÑnge eines Eintrags */
-	int clw, clh; /* Breite/Hîhe einer Textzelle */
+	short text; /* Textdarstellung */
+	short tlen; /* LÑnge eines Eintrags */
+	short clw, clh; /* Breite/Hîhe einer Textzelle */
 #if 0
-	int ih; /* Hîhe des Ordner-Icons */
+	short ih; /* Hîhe des Ordner-Icons */
 #endif
-	int imx, imy;
-	int type;
+	short imx, imy;
+	short type;
 	OBJECT *tree;
 
 	win = glob.fwin;
@@ -1436,21 +1436,21 @@ void wf_draw(void) {
 		if (conf.vert && type == WPATH) {
 			tx = i / wpath->imy;
 #ifdef OFFSET
-			ix = tx * tlen + win->work.x + 10 - win->offx;
-			iy = (i - tx * imy) * (clh+1) + win->work.y + 2 - win->offy;
+			ix = tx * tlen + win->work.g_x + 10 - win->offx;
+			iy = (i - tx * imy) * (clh+1) + win->work.g_y + 2 - win->offy;
 #else
-			ix = tx * tlen + win->work.x + 10 - wpath->offx;
-			iy = (i - tx * imy) * (clh + 1) + win->work.y + 2 - wpath->offy;
+			ix = tx * tlen + win->work.g_x + 10 - wpath->offx;
+			iy = (i - tx * imy) * (clh + 1) + win->work.g_y + 2 - wpath->offy;
 #endif
 		} else {
 			ty = i / imx;
 
 #ifdef OFFSET
-			ix = (i - ty * imx) * tlen + win->work.x + 10 - win->offx;
-			iy = ty * (clh + 1) + win->work.y + 2 - win->offy;
+			ix = (i - ty * imx) * tlen + win->work.g_x + 10 - win->offx;
+			iy = ty * (clh + 1) + win->work.g_y + 2 - win->offy;
 #else
-			ix = (i - ty * imx) * tlen + win->work.x + 10;
-			iy = ty * (clh + 1) + win->work.y + 2;
+			ix = (i - ty * imx) * tlen + win->work.g_x + 10;
+			iy = ty * (clh + 1) + win->work.g_y + 2;
 
 			if (type == WPATH) {
 				ix -= wpath->offx;
@@ -1555,19 +1555,19 @@ void wf_draw(void) {
 	area = tb.desk;
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	new_wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(whandle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		/*
 		 * Nur durchfÅhren, wenn Rechteck innerhalb des zu
 		 * zeichnenden Bereichs liegt
 		 */
-		if (rc_intersect(&area, &box)) {
-			cxy[0] = box.x;
-			cxy[1] = box.y;
-			cxy[2] = cxy[0] + box.w - 1;
-			cxy[3] = cxy[1] + box.h - 1;
+		if (rc_intersect((GRECT *)&area, (GRECT *)&box)) {
+			cxy[0] = box.g_x;
+			cxy[1] = box.g_y;
+			cxy[2] = cxy[0] + box.g_w - 1;
+			cxy[3] = cxy[1] + box.g_h - 1;
 			vs_clip(tb.vdi_handle, 1, cxy);
 
 			if (text)
@@ -1579,7 +1579,7 @@ void wf_draw(void) {
 		}
 
 		/* NÑchstes Rechteck holen */
-		new_wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(whandle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 
 	vs_clip(tb.vdi_handle, 0, cxy);
@@ -1595,12 +1595,12 @@ void wf_draw(void) {
  * @param sel
  * @param add
  */
-void wf_sel(int sel, int add) {
+void wf_sel(short sel, short add) {
 	WININFO *win, *win1;
 	W_PATH *wpath;
 	W_GRP *wgrp;
 	WG_ENTRY *gitem;
-	int i, f;
+	short i, f;
 
 	win = glob.fwin;
 
@@ -1667,12 +1667,12 @@ void wf_sel(int sel, int add) {
 }
 
 /* Cursor bewegen */
-void wf_move(int dir, int add) {
+void wf_move(short dir, short add) {
 	WININFO *win;
 	W_PATH *wpath;
 	W_GRP *wgrp;
-	int focus, max, vmove, hmove;
-	int page;
+	short focus, max, vmove, hmove;
+	short page;
 
 	if (glob.fdraw)
 		wf_draw();
@@ -1685,9 +1685,9 @@ void wf_move(int dir, int add) {
 		max = wpath->e_total - 1;
 
 		if (wpath->index.text)
-			page = win->work.h / (wpath->clh + 1);
+			page = win->work.g_h / (wpath->clh + 1);
 		else
-			page = win->work.h / (wpath->ih + 8);
+			page = win->work.g_h / (wpath->ih + 8);
 
 		page--;
 		if (page < 1)
@@ -1745,9 +1745,9 @@ void wf_move(int dir, int add) {
 		max = wgrp->e_num - 1;
 
 		if (wgrp->text)
-			page = win->work.h / (wgrp->clh + 1);
+			page = win->work.g_h / (wgrp->clh + 1);
 		else
-			page = win->work.h / wgrp->ih;
+			page = win->work.g_h / wgrp->ih;
 
 		page--;
 		if (page < 1)
@@ -1801,11 +1801,11 @@ void wf_move(int dir, int add) {
  Berechnen der idealen Fenstergrîûe fÅr Verzeichnisse/Gruppen
  -------------------------------------------------------------------------*/
 void w_full(WININFO *win) {
-	int x, y, w, h, imx, imy;
-	int minx, miny, maxw, maxh;
-	int wx, wy;
+	short x, y, w, h, imx, imy;
+	short minx, miny, maxw, maxh;
+	short wx, wy;
 	double f, g;
-	int fi, fj, ax, ay;
+	short fi, fj, ax, ay;
 	W_PATH *wpath;
 	W_GRP *wgrp;
 
@@ -1839,10 +1839,10 @@ void w_full(WININFO *win) {
 		wx = 1;
 	if (wy < 1)
 		wy = 1;
-	minx = tb.desk.x;
-	miny = tb.desk.y;
-	maxw = tb.desk.w;
-	maxh = tb.desk.h;
+	minx = tb.desk.g_x;
+	miny = tb.desk.g_y;
+	maxw = tb.desk.g_w;
+	maxh = tb.desk.g_h;
 	if (1 /* conf.autoplace */) {
 		minx += tb.fleft;
 		miny += tb.fupper;
@@ -1852,27 +1852,27 @@ void w_full(WININFO *win) {
 			/*
 			 * Bei offenen Fenstern ist die zulÑssige Gesamtgrîûe ggf. hîher
 			 */
-			minx = min(minx, win->curr.x);
-			miny = min(miny, win->curr.y);
-			if ((win->curr.x + win->curr.w) > (minx + maxw))
-				maxw = win->curr.x + win->curr.w - minx;
-			if ((win->curr.y + win->curr.h) > (miny + maxh))
-				maxh = win->curr.y + win->curr.h - miny;
+			minx = min(minx, win->curr.g_x);
+			miny = min(miny, win->curr.g_y);
+			if ((win->curr.g_x + win->curr.g_w) > (minx + maxw))
+				maxw = win->curr.g_x + win->curr.g_w - minx;
+			if ((win->curr.g_y + win->curr.g_h) > (miny + maxh))
+				maxh = win->curr.g_y + win->curr.g_h - miny;
 
 			/* Auf Desktop beschrÑnken */
-			minx = max(minx, tb.desk.x);
-			miny = max(miny, tb.desk.y);
-			if ((minx + maxw) > (tb.desk.x + tb.desk.w))
-				maxw = tb.desk.x + tb.desk.w - minx;
-			if ((miny + maxh) > (tb.desk.y + tb.desk.h))
-				maxh = tb.desk.y + tb.desk.h - miny;
+			minx = max(minx, tb.desk.g_x);
+			miny = max(miny, tb.desk.g_y);
+			if ((minx + maxw) > (tb.desk.g_x + tb.desk.g_w))
+				maxw = tb.desk.g_x + tb.desk.g_w - minx;
+			if ((miny + maxh) > (tb.desk.g_y + tb.desk.g_h))
+				maxh = tb.desk.g_y + tb.desk.g_h - miny;
 		}
 		w = maxw;
 		h = maxh;
 		if (conf.autosizey)
-			h = (int) (+((double) h * (double) (11 - conf.autosizey)) / 10.0);
+			h = (short) (+((double) h * (double) (11 - conf.autosizey)) / 10.0);
 		if (conf.autosizex)
-			w = (int) (+((double) w * (double) (11 - conf.autosizex)) / 10.0);
+			w = (short) (+((double) w * (double) (11 - conf.autosizex)) / 10.0);
 		if (conf.autoplace) {
 			if ((w % 8) != 7)
 				w -= w % 8 + 1;
@@ -1886,9 +1886,9 @@ void w_full(WININFO *win) {
 	}
 	wind_calc(WC_WORK, win->flags, minx, miny, w, h, &x, &y, &w, &h);
 	if (!conf.autosizey)
-		h = min(win->work.h, maxh);
+		h = min(win->work.g_h, maxh);
 	if (!conf.autosizex)
-		w = min(win->work.w, maxw);
+		w = min(win->work.g_w, maxw);
 	else
 		w -= w % wx;
 	imx = w / wx;
@@ -1901,7 +1901,7 @@ void w_full(WININFO *win) {
 	/* Rechteck berechnen */
 	if (!ax) {
 		/* Textmodus */
-		if (imy >= (int) f)
+		if (imy >= (short) f)
 			imx = 1; /* Alles passt in eine Spalte */
 		else {
 			/* Sonst nîtige bzw. mîgliche Spaltenzahl ermitteln */
@@ -1910,35 +1910,35 @@ void w_full(WININFO *win) {
 				for (imx = 2; (((wx * (imx + 1)) <= w) && ((imx * imy) < f)); imx++)
 					;
 #else
-				imx=(int)(f/imy);
+				imx=(short)(f/imy);
 				if(imx*imy<f) imx++;
 #endif
 			}
 		}
-		for (; imy && ((imx * imy) > (int) f); imy--)
+		for (; imy && ((imx * imy) > (short) f); imy--)
 			;
 		wx *= imx;
 		wy *= imy;
 		wy += ay;
 	} else {
 		g = sqrt(f);
-		fi = (int) g;
-		if (g - (int) (g) > 0)
+		fi = (short) g;
+		if (g - (short) (g) > 0)
 			fi++;
 		if (fi > imx)
-			fj = (int) (f / (double) imx);
+			fj = (short) (f / (double) imx);
 		if (fj * imx < f)
 			fj++;
 		else
-			fj = (int) (f / (double) fi);
+			fj = (short) (f / (double) fi);
 		if (fj * fi < f)
 			fj++;
 		fi = min(fi, imx);
 		fj = min(fj, imy);
-		if ((fi * fj) < (int) f) {
-			for (; (fi < imx) && ((fi * fj) < (int) f); fi++)
+		if ((fi * fj) < (short) f) {
+			for (; (fi < imx) && ((fi * fj) < (short) f); fi++)
 				;
-			for (; (fj < imy) && ((fi * fj) < (int) f); fj++)
+			for (; (fj < imy) && ((fi * fj) < (short) f); fj++)
 				;
 		}
 		wx *= fi;
@@ -1949,9 +1949,9 @@ void w_full(WININFO *win) {
 	wx = max(wx, (14 * tb.ch_w));
 	wy = max(wy, (7 * tb.ch_h));
 	if (!conf.autosizey)
-		wy = win->work.h;
+		wy = win->work.g_h;
 	if (!conf.autosizex)
-		wx = win->work.w;
+		wx = win->work.g_w;
 
 	/* Auf maximale Grîûe begrenzen */
 	wind_calc(WC_BORDER, win->flags, 0, 0, wx, wy, &x, &y, &wx, &wy);
@@ -1965,33 +1965,33 @@ void w_full(WININFO *win) {
 	win->full.x=win->curr.x+(win->curr.w-wx)/2;
 	win->full.y=win->curr.y+(win->curr.h-wy)/2;
 #else
-	win->full.x = win->curr.x;
-	win->full.y = win->curr.y;
-	if ((win->full.x + wx) > (tb.desk.x + tb.desk.w))
-		win->full.x = tb.desk.x + tb.desk.w - wx;
-	if ((win->full.y + wy) > (tb.desk.y + tb.desk.h))
-		win->full.y = tb.desk.y + tb.desk.h - wy;
+	win->full.g_x = win->curr.g_x;
+	win->full.g_y = win->curr.g_y;
+	if ((win->full.g_x + wx) > (tb.desk.g_x + tb.desk.g_w))
+		win->full.g_x = tb.desk.g_x + tb.desk.g_w - wx;
+	if ((win->full.g_y + wy) > (tb.desk.g_y + tb.desk.g_h))
+		win->full.g_y = tb.desk.g_y + tb.desk.g_h - wy;
 #endif
-	if (win->full.x < minx)
-		win->full.x = minx;
-	if (win->full.y < miny)
-		win->full.y = miny;
+	if (win->full.g_x < minx)
+		win->full.g_x = minx;
+	if (win->full.g_y < miny)
+		win->full.g_y = miny;
 
-	win->full.w = wx;
-	win->full.h = wy;
-	if (win->full.x + wx > minx + maxw)
-		win->full.x = minx + maxw - wx;
-	if (win->full.y + wy > miny + maxh)
-		win->full.y = miny + maxh - wy;
+	win->full.g_w = wx;
+	win->full.g_h = wy;
+	if (win->full.g_x + wx > minx + maxw)
+		win->full.g_x = minx + maxw - wx;
+	if (win->full.g_y + wy > miny + maxh)
+		win->full.g_y = miny + maxh - wy;
 
 	if (!(win->state & WSOPEN) || (win->state & WSICON)) {
-		RECT *what;
+		GRECT *what;
 
 		what = (win->state & WSICON) ? &win->save : &win->curr;
-		what->x = win->full.x;
-		what->y = win->full.y;
-		what->w = win->full.w;
-		what->h = win->full.h;
+		what->g_x = win->full.g_x;
+		what->g_y = win->full.g_y;
+		what->g_w = win->full.g_w;
+		what->g_h = win->full.g_h;
 	} else
 		win_full(win);
 }
@@ -2001,8 +2001,8 @@ void w_full(WININFO *win) {
 
  Rubberframe-Koordinaten fÅr Icon/Texte berechnen
  -------------------------------------------------------------------------*/
-void wc_icon(int *pxy, int *x, int *y, int *w, int *h, int ix, int iw, int tx,
-		int ty, int tw) {
+void wc_icon(short *pxy, short *x, short *y, short *w, short *h, short ix, short iw, short tx,
+		short ty, short tw) {
 	/* Anpassung an Beschriftung */
 	if (tw < iw) {
 		/* Text kleiner als Icon */
@@ -2019,15 +2019,15 @@ void wc_icon(int *pxy, int *x, int *y, int *w, int *h, int ix, int iw, int tx,
 	}
 
 	/* Auf Desktop begrenzen */
-	if (*x < tb.desk.x)
-		*x = tb.desk.x;
-	if (*y < tb.desk.y)
-		*y = tb.desk.y;
+	if (*x < tb.desk.g_x)
+		*x = tb.desk.g_x;
+	if (*y < tb.desk.g_y)
+		*y = tb.desk.g_y;
 
-	if (*x + *w > tb.desk.x + tb.desk.w)
-		*x = tb.desk.x + tb.desk.w - *w;
-	if (*y + *h > tb.desk.y + tb.desk.h)
-		*y = tb.desk.y + tb.desk.h - *h;
+	if (*x + *w > tb.desk.g_x + tb.desk.g_w)
+		*x = tb.desk.g_x + tb.desk.g_w - *w;
+	if (*y + *h > tb.desk.g_y + tb.desk.g_h)
+		*y = tb.desk.g_y + tb.desk.g_h - *h;
 
 	/* Polygonzug berechnen */
 	pxy[0] = *x + ix;
@@ -2050,17 +2050,17 @@ void wc_icon(int *pxy, int *x, int *y, int *w, int *h, int ix, int iw, int tx,
 	pxy[17] = *y;
 }
 
-void wc_text(int *pxy, int *x, int *y, int *w, int *h) {
+void wc_text(short *pxy, short *x, short *y, short *w, short *h) {
 	/* Auf Desktop begrenzen */
-	if (*x < tb.desk.x)
-		*x = tb.desk.x;
-	if (*y < tb.desk.y)
-		*y = tb.desk.y;
+	if (*x < tb.desk.g_x)
+		*x = tb.desk.g_x;
+	if (*y < tb.desk.g_y)
+		*y = tb.desk.g_y;
 
-	if (*x + *w > tb.desk.x + tb.desk.w)
-		*x = tb.desk.x + tb.desk.w - *w;
-	if (*y + *h > tb.desk.y + tb.desk.h)
-		*y = tb.desk.y + tb.desk.h - *h;
+	if (*x + *w > tb.desk.g_x + tb.desk.g_w)
+		*x = tb.desk.g_x + tb.desk.g_w - *w;
+	if (*y + *h > tb.desk.g_y + tb.desk.g_h)
+		*y = tb.desk.g_y + tb.desk.g_h - *h;
 
 	/* Polygonzug berechnen */
 	pxy[0] = *x;
@@ -2075,16 +2075,16 @@ void wc_text(int *pxy, int *x, int *y, int *w, int *h) {
 	pxy[9] = pxy[1];
 }
 
-static void draw_minicicon(ICONIMG *ic, int *pxy, int sel) {
+static void draw_minicicon(ICONIMG *ic, short *pxy, short sel) {
 	OBJECT mini_icon;
 	USERBLK block;
-	int ext_out[57];
-	RECT clip, pos;
+	short ext_out[57];
+	GRECT clip, pos;
 
-	pos.x = pxy[4];
-	pos.y = pxy[5];
-	pos.w = pxy[6] - pxy[4] + 1;
-	pos.h = pxy[7] - pxy[5] + 1;
+	pos.g_x = pxy[4];
+	pos.g_y = pxy[5];
+	pos.g_w = pxy[6] - pxy[4] + 1;
+	pos.g_h = pxy[7] - pxy[5] + 1;
 	mini_icon.ob_next = mini_icon.ob_head = mini_icon.ob_tail = -1;
 	mini_icon.ob_type = G_USERDEF;
 	mini_icon.ob_flags = LASTOB;
@@ -2097,15 +2097,15 @@ static void draw_minicicon(ICONIMG *ic, int *pxy, int sel) {
 	 * Die Bitmap des Icons ist innerhalb des Gesamticons u. U.
 	 * versetzt, also die Position entsprechend berechnen
 	 */
-	mini_icon.ob_x = pos.x - ic->siconblk->ib_xicon;
-	mini_icon.ob_y = pos.y - ic->siconblk->ib_yicon;
-	mini_icon.ob_width = pos.w + ic->siconblk->ib_xicon;
-	mini_icon.ob_height = pos.h + ic->siconblk->ib_yicon;
+	mini_icon.ob_x = pos.g_x - ic->siconblk->ib_xicon;
+	mini_icon.ob_y = pos.g_y - ic->siconblk->ib_yicon;
+	mini_icon.ob_width = pos.g_w + ic->siconblk->ib_xicon;
+	mini_icon.ob_height = pos.g_h + ic->siconblk->ib_yicon;
 	vq_extnd(tb.vdi_handle, 1, ext_out);
-	clip.x = ext_out[45];
-	clip.y = ext_out[46];
-	clip.w = ext_out[47] - ext_out[45] + 1;
-	clip.h = ext_out[48] - ext_out[46] + 1;
+	clip.g_x = ext_out[45];
+	clip.g_y = ext_out[46];
+	clip.g_w = ext_out[47] - ext_out[45] + 1;
+	clip.g_h = ext_out[48] - ext_out[46] + 1;
 	if (rc_intersect(&clip, &pos)) /* Ueberhaupt sichtbar? */
-		objc_draw(&mini_icon, ROOT, 0, pos.x, pos.y, pos.w, pos.h);
+		objc_draw(&mini_icon, ROOT, 0, pos.g_x, pos.g_y, pos.g_w, pos.g_h);
 }

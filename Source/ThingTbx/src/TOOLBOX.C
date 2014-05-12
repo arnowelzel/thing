@@ -21,14 +21,12 @@
  * @license    LGPL
  */
 
-#include <aes.h>
-#include <vdi.h>
+#include <gem.h>
 #include <nkcc.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <slectric.h>
-#include <portab.h>
 #define TOOLBOX_LIB
 #define _TOOLBOX_
 #include "..\include\thingtbx.h"
@@ -42,18 +40,6 @@
 /*------------------------------------------------------------------*/
 /*  global functions                                                */
 /*------------------------------------------------------------------*/
-/*------------------------------------------------------------------*/
-/*  local definitions                                               */
-/*------------------------------------------------------------------*/
-/* AES-Font Cookie-Struktur */
-typedef struct {
-	LONG af_magic;		/* AES-Font ID (AFnt) */
-	WORD version;		/* Highbyte Cookieversion (BCD-Format) */
-	/* Lowbyte Programmversion (BCD-Format) */
-	WORD installed;		/* Flag fuer Fonts angemeldet */
-	WORD cdecl (*afnt_getinfo)(WORD af_gtype, WORD *af_gout1, WORD *af_gout2, WORD *af_gout3, WORD *af_gout4);
-} AFNT;
-
 /*------------------------------------------------------------------*/
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
@@ -71,97 +57,22 @@ BYTE *aesBuffer;
 #define MAX_BUFFERS	10
 
 static WORD d_getcwd(char *buf, WORD drive, WORD len);
-static void lst_arrow(LISTINFO *li, int object, int dir);
+static void lst_arrow(LISTINFO *li, short object, short dir);
 
-static int is_disabled(char *p);
+static short is_disabled(char *p);
 
 /* Lokale Variablen */
-static int work_in[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
-static int work_out[57];
-static int nk_ok;
+static short work_in[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2 };
+static short work_out[57];
+static short nk_ok;
 static MFDB scr_mfdb;
-static int aesmsg[8];
+static short aesmsg[8];
 static USERBLK *ublk;
-static int unum, uused;
-static int v_handle;
+static short unum, uused;
+static short v_handle;
 static FORMINFO t_fi;
-static int pop_offx, pop_offy;
+static short pop_offx, pop_offy;
 static OBJECT sepline = { -1, -1, -1, (SEPARATOR << 8) | G_STRING, LASTOB, DRAW3D | NORMAL, 0, 0, 1, 1 };
-
-/**
- * appl_control
- *
- * Implementation des neuen AES-Aufrufs von N.AES zur Beinflussung
- * einiger Applikationsparameter.
- *
- * Eingabe:
- * ap_id: ID der zu steuernden Applikation
- * what: Steuerungsopcode (z.B. APC_TOP)
- * retcode: Zeiger auf Returnwert der Steuerungsfunktion
- *
- * Rueckgabe:
- * 1: Alles OK
- * 0: Fehler
- */
-int appl_control(int ap_id, int what, void *retcode) {
-	AESPB aespb;
-
-	aespb.contrl = _GemParBlk.contrl;
-	aespb.global = _GemParBlk.global;
-	aespb.intin = _GemParBlk.intin;
-	aespb.intout = _GemParBlk.intout;
-	aespb.addrin = (int *) _GemParBlk.addrin;
-	aespb.addrout = (int *) _GemParBlk.addrout;
-	aespb.contrl[0] = 129;
-	aespb.contrl[1] = 2;
-	aespb.contrl[2] = 1;
-	aespb.contrl[3] = 1;
-	aespb.contrl[4] = 0;
-	aespb.intin[0] = ap_id;
-	aespb.intin[1] = what;
-	((void **) aespb.addrin)[0] = retcode;
-	_crystal(&aespb);
-	return (aespb.intout[0]);
-}
-
-/**
- * new_wind_get
- *
- * wind_get-Ersatz fuer Pure C, das wegen seines "Bequemlichkeits-
- * patents" neue Opcodes nicht und einige schon vorhandene nicht
- * richtig unterstuetzt.
- *
- * Eingabe:
- * win: Handle des Fenster, ueber das man Informationen haben will
- * cmd: Opcode fuer wind_get, also z.B. WF_OWNER
- * out1 bis out4: Zeiger auf int-Ausgabeparameter 1 bis 4
- *
- * Rueckgabe:
- * 1: Alles OK
- * 0: Fehler
- */
-int new_wind_get(int win, int cmd, int *out1, int *out2, int *out3, int *out4) {
-	AESPB aespb;
-
-	aespb.contrl = _GemParBlk.contrl;
-	aespb.global = _GemParBlk.global;
-	aespb.intin = _GemParBlk.intin;
-	aespb.intout = _GemParBlk.intout;
-	aespb.addrin = (int *) _GemParBlk.addrin;
-	aespb.addrout = (int *) _GemParBlk.addrout;
-	aespb.contrl[0] = 104;
-	aespb.contrl[1] = 2;
-	aespb.contrl[2] = 5;
-	aespb.contrl[3] = aespb.contrl[4] = 0;
-	aespb.intin[0] = win;
-	aespb.intin[1] = cmd;
-	_crystal(&aespb);
-	*out1 = aespb.intout[1];
-	*out2 = aespb.intout[2];
-	*out3 = aespb.intout[3];
-	*out4 = aespb.intout[4];
-	return (aespb.intout[0]);
-}
 
 /**-------------------------------------------------------------------------
  mybeep()
@@ -177,10 +88,10 @@ void mybeep(void) {
 
  Normalisierten Tastaturcode ermitteln
  -------------------------------------------------------------------------*/
-unsigned int normkey(int ks, int kr) {
+unsigned short normkey(short ks, short kr) {
 	long toskey;
-	int nkc_ret;
-	int nkc_special;
+	short nkc_ret;
+	short nkc_special;
 
 	toskey = (kr & 0xff) | ((long) (kr & 0xff00) << 8) | ((long) (ks & 0xff)
 			<< 24);
@@ -216,14 +127,13 @@ unsigned int normkey(int ks, int kr) {
  *
  * @param cookie
  * @param *p_value
- * @return 0 = not found
- *         1 = found
+ * @return
  */
 static long getCookiePointer(void) {
 	return (*(long *) 0x5a0L);
 }
 
-int getCookie(long cookie, long *p_value) {
+short getCookie(long cookie, long *p_value) {
 	long *cookiejar;
 
 	cookiejar = (long *) Supexec(getCookiePointer);
@@ -277,11 +187,11 @@ int getCookie(long cookie, long *p_value) {
  *    erzeugten absoluten Pfad
  * sonst: GEMDOS-Fehlermeldung, destpath ist NULL
  */
-WORD rel2abs(char *path, char **destpath) {
+short rel2abs(char *path, char **destpath) {
 	char *act_path, *temp, *pos, *next, rootdir[4] = "x:\\";
 	WORD drive, err;
 	LONG maxplen;
-	DTA mydta, *olddta;
+	_DTA mydta, *olddta;
 
 	/*
 	 * Wenn path bereits eine Laufwerksangabe enth„lt,
@@ -397,9 +307,9 @@ WORD rel2abs(char *path, char **destpath) {
 	 */
 	olddta = Fgetdta();
 	Fsetdta(&mydta);
-	err = Fsfirst(temp, FA_SUBDIR);
+	err = Fsfirst(temp, 0x10 /* FA_SUBDIR */);
 	Fsetdta(olddta);
-	if (!err && (mydta.d_attrib & FA_SUBDIR))
+	if (!err && (mydta.dta_attribute & 0x10 /* FA_SUBDIR */))
 		strcat(temp, "\\");
 
 	return (0);
@@ -447,9 +357,9 @@ static WORD d_getcwd(char *buf, WORD drive, WORD len) {
  Ermittelt anhand des NKCC-Tastaturcodes den zugeh”rigen Menueeintrag
  ueber den Shortcut, der als Text am rechten Menuerand steht.
  -------------------------------------------------------------------------*/
-int menu_key(OBJECT *tree, int key, int *title, int *item) {
+short menu_key(OBJECT *tree, short key, short *title, short *item) {
 	char match[5], text[5], *mp;
-	int p, i, index, menu, mtitle, first, last;
+	short p, i, index, menu, mtitle, first, last;
 
 	/* Suchmuster erstellen */
 	p = 0;
@@ -531,8 +441,8 @@ int menu_key(OBJECT *tree, int key, int *title, int *item) {
 
  Ermitteln eines Shortcuts im Dialogbaum
  -------------------------------------------------------------------------*/
-static int shortcut_walk(OBJECT *tree, int start, unsigned char k) {
-	int i, scut, index;
+static short shortcut_walk(OBJECT *tree, short start, unsigned char k) {
+	short i, scut, index;
 	char *p;
 	unsigned char s;
 	OBJECT *obj;
@@ -576,8 +486,8 @@ static int shortcut_walk(OBJECT *tree, int start, unsigned char k) {
 /**
  * 
  */
-int shortcut(OBJECT *tree, int ks, int kr, int undo_obj, int help_obj) {
-	unsigned int key;
+short shortcut(OBJECT *tree, short ks, short kr, short undo_obj, short help_obj) {
+	unsigned short key;
 
 	/* Normalcode holen */
 	key = normkey(ks, kr);
@@ -605,12 +515,12 @@ int shortcut(OBJECT *tree, int ks, int kr, int undo_obj, int help_obj) {
 
  Initialisierung der Toolbox (einschl. NKCC)
  -------------------------------------------------------------------------*/
-int tool_init(char *apname) {
-	int sret;
+short tool_init(char *apname) {
+	short sret;
 	long ldummy;
 	char cmd[128], *p;
 	SHELTAIL *tail;
-	int out[4], d;
+	short out[4], d;
 
 	tb.numfonts = 1;
 	tb.mform = ARROW;
@@ -678,7 +588,7 @@ int tool_init(char *apname) {
 	 */
 	{
 		MFDB src, dst;
-		int xy[12], buf[32], black[32];
+		short xy[12], buf[32], black[32];
 
 		xy[0] = xy[8] = tb.resx - 16;
 		xy[1] = xy[3] = xy[9] = xy[11] = tb.resy - 1;
@@ -739,7 +649,7 @@ int tool_init(char *apname) {
 	tb.fi = tb.topfi = 0L;
 
 	/* Desktop-Ausmasse */
-	new_wind_get(0, WF_WORKXYWH, &tb.desk.x, &tb.desk.y, &tb.desk.w, &tb.desk.h);
+	wind_get(0, WF_WORKXYWH, &tb.desk.g_x, &tb.desk.g_y, &tb.desk.g_w, &tb.desk.g_h);
 
 	/* Message-Handler ec. fuer modale Dialoge */
 	tb.msg_handler = 0L;
@@ -766,9 +676,9 @@ int tool_init(char *apname) {
 		tb.sys |= SY_NAES;
 	if (getCookie('Gnva', 0L))
 		tb.sys |= SY_GNVA;
-	if (_GemParBlk.global[1] != 1) {
+	if (_AESnumapps != 1) {
 		tb.sys |= SY_MULTI; /* Multitasking */
-		if (_GemParBlk.global[0] >= 0x400)
+		if (_AESversion >= 0x400)
 			tb.sys |= SY_MTOS; /* Und MultiTOS */
 	}
 	if (getCookie('MiNT', &ldummy))
@@ -822,7 +732,7 @@ int tool_init(char *apname) {
 	}
 
 	/* Systemsprache ermitteln */
-	tb.sysLanguageId = getSystemLanguage(tb.sysLanguageCode, tb.sysLanguageCodeLong);
+	tb.sysLanguageId = getSystemLanguage(tb.sysLanguageCode, tb.sysLanguageCodeLong );
 
 	/* AES-Fonts ermitteln */
 	tb.fn_id = tb.fs_id = 1;
@@ -834,23 +744,23 @@ int tool_init(char *apname) {
 
 	if ((tb.sys & SY_MTOS) || (tb.sys & SY_MAGX) || (appl_find("?AGI\0\0\0\0") >= 0)) {
 		tb.sys |= SY_AGI;
-		if (appl_xgetinfo(0, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(0, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			tb.fn_size = out[0];
 			tb.fn_id = out[1];
 		}
-		if (appl_xgetinfo(1, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(1, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			tb.fs_size = out[0];
 			tb.fs_id = out[1];
 		}
 	}
 
 	/* Auf WINX pruefen */
-	if (new_wind_get(0, 'WX', &out[0], &out[1], &out[2], &out[3]) == 'WX')
+	if (wind_get(0, 'WX', &out[0], &out[1], &out[2], &out[3]) == 'WX')
 		tb.sys |= SY_WINX;
 
 	/* Auf Farbicons pruefen */
 	if (tb.sys & SY_AGI) {
-		if (appl_xgetinfo(2, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(2, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[2] == 1)
 				tb.sys |= SY_CICON; /* Farbicons vorhanden */
 			if (out[3] == 1)
@@ -875,7 +785,7 @@ int tool_init(char *apname) {
 	/* Weitere AES-Features testen */
 	if (tb.sys & SY_AGI) {
 		/* Shutdown-Support testen */
-		if (appl_xgetinfo(12, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(12, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			/* Falls vorhanden, dann auch gleich anmelden */
 			if (out[0] & 0x0008) {
 				tb.sys |= SY_SHUT;
@@ -884,7 +794,7 @@ int tool_init(char *apname) {
 		}
 
 		/* Auf Iconify testen */
-		if (appl_xgetinfo(11, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(11, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			/* WF_ICONIFY vorhanden und Iconifier? */
 			if ((out[0] & 0x0080) && (out[3] & 0x0001))
 				tb.sys |= SY_ICONIFY;
@@ -899,13 +809,13 @@ int tool_init(char *apname) {
 		}
 
 		/* Ermitteln, ob appl_search() vorhanden */
-		if (appl_xgetinfo(4, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(4, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[2] == 1)
 				tb.sys |= SY_ASEARCH;
 		}
 
 		/* MultiTOS-Popup- bzw. Submenues vorhanden? */
-		if (appl_xgetinfo(9, &out[0], &out[1], &out[2], &out[3]) == 1) {
+		if (appl_getinfo(9, &out[0], &out[1], &out[2], &out[3]) == 1) {
 			if (out[0] && out[1])
 				tb.sys |= SY_POPUP;
 		}
@@ -960,8 +870,8 @@ LINOUT
 
  Routinen zu frm_do()
  -------------------------------------------------------------------------*/
-int find_obj(OBJECT *tree, int start_obj, int wich) {
-	int obj, flag, theflag, inc;
+short find_obj(OBJECT *tree, short start_obj, short wich) {
+	short obj, flag, theflag, inc;
 
 	obj = 0;
 	flag = EDITABLE;
@@ -995,7 +905,7 @@ int find_obj(OBJECT *tree, int start_obj, int wich) {
 	return (start_obj);
 }
 
-int ini_field(OBJECT *tree, int start_fld) {
+short ini_field(OBJECT *tree, short start_fld) {
 	if (!start_fld)
 		start_fld = find_obj(tree, 0, FMD_FORWARD);
 
@@ -1010,9 +920,9 @@ int ini_field(OBJECT *tree, int start_fld) {
 
  Wird von obj_edit() verwendet
  -------------------------------------------------------------------------*/
-void obj_cdraw(int *pxy, int whandle) {
-	int cxy[4];
-	RECT area, box;
+void obj_cdraw(short *pxy, short whandle) {
+	short cxy[4];
+	GRECT area, box;
 	WININFO *win;
 
 	win = win_getwinfo(whandle);
@@ -1027,35 +937,35 @@ void obj_cdraw(int *pxy, int whandle) {
 
 	graf_mouse(M_OFF, 0L);
 	if (whandle != -1) {
-		area.x = tb.desk.x;
-		area.y = tb.desk.y;
-		area.w = tb.desk.w;
-		area.h = tb.desk.h;
+		area.g_x = tb.desk.g_x;
+		area.g_y = tb.desk.g_y;
+		area.g_w = tb.desk.g_w;
+		area.g_h = tb.desk.g_h;
 
 		wind_update(BEG_UPDATE);
-		new_wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(whandle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 		/* Rechteckliste abarbeiten */
-		while (box.w && box.h) {
+		while (box.g_w && box.g_h) {
 			if (rc_intersect(&area, &box)) {
-				cxy[0] = box.x;
-				cxy[1] = box.y;
-				cxy[2] = cxy[0] + box.w - 1;
-				cxy[3] = cxy[1] + box.h - 1;
+				cxy[0] = box.g_x;
+				cxy[1] = box.g_y;
+				cxy[2] = cxy[0] + box.g_w - 1;
+				cxy[3] = cxy[1] + box.g_h - 1;
 				vs_clip(v_handle, 1, cxy);
 				v_pline(v_handle, 2, pxy);
 				vs_clip(v_handle, 0, cxy);
 			}
 
 			/* Naechstes freies Rechteck holen */
-			new_wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+			wind_get(whandle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 		}
 		wind_update(END_UPDATE);
 	} else {
-		cxy[0] = tb.desk.x;
-		cxy[1] = tb.desk.y;
-		cxy[2] = cxy[0] + tb.desk.w - 1;
-		cxy[3] = cxy[1] + tb.desk.h - 1;
+		cxy[0] = tb.desk.g_x;
+		cxy[1] = tb.desk.g_y;
+		cxy[2] = cxy[0] + tb.desk.g_w - 1;
+		cxy[3] = cxy[1] + tb.desk.g_h - 1;
 		vs_clip(v_handle, 1, cxy);
 		v_pline(v_handle, 2, pxy);
 		vs_clip(v_handle, 0, cxy);
@@ -1072,8 +982,8 @@ void obj_cdraw(int *pxy, int whandle) {
  Beruecksichtigung der Eingabemaske - wird von obj_edit() verwendet um
  die Position fuer den Cursor zu berechnen
  -------------------------------------------------------------------------*/
-int obj_idxabs(char *tmp, char *txt, int idx) {
-	int tmp_idx, txt_idx, hlp_idx, extent[8], d;
+short obj_idxabs(char *tmp, char *txt, short idx) {
+	short tmp_idx, txt_idx, hlp_idx, extent[8], d;
 	char hlp[256];
 
 	vst_font(tb.vdi_handle, tb.fn_id);
@@ -1106,14 +1016,14 @@ int obj_idxabs(char *tmp, char *txt, int idx) {
  Beruecksichtigung der Eingabemaske - wird von frm_do() fuer die direkte
  Positionierung des Cursors verwendet.
  -------------------------------------------------------------------------*/
-int obj_idxrel(OBJECT *tree, int obj, int pxl_idx) {
+short obj_idxrel(OBJECT *tree, short obj, short pxl_idx) {
 	char *txt, *tmp;
-	int txt_idx, tmp_len;
+	short txt_idx, tmp_len;
 
 	txt = tree[obj].ob_spec.tedinfo->te_ptext;
 	tmp = tree[obj].ob_spec.tedinfo->te_ptmplt;
 
-	if ((tmp_len = (int) strlen(tmp)) == 0)
+	if ((tmp_len = (short) strlen(tmp)) == 0)
 		return (0);
 
 	for (txt_idx = --tmp_len; txt_idx >= 0; txt_idx--) {
@@ -1137,14 +1047,14 @@ int obj_idxrel(OBJECT *tree, int obj, int pxl_idx) {
  * Rueckgabe:
  * Absolute x-Bildschirmkoordinate des ersten Zeichens im Editfeld
  */
-int obj_xleft(OBJECT *tree, int obj) {
+short obj_xleft(OBJECT *tree, short obj) {
 	char *tmp, *txt;
-	int tmp_len, cnt_len, x_off, width, d;
+	short tmp_len, cnt_len, x_off, width, d;
 
 	txt = tree[obj].ob_spec.tedinfo->te_ptext;
 	tmp = tree[obj].ob_spec.tedinfo->te_ptmplt;
 
-	if ((tmp_len = (int) strlen(tmp)) == 0)
+	if ((tmp_len = (short) strlen(tmp)) == 0)
 		cnt_len = 0;
 	else
 		cnt_len = obj_idxabs(tmp, txt, tmp_len);
@@ -1172,15 +1082,15 @@ int obj_xleft(OBJECT *tree, int obj) {
  Erweiterte Version der AES-Funktion objc_edit() mit Beruecksichtigung
  des sichtbaren Fensterausschnitts etc.
  -------------------------------------------------------------------------*/
-int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
-		int *ob_edidx, int ob_edkind, int whandle) {
-	int i, x, y, pxy[4];
-	int maxidx, idx, vidx;
-	unsigned int key;
+short obj_edit(OBJECT *ob_edtree, short ob_edobject, short ob_edchar, short ob_edstate,
+		short *ob_edidx, short ob_edkind, short whandle) {
+	short i, x, y, pxy[4];
+	short maxidx, idx, vidx;
+	unsigned short key;
 	char *txt, *valid, *tmp;
-	int txtlen;
+	short txtlen;
 #if 0
-	int tmplen;
+	short tmplen;
 #endif
 
 	/* Falls kein Eingabefeld angegeben wurde, dann raus */
@@ -1194,7 +1104,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 	valid = ob_edtree[ob_edobject].ob_spec.tedinfo->te_pvalid;
 	tmp = ob_edtree[ob_edobject].ob_spec.tedinfo->te_ptmplt;
 
-	txtlen = (int) strlen(txt);
+	txtlen = (short) strlen(txt);
 #if 0
 	tmplen = ob_edtree[ob_edobject].ob_spec.tedinfo->te_tmplen - 1;
 #endif
@@ -1272,7 +1182,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 				obj_cdraw(pxy, whandle);
 
 				txt[0] = 0;
-				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 				*ob_edidx = 0;
 				idx = 0;
@@ -1295,7 +1205,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 				*ob_edidx = idx;
 				pxy[0] = x + obj_idxabs(tmp, txt, idx);
 				pxy[2] = pxy[0];
-				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, pxy[0], tb.desk.y, tb.desk.w, tb.desk.h);
+				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, pxy[0], tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 				obj_cdraw(pxy, whandle);
 			}
 			break;
@@ -1308,7 +1218,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 				pxy[0] = x + obj_idxabs(tmp, txt, idx);
 				pxy[2] = pxy[0];
 				obj_cdraw(pxy, whandle);
-				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, pxy[0], tb.desk.y, tb.desk.w, tb.desk.h);
+				objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, pxy[0], tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 #if 0
 				pxy[0] = x + obj_idxabs(tmp, txt, idx);
 				pxy[1] = y - 3;
@@ -1355,7 +1265,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
 
 					pxy[0] = x + obj_idxabs(tmp, txt, vidx);
 					objc_draw(ob_edtree, ob_edobject, MAX_DEPTH, pxy[0],
-							tb.desk.y, tb.desk.w, tb.desk.h);
+							tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					if (idx < maxidx) {
 						idx++;
 						*ob_edidx = idx;
@@ -1396,7 +1306,7 @@ int obj_edit(OBJECT *ob_edtree, int ob_edobject, int ob_edchar, int ob_edstate,
  Passt einen Objektbaum zur Verwendung in einem Fensterdialog an
  und umgekehrt
  -------------------------------------------------------------------------*/
-void tree_win(OBJECT *tree, int mode) {
+void tree_win(OBJECT *tree, short mode) {
 	if (mode) {
 		/* Dialog auf Fenster anpassen */
 		if (tree[1].ob_state & WHITEBAK) {
@@ -1419,33 +1329,33 @@ void tree_win(OBJECT *tree, int mode) {
 
  Durchfuehrung eines Popup-Menues
  -------------------------------------------------------------------------*/
-int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
+short popup_menu(POPMENU *menu, short x, short y, short center_obj, short *ok,
 		OBJECT *father) {
 #if 0
-	int fx, fy, fw, fh;
-	int sx, sy;
+	short fx, fy, fw, fh;
+	short sx, sy;
 	MFDB mfdb;
 	long msize;
-	int mxy[8];
+	short mxy[8];
 #endif
 	EVENT mevent;
 	OBJECT *tree = menu->tree;
-	int sx, sy;
-	int done, key;
-	int sel, sel1, i, rt, ob;
-	int first, last, mx, my;
-	int d;
-	int dish, disl;
-	int mouse;
+	short sx, sy;
+	short done, key;
+	short sel, sel1, i, rt, ob;
+	short first, last, mx, my;
+	short d;
+	short dish, disl;
+	short mouse;
 	MN_SET mn_set;
 
 	/* Aktuelle Einstellungen fuer Popup-Menues auslesen */
 	if (tb.sys & SY_POPUP)
 		menu_settings(0, &mn_set);
 	else
-		mn_set.Display = 200L;
-	dish = (int) ((mn_set.Display >> 16L) & 0xffffL);
-	disl = (int) (mn_set.Display & 0xffffL);
+		mn_set.display = 200L;
+	dish = (short) ((mn_set.display >> 16L) & 0xffffL);
+	disl = (short) (mn_set.display & 0xffffL);
 	if (!disl && !dish)
 		disl = 1;
 
@@ -1475,18 +1385,18 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 	tree->ob_y = y - tree[center_obj].ob_y - tree[center_obj].ob_height / 2;
 
 	/* Und auf Desktop begrenzen */
-	if ((tree->ob_x + tree->ob_width + 3) > (tb.desk.x + tb.desk.w)) {
+	if ((tree->ob_x + tree->ob_width + 3) > (tb.desk.g_x + tb.desk.g_w)) {
 		if (father != NULL)
 			tree->ob_x = father->ob_x - tree->ob_width + tb.ch_w;
 		else
-			tree->ob_x = tb.desk.x + tb.desk.w - tree->ob_width - 3;
+			tree->ob_x = tb.desk.g_x + tb.desk.g_w - tree->ob_width - 3;
 	}
-	if (tree->ob_x <= tb.desk.x)
-		tree->ob_x = tb.desk.x + 1;
-	if ((tree->ob_y + tree->ob_height + 3) > (tb.desk.y + tb.desk.h))
-		tree->ob_y = tb.desk.y + tb.desk.h - tree->ob_height - 3;
-	if (tree->ob_y <= tb.desk.y)
-		tree->ob_y = tb.desk.y + 1;
+	if (tree->ob_x <= tb.desk.g_x)
+		tree->ob_x = tb.desk.g_x + 1;
+	if ((tree->ob_y + tree->ob_height + 3) > (tb.desk.g_y + tb.desk.g_h))
+		tree->ob_y = tb.desk.g_y + tb.desk.g_h - tree->ob_height - 3;
+	if (tree->ob_y <= tb.desk.g_y)
+		tree->ob_y = tb.desk.g_y + 1;
 
 	/* Bildschirmhintergrund sichern */
 	if (!Screen2Buffer(sx = tree->ob_x - 1, sy = tree->ob_y - 1, tree->ob_width
@@ -1499,13 +1409,13 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 		*ok = 1;
 
 	/* Menue ausgeben und los ...*/
-	objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+	objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 	/*
 	 * Pruefen, ob Maustaste noch gedrueckt ist und ggf. Flag fuer
 	 * die Auswahl mit gedrueckter Maustaste setzen.
 	 */
-	evnt_timer(100, 0);
+	evnt_timer(100L);
 	graf_mkstate(&mx, &my, &mevent.ev_mbreturn, &d);
 	if (mevent.ev_mbreturn & 3)
 		rt = 1;
@@ -1732,12 +1642,12 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 		/* Auswahl ge„ndert ? */
 		if (sel != sel1) {
 			if (sel1 >= 0)
-				objc_change(tree, sel1, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-						tb.desk.h, tree[sel1].ob_state & ~SELECTED, 1);
+				objc_change(tree, sel1, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w,
+						tb.desk.g_h, tree[sel1].ob_state & ~SELECTED, 1);
 
 			if (sel >= 0) {
-				objc_change(tree, sel, 0, tb.desk.x, tb.desk.y, tb.desk.w,
-						tb.desk.h, tree[sel].ob_state | SELECTED, 1);
+				objc_change(tree, sel, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w,
+						tb.desk.g_h, tree[sel].ob_state | SELECTED, 1);
 			}
 
 			sel1 = sel;
@@ -1757,7 +1667,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
 
 	/* Zuletzt selektiertes Objekt wieder normal darstellen */
 	if (sel >= 0)
-		objc_change(tree, sel, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h,
+		objc_change(tree, sel, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h,
 				tree[sel].ob_state & ~SELECTED, 0);
 
 	/* Bildschirmhintergrund wiederherstellen */
@@ -1782,7 +1692,7 @@ int popup_menu(POPMENU *menu, int x, int y, int center_obj, int *ok,
  šbernimmt eine Menueauswahl eines Popup-Menues in den Dialog.
  -------------------------------------------------------------------------*/
 void pop_set(FORMINFO *fi, POPMENU *pop) {
-	int newtype, oldtype;
+	short newtype, oldtype;
 	OBJECT *form, *popup;
 
 	form = &fi->tree[pop->formobj];
@@ -1817,7 +1727,7 @@ void poplist_set(FORMINFO *fi, POPLIST *pop) {
 		obj->ob_spec.tedinfo->te_color |= 7 << 4;
 		obj->ob_spec.tedinfo->te_color
 				|= (tb.use3d && (tb.colors >= 16)) ? getBackgroundColor()
-						: WHITE;
+						: G_WHITE;
 
 		if (!(obj->ob_width % tb.ch_w))
 			obj->ob_width--;
@@ -1831,7 +1741,7 @@ void poplist_set(FORMINFO *fi, POPLIST *pop) {
  im Eingabefeld
  -------------------------------------------------------------------------*/
 void poplist_get(FORMINFO *fi, POPLIST *pop) {
-	int i;
+	short i;
 
 	pop->sel = -1;
 	for (i = 0; i < pop->num; i++)
@@ -1852,10 +1762,10 @@ void poplist_get(FORMINFO *fi, POPLIST *pop) {
  2=Auswahl durchgefuehrt und Popup-Objekt enth„lt
  "TOUCHEXIT"-Flag
  -------------------------------------------------------------------------*/
-int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
-		int *idx, int whandle, int *next_obj) {
-	int px, py, pn, pok, pret, pobj, pdo;
-	int sstate = 0;
+short pop_do(short mode, FORMINFO *fi, short obj, short ks, short kr, short *edit_obj,
+		short *idx, short whandle, short *next_obj) {
+	short px, py, pn, pok, pret, pobj, pdo;
+	short sstate = 0;
 	POPMENU *pop;
 
 	if (!mode)
@@ -1906,8 +1816,8 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 				/* Zugeh”rigen Shortcut selektieren */
 				if (pop->formshort >= 0) {
 					sstate = fi->tree[pop->formshort].ob_state;
-					objc_change(fi->tree, pop->formshort, 0, tb.desk.x,
-							tb.desk.y, tb.desk.w, tb.desk.h, sstate | SELECTED,
+					objc_change(fi->tree, pop->formshort, 0, tb.desk.g_x,
+							tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, sstate | SELECTED,
 							1);
 				}
 
@@ -1916,8 +1826,8 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 
 				/* Shortcut wieder deselektieren */
 				if (pop->formshort >= 0) {
-					objc_change(fi->tree, pop->formshort, 0, tb.desk.x,
-							tb.desk.y, tb.desk.w, tb.desk.h, sstate, 1);
+					objc_change(fi->tree, pop->formshort, 0, tb.desk.g_x,
+							tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, sstate, 1);
 				}
 
 				/*
@@ -1932,7 +1842,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 					if (pop->take == 1) {
 						pop->sel = pret;
 						pop_set(fi, pop);
-						objc_draw(fi->tree, pop->formobj - 1, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						objc_draw(fi->tree, pop->formobj - 1, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					}
 					if (fi->tree[pop->formobj].ob_flags & TOUCHEXIT) {
 						*next_obj = pop->formobj;
@@ -1942,7 +1852,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 
 				/* Objektbaum neu zeichnen, falls n”tig */
 				if (!pok && fi->state != FST_WIN)
-					objc_draw(fi->tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					objc_draw(fi->tree, ROOT, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 				/* Cursor einschalten */
 				if (*edit_obj == pop->formobj)
@@ -1993,7 +1903,7 @@ int pop_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
  * 0: Zeichenkette enth„lt nicht nur Minuszeichen oder ist leer
  * sonst: Zeichenkette besteht durchgehen aus Minuszeichen
  */
-static int is_disabled(char *p) {
+static short is_disabled(char *p) {
 	if (!*p)
 		return (0);
 	for (; *p == '-'; p++)
@@ -2003,10 +1913,10 @@ static int is_disabled(char *p) {
 
 /* Unterfunktion: Aktualisieren der Liste - wurde ausgelagert um das
  "Realtime"-Scrolling mit dem Slider zu erm”glichen */
-void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) {
+void poplist_update(short *offset, short *offset1, POPLIST *pop, short vnum, short sel) {
 	long spos; /* Sliderposition */
-	int i, j, l, delta;
-	int pxy[8];
+	short i, j, l, delta;
+	short pxy[8];
 	OBJECT *tree; /* Objekt-Baum */
 	char tmp[256];
 
@@ -2015,8 +1925,8 @@ void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) 
 	/* Sliderposition aktualisieren */
 	if (pop->num > vnum) {
 		spos = (long) *offset * (long) (tree[POPLISTSBAR].ob_height - tree[POPLISTSLIDER].ob_height) / (long) (pop->num - vnum);
-		tree[POPLISTSLIDER].ob_y = (int) spos;
-		objc_draw(tree, POPLISTSBAR, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		tree[POPLISTSLIDER].ob_y = (short) spos;
+		objc_draw(tree, POPLISTSBAR, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 	}
 
 	/* Liste aktualisieren */
@@ -2029,7 +1939,7 @@ void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) 
 			tree[i + 2].ob_state &= ~SELECTED;
 
 		strcpy(tmp, pop->list[i + *offset]);
-		l = (int) strlen(pop->list[i + *offset]);
+		l = (short) strlen(pop->list[i + *offset]);
 		for (j = l; j < pop->len; j++)
 			tmp[j] = ' ';
 		tmp[j] = 0;
@@ -2048,7 +1958,7 @@ void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) 
 	delta = *offset - *offset1;
 	if (abs(delta) >= vnum) {
 		/* Nein - komplett neuzeichnen */
-		objc_draw(tree, 1, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		objc_draw(tree, 1, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 	} else {
 		/* Ja - nur scrollen und Teile neuzeichnen */
 		pxy[0] = pxy[4] = tree->ob_x + tree[1].ob_x;
@@ -2080,11 +1990,11 @@ void poplist_update(int *offset, int *offset1, POPLIST *pop, int vnum, int sel) 
 	*offset1 = *offset;
 }
 
-int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
-		int *idx, int whandle, int *exit_obj) {
-	int px, py, pn, pok, pret, pobj, pdo;
+short poplist_do(short mode, FORMINFO *fi, short obj, short ks, short kr, short *edit_obj,
+		short *idx, short whandle, short *exit_obj) {
+	short px, py, pn, pok, pret, pobj, pdo;
 	POPLIST *pop;
-	int sstate = 0;
+	short sstate = 0;
 
 	if (!mode)
 		pobj = shortcut(fi->tree, ks, kr, -1, -1);
@@ -2128,12 +2038,12 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 						obj_edit(fi->tree, *edit_obj, 0, 0, idx, ED_END, whandle);
 
 					/* Ausl”ser selektieren */
-					objc_change(fi->tree, pop->formobj, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED | SHADOWED, 1);
+					objc_change(fi->tree, pop->formobj, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED | SHADOWED, 1);
 
 					/* Zugeh”rigen Shortcut selektieren */
 					if (pop->formshort >= 0) {
 						sstate = fi->tree[pop->formshort].ob_state;
-						objc_change(fi->tree, pop->formshort, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, sstate | SELECTED, 1);
+						objc_change(fi->tree, pop->formshort, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, sstate | SELECTED, 1);
 					}
 				}
 
@@ -2141,11 +2051,11 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 
 				if (fi->open) {
 					/* Ausl”ser deselektieren */
-					objc_change(fi->tree, pop->formobj, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL | SHADOWED, 1);
+					objc_change(fi->tree, pop->formobj, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL | SHADOWED, 1);
 
 					/* Shortcut wieder deselektieren */
 					if (pop->formshort >= 0) {
-						objc_change(fi->tree, pop->formshort, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, sstate, 1);
+						objc_change(fi->tree, pop->formshort, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, sstate, 1);
 					}
 				}
 
@@ -2159,15 +2069,15 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
 					/* Listeneintrag in den Dialog uebernehmen */
 					if (fi->open) {
 						poplist_set(fi, pop);
-						objc_draw(fi->tree, pop->formset, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
-						objc_draw(fi->tree, pop->formobj, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						objc_draw(fi->tree, pop->formset, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
+						objc_draw(fi->tree, pop->formobj, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					}
 				}
 
 				/* Objektbaum neu zeichnen, falls n”tig */
 				if (fi->open) {
 					if (!pok && fi->state != FST_WIN)
-						objc_draw(fi->tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						objc_draw(fi->tree, ROOT, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 					/* Cursor einschalten */
 					if (*edit_obj == pop->formset)
@@ -2202,10 +2112,10 @@ int poplist_do(int mode, FORMINFO *fi, int obj, int ks, int kr, int *edit_obj,
  * Rueckgabe:
  * Gew„hlter Eintrag (ggf. -1), der auch in *pop gesetzt wird
  */
-int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
+short poplist_handle(POPLIST *pop, short px, short py, short width, short oh, short *pok,
 		OBJECT *father) {
 	EVENT mevent;
-	int sel, sel1, vnum, offset, offset1, done, pret, rt, mx, my, ox, oy,
+	short sel, sel1, vnum, offset, offset1, done, pret, rt, mx, my, ox, oy,
 			keyflag, dir, rs, ob, key, i, j, l, d;
 	long ssize, spos;
 	OBJECT *tree, *line, copy[LISTSIZE];
@@ -2242,7 +2152,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		offset = 0;
 
 	/* ... Liste */
-	rs_textadjust(tree, (tb.use3d && (tb.colors >= 16)) ? getBackgroundColor() : WHITE);
+	rs_textadjust(tree, (tb.use3d && (tb.colors >= 16)) ? getBackgroundColor() : G_WHITE);
 	tree[1].ob_width = sepline.ob_width = width - 1;
 	tree[1].ob_height = tb.ch_h * vnum;
 	pop->copy = copy;
@@ -2254,7 +2164,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		if (i < vnum) {
 			line->ob_flags &= ~HIDETREE;
 			strcpy(tmp, pop->list[i + offset]);
-			l = (int) strlen(pop->list[i + offset]);
+			l = (short) strlen(pop->list[i + offset]);
 			for (j = l; j < pop->len; j++)
 				tmp[j] = ' ';
 			tmp[j] = 0;
@@ -2299,8 +2209,8 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 
 		spos = (long) offset * ((long) tree[POPLISTSBAR].ob_height - ssize) / (long) (pop->num - vnum);
 	}
-	tree[POPLISTSLIDER].ob_height = (int) ssize;
-	tree[POPLISTSLIDER].ob_y = (int) spos;
+	tree[POPLISTSLIDER].ob_height = (short) ssize;
+	tree[POPLISTSLIDER].ob_y = (short) spos;
 
 	/* Die Trennlinie */
 	tree[POPLISTLINE].ob_x = tree[1].ob_width;
@@ -2318,27 +2228,27 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	tree->ob_height = pop_offy + tree[1].ob_height - 1;
 
 	/* ... vollst„ndig sichtbar ? */
-	if ((tree->ob_x + tree->ob_width + 3) > (tb.desk.x + tb.desk.w)) {
+	if ((tree->ob_x + tree->ob_width + 3) > (tb.desk.g_x + tb.desk.g_w)) {
 		if (father)
 			tree->ob_x = father->ob_x - tree->ob_width + tb.ch_w;
 		else
-			tree->ob_x = tb.desk.x + tb.desk.w - tree->ob_width - 3;
+			tree->ob_x = tb.desk.g_x + tb.desk.g_w - tree->ob_width - 3;
 	}
-	if (tree->ob_x <= tb.desk.x)
-		tree->ob_x = tb.desk.x + 1;
-	if ((tree->ob_y + tree->ob_height + 2) >= (tb.desk.y + tb.desk.h)) {
+	if (tree->ob_x <= tb.desk.g_x)
+		tree->ob_x = tb.desk.g_x + 1;
+	if ((tree->ob_y + tree->ob_height + 2) >= (tb.desk.g_y + tb.desk.g_h)) {
 		/* Liste verschieben oder nach oben "aufklappen" */
 		if (father) {
 			oy = tree->ob_y;
-			tree->ob_y = tb.desk.y + tb.desk.h - tree->ob_height - 2;
+			tree->ob_y = tb.desk.g_y + tb.desk.g_h - tree->ob_height - 2;
 			if ((oy - tree->ob_y) % tb.ch_h)
 				tree->ob_y += (oy - tree->ob_y) % tb.ch_h - tb.ch_h;
 		} else {
 			tree->ob_y = py - tree->ob_height - 1;
 
 			/* Trotzdem aužerhalb des Desktops ? */
-			if ((tree->ob_y + tree->ob_height + 2) >= (tb.desk.y + tb.desk.h))
-				tree->ob_y = tb.desk.y + tb.desk.h - tree->ob_height - 3;
+			if ((tree->ob_y + tree->ob_height + 2) >= (tb.desk.g_y + tb.desk.g_h))
+				tree->ob_y = tb.desk.g_y + tb.desk.g_h - tree->ob_height - 3;
 		}
 	}
 
@@ -2357,7 +2267,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 		*pok = 1;
 
 	/* Liste zeichnen */
-	objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+	objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 	/* Auf gehts ... */
 	done = 0;
@@ -2368,7 +2278,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 	 * Pruefen, ob Maustaste noch gedrueckt ist und ggf. Flag fuer
 	 * die Auswahl mit gedrueckter Maustaste setzen.
 	 */
-	evnt_timer(100, 0);
+	evnt_timer(100L);
 	graf_mkstate(&mevent.ev_mmox, &mevent.ev_mmoy, &mevent.ev_mbreturn, &mevent.ev_mmokstate);
 	if (mevent.ev_mbreturn & 3)
 		rt = 1;
@@ -2390,10 +2300,10 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 
 	mevent.ev_mflags = MU_KEYBD | MU_BUTTON | MU_M1;
 	mevent.ev_mm1flags = 0;
-	mevent.ev_mm1x = tb.desk.x;
-	mevent.ev_mm1y = tb.desk.y;
-	mevent.ev_mm1width = tb.desk.w;
-	mevent.ev_mm1height = tb.desk.h;
+	mevent.ev_mm1x = tb.desk.g_x;
+	mevent.ev_mm1y = tb.desk.g_y;
+	mevent.ev_mm1width = tb.desk.g_w;
+	mevent.ev_mm1height = tb.desk.g_h;
 	mevent.ev_mtlocount = 10;
 	mevent.ev_mthicount = 0;
 	mevent.ev_mbclicks = rt ? 1 : 257;
@@ -2469,14 +2379,14 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 							/* Maus oberhalb der Liste */
 							if (offset > 0) {
 								offset--;
-								evnt_timer(70, 0);
+								evnt_timer(70L);
 							}
 						} else {
 							if (mevent.ev_mmoy >= tree->ob_y + tree->ob_height) {
 								/* Maus unterhalb der Liste */
 								if (offset < pop->num - vnum) {
 									offset++;
-									evnt_timer(70, 0);
+									evnt_timer(70L);
 								}
 							}
 						}
@@ -2520,27 +2430,27 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 			case POPLISTUP: /* Arrow up */
 			case POPLISTDOWN: /* Arrow down */
 				if (!rt && mevent.ev_mwich & MU_BUTTON) {
-					objc_change(tree, ob, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
+					objc_change(tree, ob, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED, 1);
 
 					while (mevent.ev_mbreturn & 1) {
 						if (ob == POPLISTUP) {
 							if (offset > 0) {
 								offset--;
 								poplist_update(&offset, &offset1, pop, vnum, sel);
-								evnt_timer(70, 0); /* Slow down ... */
+								evnt_timer(70L); /* Slow down ... */
 							}
 						} else {
 							if (offset < pop->num - vnum) {
 								offset++;
 								poplist_update(&offset, &offset1, pop, vnum, sel);
-								evnt_timer(70, 0); /* Slow down ... */
+								evnt_timer(70L); /* Slow down ... */
 							}
 						}
 
 						/* Mausstatus */
 						graf_mkstate(&mevent.ev_mmox, &mevent.ev_mmoy, &mevent.ev_mbreturn, &mevent.ev_mmokstate);
 					}
-					objc_change(tree, ob, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
+					objc_change(tree, ob, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL, 1);
 				}
 				break;
 			case POPLISTSBAR: /* Scrollbar */
@@ -2588,7 +2498,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 
 						/* Bei 3D-Optik Slider selektieren */
 						if (tb.use3d) {
-							objc_change(tree, POPLISTSLIDER, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
+							objc_change(tree, POPLISTSLIDER, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED, 1);
 						}
 						/* Position des Sliders */
 						objc_offset(tree, POPLISTSLIDER, &px, &py);
@@ -2597,7 +2507,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 							/* Offset berechnen */
 							spos = (long) (pop->num - vnum) * (long) (mevent.ev_mmoy - oy - i) / (long) (tree[POPLISTSBAR].ob_height - tree[POPLISTSLIDER].ob_height);
 
-							offset = (int) spos;
+							offset = (short) spos;
 							if (offset < 0)
 								offset = 0;
 							if (offset > pop->num - vnum)
@@ -2615,7 +2525,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 
 						/* Bei 3D-Optik Slider deselektieren */
 						if (tb.use3d) {
-							objc_change(tree, POPLISTSLIDER, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
+							objc_change(tree, POPLISTSLIDER, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL, 1);
 						}
 						graf_mouse(ARROW, 0L);
 					}
@@ -2749,7 +2659,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 			offset = offset1;
 			/* Alte Auswahl sichtbar ? */
 			if (sel1 >= offset && sel1 < offset + vnum)
-				objc_change(tree, 2 + sel1 - offset, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
+				objc_change(tree, 2 + sel1 - offset, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL, 1);
 
 			/* Neue Auswahl sichtbar */
 			if (sel != -1) {
@@ -2758,7 +2668,7 @@ int poplist_handle(POPLIST *pop, int px, int py, int width, int oh, int *pok,
 				if (sel >= offset + vnum)
 					offset = sel - vnum + 1;
 				if (offset == offset1) {
-					objc_change(tree, 2 + sel - offset, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
+					objc_change(tree, 2 + sel - offset, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED, 1);
 				}
 			}
 			sel1 = sel;
@@ -2809,11 +2719,11 @@ void fw_update(struct wininfo *win) {
 
 	fi = (FORMINFO *) win->user;
 	tree = fi->tree;
-	tree->ob_x = win->work.x;
+	tree->ob_x = win->work.g_x;
 	if (tree[1].ob_state & WHITEBAK)
-		tree->ob_y = win->work.y - (tree[1].ob_y + tree[1].ob_height);
+		tree->ob_y = win->work.g_y - (tree[1].ob_y + tree[1].ob_height);
 	else
-		tree->ob_y = win->work.y;
+		tree->ob_y = win->work.g_y;
 }
 
 /* #pragma-Direktive um Warnung "... never used ..." zu unterdruecken */
@@ -2822,11 +2732,11 @@ void fw_prepare(struct wininfo *win) {
 }
 #pragma warn .par
 
-void fw_redraw(struct wininfo *win, RECT *area) {
+void fw_redraw(struct wininfo *win, GRECT *area) {
 	FORMINFO *fi;
 
 	fi = (FORMINFO *) win->user;
-	objc_draw(fi->tree, fi->drobj, MAX_DEPTH, area->x, area->y, area->w, area->h);
+	objc_draw(fi->tree, fi->drobj, MAX_DEPTH, area->g_x, area->g_y, area->g_w, area->g_h);
 }
 
 /**-------------------------------------------------------------------------
@@ -2839,7 +2749,7 @@ void frm_restore(FORMINFO *fi) {
 		return;
 
 	if (fi->win.state & WSICON)
-		win_unicon(&fi->win, fi->win.save.x, fi->win.save.y, fi->win.save.w, fi->win.save.h);
+		win_unicon(&fi->win, fi->win.save.g_x, fi->win.save.g_y, fi->win.save.g_w, fi->win.save.g_h);
 	win_top(&fi->win);
 }
 
@@ -2849,9 +2759,9 @@ void frm_restore(FORMINFO *fi) {
  Erweiterte Version von form_keybd() mit Beruecksichtigung von
  Tastaturshortcuts, [Insert] und [Ctrl]-C/X/V
  -------------------------------------------------------------------------*/
-int frm_keybd(FORMINFO *fi, int nobj, int *nextobj, int *nextchar, int kr,
-		int ks) {
-	int sobj;
+short frm_keybd(FORMINFO *fi, short nobj, short *nextobj, short *nextchar, short kr,
+		short ks) {
+	short sobj;
 
 	/* Erstmal auf Shortcut pruefen */
 	sobj = shortcut(fi->tree, ks, kr, fi->undo_obj, fi->help_obj);
@@ -2881,7 +2791,7 @@ int frm_keybd(FORMINFO *fi, int nobj, int *nextobj, int *nextchar, int kr,
  Text in ein Editfeld uebertragen, unter Beruecksichtigung des
  Cursors.
  -------------------------------------------------------------------------*/
-void frm_edstring(FORMINFO *fi, int obj, char *str) {
+void frm_edstring(FORMINFO *fi, short obj, char *str) {
 	if (fi->edit_obj == obj && fi->edit_idx != -1)
 		obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END,
 				fi->win.handle);
@@ -2906,7 +2816,7 @@ void frm_edstring(FORMINFO *fi, int obj, char *str) {
  * obj: Objektnummer des Editfelds, in das der Cursor gesetzt werden
  *      soll. 0 = Cursor l”schen
  */
-void frm_gotoedit(FORMINFO *fi, int obj) {
+void frm_gotoedit(FORMINFO *fi, short obj) {
 	if (obj) {
 		if (obj != fi->edit_obj) {
 			if (fi->edit_obj) {
@@ -2955,8 +2865,8 @@ void frm_norm(FORMINFO *fi) {
  auf jeden Fall). Die Variable 'state' der FORMINFO-Struktur wird
  entsprechend gesetzt.
  -------------------------------------------------------------------------*/
-void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
-	int ok, pn, x, y, w, h, domode;
+void frm_start(FORMINFO *fi, short wd, short cd, short mode) {
+	short ok, pn, x, y, w, h, domode;
 	FORMINFO *list;
 	EVENT event;
 
@@ -3043,21 +2953,21 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
 		tree_win(fi->tree, 1);
 		if (cd) {
 			/* Zentrieren, falls gewuenscht */
-			form_center(fi->tree, &fi->win.work.x, &fi->win.work.y, &fi->win.work.w, &fi->win.work.h);
+			form_center(fi->tree, &fi->win.work.g_x, &fi->win.work.g_y, &fi->win.work.g_w, &fi->win.work.g_h);
 		} else {
 			/* sonst aktuelle Werte beibehalten */
-			fi->win.work.x = fi->tree->ob_x;
-			fi->win.work.y = fi->tree->ob_y;
-			fi->win.work.w = fi->tree->ob_width;
-			fi->win.work.h = fi->tree->ob_height;
+			fi->win.work.g_x = fi->tree->ob_x;
+			fi->win.work.g_y = fi->tree->ob_y;
+			fi->win.work.g_w = fi->tree->ob_width;
+			fi->win.work.g_h = fi->tree->ob_height;
 		}
 		if (fi->tree[1].ob_state & WHITEBAK) {
-			fi->win.work.h -= (fi->tree[1].ob_y + fi->tree[1].ob_height);
-			fi->win.work.y += (fi->tree[1].ob_y + fi->tree[1].ob_height / 2);
+			fi->win.work.g_h -= (fi->tree[1].ob_y + fi->tree[1].ob_height);
+			fi->win.work.g_y += (fi->tree[1].ob_y + fi->tree[1].ob_height / 2);
 		}
 		/* Koordinaten sichern */
 		fi->ty = fi->tree->ob_y;
-		fi->wy = fi->win.work.y;
+		fi->wy = fi->win.work.g_y;
 		/* Fenster ”ffnen */
 		if (win_open(&fi->win, 0)) {
 			win_open(&fi->win, 1);
@@ -3135,7 +3045,7 @@ void frm_start(FORMINFO *fi, int wd, int cd, int mode) {
  -------------------------------------------------------------------------*/
 void frm_end(FORMINFO *fi) {
 	FORMINFO *prev, *next;
-	int handle, dummy;
+	short handle, d;
 
 	/* Mauszeiger wieder als Pfeil */
 	tb.mform = ARROW;
@@ -3180,7 +3090,7 @@ void frm_end(FORMINFO *fi) {
 		win_close(&fi->win);
 		tree_win(fi->tree, 0);
 		/* Koordinaten wiederherstellen */
-		fi->tree->ob_y = fi->ty + fi->win.work.y - fi->wy;
+		fi->tree->ob_y = fi->ty + fi->win.work.g_y - fi->wy;
 	}
 
 	/* Semaphore fuer Dialoge allgemein heruntersetzen */
@@ -3212,7 +3122,7 @@ void frm_end(FORMINFO *fi) {
 		tb.topfi = 0L;
 
 	/* Aktives Fenster ermitteln */
-	new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
+	wind_get(0, WF_TOP, &handle, &d, &d, &d);
 	tb.topwin = win_getwinfo(handle);
 	win_newtop(tb.topwin);
 }
@@ -3223,8 +3133,8 @@ void frm_end(FORMINFO *fi) {
  Zeichnet den Dialog komplett oder teilweise neu unter Beruecksichtigung
  eines eventuell aktiven Eingabefeldes
  -------------------------------------------------------------------------*/
-void frm_redraw(FORMINFO *fi, int obj) {
-	int x, y, w, h;
+void frm_redraw(FORMINFO *fi, short obj) {
+	short x, y, w, h;
 
 	if (fi->state == FST_WIN) {
 		objc_offset(fi->tree, obj, &x, &y);
@@ -3237,7 +3147,7 @@ void frm_redraw(FORMINFO *fi, int obj) {
 		if (fi->edit_obj && fi->edit_idx != -1)
 			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
 
-		objc_draw(fi->tree, obj, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		objc_draw(fi->tree, obj, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 		if (fi->edit_obj && fi->edit_idx != -1)
 			obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_INIT, fi->win.handle);
@@ -3252,7 +3162,7 @@ void frm_redraw(FORMINFO *fi, int obj) {
  -------------------------------------------------------------------------*/
 void frm_event(FORMINFO *fi, EVENT *mevent) {
 	WININFO *win;
-	int msg;
+	short msg;
 
 	msg = mevent->ev_mmgpbuf[0];
 
@@ -3334,13 +3244,13 @@ void frm_event(FORMINFO *fi, EVENT *mevent) {
  aktuelle Cursorposition im Editfeld
  -------------------------------------------------------------------------*/
 void frm_insert(FORMINFO *fi) {
-	/*	int fx, fy, fw, fh;*/
-	int pxy[4];
-	int sx, sy, sx1, sy1, skey;
-	/*	int mxy[8];
+	/*	short fx, fy, fw, fh;*/
+	short pxy[4];
+	short sx, sy, sx1, sy1, skey;
+	/*	short mxy[8];
 	 long msize;
 	 MFDB mfdb;*/
-	int done, mx, my;
+	short done, mx, my;
 	EVENT mevent;
 	char ch;
 	OBJECT *tree;
@@ -3355,14 +3265,14 @@ void frm_insert(FORMINFO *fi) {
 	tree->ob_x += (fi->tree[fi->edit_obj].ob_width / 2 - tree->ob_width / 2);
 	tree->ob_y += fi->tree[fi->edit_obj].ob_height;
 
-	if (tree->ob_x + tree->ob_width + 3 > tb.desk.x + tb.desk.w)
-		tree->ob_x = tb.desk.x + tb.desk.w - tree->ob_width - 3;
-	if (tree->ob_x <= tb.desk.x)
-		tree->ob_x = tb.desk.x + 1;
-	if (tree->ob_y + tree->ob_height + 3 > tb.desk.y + tb.desk.h)
-		tree->ob_y = tb.desk.y + tb.desk.h - tree->ob_height - 3;
-	if (tree->ob_y <= tb.desk.y)
-		tree->ob_y = tb.desk.y + 1;
+	if (tree->ob_x + tree->ob_width + 3 > tb.desk.g_x + tb.desk.g_w)
+		tree->ob_x = tb.desk.g_x + tb.desk.g_w - tree->ob_width - 3;
+	if (tree->ob_x <= tb.desk.g_x)
+		tree->ob_x = tb.desk.g_x + 1;
+	if (tree->ob_y + tree->ob_height + 3 > tb.desk.g_y + tb.desk.g_h)
+		tree->ob_y = tb.desk.g_y + tb.desk.g_h - tree->ob_height - 3;
+	if (tree->ob_y <= tb.desk.g_y)
+		tree->ob_y = tb.desk.g_y + 1;
 
 	/* Bildschirmhintergrund sichern */
 	if (!Screen2Buffer(tree->ob_x - 1, tree->ob_y - 1, tree->ob_width + 4, tree->ob_height + 4, TRUE)) {
@@ -3401,7 +3311,7 @@ void frm_insert(FORMINFO *fi) {
 		graf_mouse(M_ON,0L);
 #endif
 
-		objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		objc_draw(tree, ROOT, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 		/* Auswahl des Sonderzeichens */
 		vsf_perimeter(v_handle, 0);
@@ -3414,10 +3324,10 @@ void frm_insert(FORMINFO *fi) {
 		mevent.ev_mbstate = 0;
 		mevent.ev_mm1flags = 1;
 		mevent.ev_mm2flags = 0;
-		mevent.ev_mm1x = mevent.ev_mm2x = tb.desk.x;
-		mevent.ev_mm1y = mevent.ev_mm2y = tb.desk.y;
-		mevent.ev_mm1width = mevent.ev_mm2width = tb.desk.w;
-		mevent.ev_mm1height = mevent.ev_mm2height = tb.desk.h;
+		mevent.ev_mm1x = mevent.ev_mm2x = tb.desk.g_x;
+		mevent.ev_mm1y = mevent.ev_mm2y = tb.desk.g_y;
+		mevent.ev_mm1width = mevent.ev_mm2width = tb.desk.g_w;
+		mevent.ev_mm1height = mevent.ev_mm2height = tb.desk.g_h;
 		mx = my = -1;
 
 		while (!done) {
@@ -3582,9 +3492,9 @@ void frm_insert(FORMINFO *fi) {
  Aktuelles Eingabefeld in's GEM-Clipboard uebertragen bzw. von dort
  einlesen
  -------------------------------------------------------------------------*/
-int frm_ecopy(FORMINFO *fi) {
+short frm_ecopy(FORMINFO *fi) {
 	char spath[256], sname[256];
-	int l;
+	short l;
 	long fh, ret;
 	char *buf;
 
@@ -3596,7 +3506,7 @@ int frm_ecopy(FORMINFO *fi) {
 		mybeep();
 		return (0);
 	}
-	l = (int) strlen(spath);
+	l = (short) strlen(spath);
 	if (spath[l - 1] != '\\') {
 		strcat(spath, "\\");
 		l++;
@@ -3604,7 +3514,7 @@ int frm_ecopy(FORMINFO *fi) {
 
 	/* Inhalt des aktuellen Editfelds als Textdatei schreiben */
 	buf = fi->tree[fi->edit_obj].ob_spec.tedinfo->te_ptext;
-	l = (int) strlen(buf);
+	l = (short) strlen(buf);
 	strcpy(sname, spath);
 	strcat(sname, "SCRAP.TXT");
 	fh = Fcreate(sname, 0);
@@ -3612,8 +3522,8 @@ int frm_ecopy(FORMINFO *fi) {
 		mybeep();
 		return (0);
 	}
-	ret = Fwrite((int) fh, (long) l, buf);
-	Fclose((int) fh);
+	ret = Fwrite((short) fh, (long) l, buf);
+	Fclose((short) fh);
 	if (ret != (long) l) {
 		mybeep();
 		return (0);
@@ -3624,7 +3534,7 @@ int frm_ecopy(FORMINFO *fi) {
 
 void frm_epaste(FORMINFO *fi) {
 	char spath[256], sname[256];
-	int l;
+	short l;
 	long fh, ret;
 	char *buf;
 
@@ -3633,7 +3543,7 @@ void frm_epaste(FORMINFO *fi) {
 		mybeep();
 		return;
 	}
-	l = (int) strlen(spath);
+	l = (short) strlen(spath);
 	if (spath[l - 1] != '\\') {
 		strcat(spath, "\\");
 		l++;
@@ -3643,16 +3553,16 @@ void frm_epaste(FORMINFO *fi) {
 	buf = fi->tree[fi->edit_obj].ob_spec.tedinfo->te_ptext;
 	strcpy(sname, spath);
 	strcat(sname, "SCRAP.TXT");
-	fh = Fopen(sname, FO_READ);
+	fh = Fopen(sname, 0 /* FO_READ */ );
 	if (fh < 0L)
 		return;
 
 	l = fi->tree[fi->edit_obj].ob_spec.tedinfo->te_txtlen - 1;
 	obj_edit(fi->tree, fi->edit_obj, 0, 0, &fi->edit_idx, ED_END, fi->win.handle);
-	ret = Fread((int) fh, (long) l, buf);
-	Fclose((int) fh);
+	ret = Fread((short) fh, (long) l, buf);
+	Fclose((short) fh);
 	if (ret >= 0L)
-		buf[(int) ret] = 0;
+		buf[(short) ret] = 0;
 	else {
 		buf[0] = 0;
 		mybeep();
@@ -3672,8 +3582,8 @@ void frm_ecut(FORMINFO *fi) {
 	}
 }
 
-static void bubble_message(int id, int obj, int mx, int my) {
-	int bubble_gem, on_demand = 0;
+static void bubble_message(short id, short obj, short mx, short my) {
+	short bubble_gem, on_demand = 0;
 	static char *global_txt = NULL;
 	long id_and_obj;
 	BHELP *search;
@@ -3707,7 +3617,7 @@ static void bubble_message(int id, int obj, int mx, int my) {
 		global_txt[255] = 0;
 		strncpy(global_txt, search->txt, 255);
 		appl_send(bubble_gem, 0xBABB, PT56, mx, my, (long) global_txt, 0L, 0L);
-		evnt_timer(100, 0);
+		evnt_timer(100L);
 	}
 	if (on_demand) {
 		free_hlp(tb.hlp);
@@ -3720,13 +3630,13 @@ static void bubble_message(int id, int obj, int mx, int my) {
 
  Bearbeiten eines Dialogevents
  -------------------------------------------------------------------------*/
-int frm_do(FORMINFO *fi, EVENT *mevent) {
-	int edit_obj, next_obj, nobj, doini;
-	int pdo, eobj, new_idx;
+short frm_do(FORMINFO *fi, EVENT *mevent) {
+	short edit_obj, next_obj, nobj, doini;
+	short pdo, eobj, new_idx;
 	char ebuf1[256], ebuf2[256];
-	int x, y, tlen;
-	int mobj, mform;
-	int kr, mx, my, mb, ks;
+	short x, y, tlen;
+	short mobj, mform;
+	short kr, mx, my, mb, ks;
 
 	fi->cont = 1;
 
@@ -3972,7 +3882,7 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 								objc_offset(fi->tree, nobj, &x, &y);
 								x = obj_xleft(fi->tree, nobj);
 
-								tlen = (int) strlen(fi->tree[nobj].ob_spec.tedinfo->te_ptext);
+								tlen = (short) strlen(fi->tree[nobj].ob_spec.tedinfo->te_ptext);
 								new_idx = mevent->ev_mmox - x;
 								new_idx = obj_idxrel(fi->tree, nobj, new_idx);
 								if (new_idx > tlen)
@@ -4049,8 +3959,8 @@ int frm_do(FORMINFO *fi, EVENT *mevent) {
 
  Komplette Abwicklung eines Dialogs - analog zu form_do()
  -------------------------------------------------------------------------*/
-int frm_dial(FORMINFO *fi, EVENT *mevent) {
-	int done, ret, handle, dummy;
+short frm_dial(FORMINFO *fi, EVENT *mevent) {
+	short done, ret, handle, d;
 	WININFO *win;
 
 	done = 0;
@@ -4068,7 +3978,7 @@ int frm_dial(FORMINFO *fi, EVENT *mevent) {
 
 		/* Unter Single-TOS ggf. neues Top-Window ermitteln */
 		if (!(tb.sys & SY_MULTI) && !(tb.sys & SY_WINX)) {
-			new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
+			wind_get(0, WF_TOP, &handle, &d, &d, &d);
 			win = win_getwinfo(handle);
 			win_newtop(win);
 		}
@@ -4094,13 +4004,13 @@ int frm_dial(FORMINFO *fi, EVENT *mevent) {
 
  Zus„tzlich ist in 'altitle' ein Dialogtitel anzugeben
  -------------------------------------------------------------------------*/
-int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
+short frm_alert(short defbut, char *alstr, char *altitle, short wd, void *userinfo) {
 	EVENT mevent;
-	int icon, p, n, t, b, s;
+	short icon, p, n, t, b, s;
 	char *but[3];
 	char buf[60];
-	int alw, maxlen, butlen, done;
-	int cancelbut;
+	short alw, maxlen, butlen, done;
+	short cancelbut;
 	OBJECT *tree;
 
 	tree = rs_trindex[2];
@@ -4366,7 +4276,7 @@ int frm_alert(int defbut, char *alstr, char *altitle, int wd, void *userinfo) {
  *       noch ungesetzt ist
  */
 void lst_prepare(LISTINFO *li, OBJECT *tree) {
-	int x;
+	short x;
 
 	x = tree[li->ob_list].ob_x + tree[li->ob_list].ob_width + 1;
 	tree[li->ob_up].ob_x = tree[li->ob_box].ob_x = tree[li->ob_down].ob_x = x;
@@ -4380,8 +4290,8 @@ void lst_prepare(LISTINFO *li, OBJECT *tree) {
 
  Initialisiert eine Auswahlliste in einem Dialog
  -------------------------------------------------------------------------*/
-void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
-	int i, j;
+void lst_init(LISTINFO *li, short ilist, short islide, short dlist, short dslide) {
+	short i, j;
 	long ssize, spos;
 	OBJECT *tree;
 	char *s, *p;
@@ -4423,8 +4333,8 @@ void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
 			ssize = (long) tree[li->ob_box].ob_height;
 			spos = 0;
 		}
-		tree[li->ob_slide].ob_y = (int) spos;
-		tree[li->ob_slide].ob_height = (int) ssize;
+		tree[li->ob_slide].ob_y = (short) spos;
+		tree[li->ob_slide].ob_height = (short) ssize;
 	}
 
 	/* Dialog aktualisieren */
@@ -4451,8 +4361,8 @@ void lst_init(LISTINFO *li, int ilist, int islide, int dlist, int dslide) {
  * 0: Die Auswahlliste war vom Dialogereignis nicht betroffen
  * sonst: Auswahlliste behandelt, *dclick entsprechend gesetzt
  */
-int lst_handle(LISTINFO *li, int ret, int *dclick) {
-	int sx, sy, sd, mx, my, mb, ks, exob, sel, osel, retcode = 1;
+short lst_handle(LISTINFO *li, short ret, short *dclick) {
+	short sx, sy, sd, mx, my, mb, ks, exob, sel, osel, retcode = 1;
 
 	*dclick = 0;
 	exob = li->fi->exit_obj;
@@ -4506,13 +4416,13 @@ int lst_handle(LISTINFO *li, int ret, int *dclick) {
  (wird aufgerufen, wenn man mit der Maus auf die Pfeile des Scrollbars
  oder den Scrollbar-Hintergrund geklickt hat).
  -------------------------------------------------------------------------*/
-void lst_move(LISTINFO *li, int delta) {
-	int pxy[8];
-	int offset, odelta, omax;
-	int ox, oy, ow;
-	int first, last, vis;
-	int ffrag = 0, lfrag = 0;
-	int i;
+void lst_move(LISTINFO *li, short delta) {
+	short pxy[8];
+	short offset, odelta, omax;
+	short ox, oy, ow;
+	short first, last, vis;
+	short ffrag = 0, lfrag = 0;
+	short i;
 	OBJECT *tree;
 
 	if (li->num <= li->view)
@@ -4534,16 +4444,16 @@ void lst_move(LISTINFO *li, int delta) {
 		return;
 
 	first = 0;
-	while ((oy + first * tb.ch_h) < tb.desk.y)
+	while ((oy + first * tb.ch_h) < tb.desk.g_y)
 		first++;
 	if (first)
-		ffrag = (oy + first * tb.ch_h - tb.desk.y) % tb.ch_h;
+		ffrag = (oy + first * tb.ch_h - tb.desk.g_y) % tb.ch_h;
 
 	last = li->view;
-	while ((oy + last * tb.ch_h) > (tb.desk.y + tb.desk.h))
+	while ((oy + last * tb.ch_h) > (tb.desk.g_y + tb.desk.g_h))
 		last--;
 	if (last < li->view)
-		lfrag = (tb.desk.y + tb.desk.h - oy + last * tb.ch_h) % tb.ch_h;
+		lfrag = (tb.desk.g_y + tb.desk.g_h - oy + last * tb.ch_h) % tb.ch_h;
 	vis = last - first;
 	if (vis <= 0)
 		return;
@@ -4600,9 +4510,9 @@ void lst_move(LISTINFO *li, int delta) {
  Slider geklickt hat).
  -------------------------------------------------------------------------*/
 void lst_slide(LISTINFO *li) {
-	int i, offset, omax;
-	int mx, my, ks, mb;
-	int ox, oy, px, py;
+	short i, offset, omax;
+	short mx, my, ks, mb;
+	short ox, oy, px, py;
 	long spos;
 	OBJECT *tree;
 
@@ -4619,13 +4529,13 @@ void lst_slide(LISTINFO *li) {
 	graf_mouse(FLAT_HAND, 0L);
 	/* Bei 3D-Optik Slider selektieren */
 	if (tb.use3d)
-		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
+		objc_change(tree, li->ob_slide, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED, 1);
 
 	do {
 		/* Offset berechnen */
 		spos = (long) (li->num - li->view) * (long) (my - oy - i)
 				/ (long) (tree[li->ob_box].ob_height - tree[li->ob_slide].ob_height);
-		offset = (int) spos;
+		offset = (short) spos;
 		if (offset > omax)
 			offset = omax;
 
@@ -4640,7 +4550,7 @@ void lst_slide(LISTINFO *li) {
 	/* Bei 3D-Optik Slider deselektieren */
 	while (mb & 1);
 	if (tb.use3d)
-		objc_change(tree, li->ob_slide, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
+		objc_change(tree, li->ob_slide, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL, 1);
 
 	graf_mouse(ARROW, 0L);
 }
@@ -4660,20 +4570,20 @@ void lst_down(LISTINFO *li) {
 	lst_arrow(li, li->ob_down, 1);
 }
 
-static void lst_arrow(LISTINFO *li, int object, int dir) {
-	int mb, du;
+static void lst_arrow(LISTINFO *li, short object, short dir) {
+	short mb, du;
 
 	if (li->num <= li->view)
 		return;
 
-	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, SELECTED, 1);
+	objc_change(li->fi->tree, object, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, SELECTED, 1);
 	do {
 		lst_move(li, dir);
-		evnt_timer(70, 0);
+		evnt_timer(70L);
 		graf_mkstate(&du, &du, &mb, &du);
 	} while (mb & 1);
 
-	objc_change(li->fi->tree, object, 0, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, NORMAL, 1);
+	objc_change(li->fi->tree, object, 0, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, NORMAL, 1);
 }
 
 /*-------------------------------------------------------------------------
@@ -4681,9 +4591,9 @@ static void lst_arrow(LISTINFO *li, int object, int dir) {
 
  Selektiert einen Eintrag einer Auswahlliste.
  -------------------------------------------------------------------------*/
-void lst_select(LISTINFO *li, int sel) {
+void lst_select(LISTINFO *li, short sel) {
 	OBJECT *tree;
-	int ob;
+	short ob;
 
 	if (sel == li->sel)
 		return;
@@ -4695,7 +4605,7 @@ void lst_select(LISTINFO *li, int sel) {
 		if (li->sel >= li->offset && li->sel <= li->offset + li->view - 1) {
 			ob = li->ob_list + 1 + li->sel - li->offset;
 			tree[ob].ob_state &= ~SELECTED;
-			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			objc_draw(tree, ob, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		}
 	}
 
@@ -4705,7 +4615,7 @@ void lst_select(LISTINFO *li, int sel) {
 		if (li->sel >= li->offset && li->sel <= li->offset + li->view - 1) {
 			ob = li->ob_list + 1 + li->sel - li->offset;
 			tree[ob].ob_state |= SELECTED;
-			objc_draw(tree, ob, MAX_DEPTH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			objc_draw(tree, ob, MAX_DEPTH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		}
 	}
 }
@@ -4715,8 +4625,8 @@ void lst_select(LISTINFO *li, int sel) {
 
  Behandelt die Auswahl eines Listenelements mit der Tastatur
  -------------------------------------------------------------------------*/
-void lst_key(LISTINFO *li, int key) {
-	int sel, d, max;
+void lst_key(LISTINFO *li, short key) {
+	short sel, d, max;
 
 	if (!li->num)
 		return;
@@ -4784,26 +4694,6 @@ void lst_key(LISTINFO *li, int key) {
 }
 
 /**-------------------------------------------------------------------------
- rc_intersect()
-
- Schnittflaechenberechnung
- -------------------------------------------------------------------------*/
-int rc_intersect(RECT *p1, RECT *p2) {
-	int tx, ty, tw, th;
-
-	tw = min(p2->x + p2->w, p1->x + p1->w);
-	th = min(p2->y + p2->h, p1->y + p1->h);
-	tx = max(p2->x, p1->x);
-	ty = max(p2->y, p1->y);
-	p2->x = tx;
-	p2->y = ty;
-	p2->w = tw - tx;
-	p2->h = th - ty;
-
-	return ((tw > tx) && (th > ty));
-}
-
-/**-------------------------------------------------------------------------
  win_init()
 
  Initialisiert die Fensterverwaltung
@@ -4818,16 +4708,16 @@ void win_init(void) {
 
  "Ikonifiziert" ein Fenster
  -------------------------------------------------------------------------*/
-void win_icon(WININFO *win, int x, int y, int w, int h) {
-	int top;
+void win_icon(WININFO *win, short x, short y, short w, short h) {
+	short top;
 
 	if ((win->state & WSICON) || !(win->state & WSOPEN))
 		return;
 
-	win->save.x = win->curr.x;
-	win->save.y = win->curr.y;
-	win->save.w = win->curr.w;
-	win->save.h = win->curr.h;
+	win->save.g_x = win->curr.g_x;
+	win->save.g_y = win->curr.g_y;
+	win->save.g_w = win->curr.g_w;
+	win->save.g_h = win->curr.g_h;
 	wind_set(win->handle, WF_ICONIFY, x, y, w, h);
 	win_pupdate(win);
 	win->state |= WSICON;
@@ -4838,17 +4728,17 @@ void win_icon(WININFO *win, int x, int y, int w, int h) {
 	win_newtop(tb.topwin);
 }
 
-void win_unicon(WININFO *win, int x, int y, int w, int h) {
-	int top;
+void win_unicon(WININFO *win, short x, short y, short w, short h) {
+	short top;
 
 	wind_set(win->handle, WF_UNICONIFY, x, y, w, h);
 
 	/* Urspruengliche Koordinaten eintragen */
-	win->curr.x = win->save.x;
-	win->curr.y = win->save.y;
-	win->curr.w = win->save.w;
-	win->curr.h = win->save.h;
-	wind_set(win->handle, WF_CURRXYWH, win->curr.x, win->curr.y, win->curr.w, win->curr.h);
+	win->curr.g_x = win->save.g_x;
+	win->curr.g_y = win->save.g_y;
+	win->curr.g_w = win->save.g_w;
+	win->curr.g_h = win->save.g_h;
+	wind_set(win->handle, WF_CURRXYWH, win->curr.g_x, win->curr.g_y, win->curr.g_w, win->curr.g_h);
 	/* WININFO-Struktur aktualisieren */
 	win->state &= ~WSICON;
 	win_pupdate(win);
@@ -4859,29 +4749,29 @@ void win_unicon(WININFO *win, int x, int y, int w, int h) {
 	win_newtop(tb.topwin);
 }
 
-static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
+static short win_pos_ok(WININFO *win, GRECT *pos, short *w) {
 	WININFO *i;
-	RECT tst1, tst2;
-	int above, wid, d, ok = 0;
+	GRECT tst1, tst2;
+	short above, wid, d, ok = 0;
 
 	tst1 = *pos;
-	tst1.x -= tb.fhor;
-	tst1.y -= tb.fvert;
-	tst1.w += 2 * tb.fhor;
-	tst1.h += 2 * tb.fvert;
+	tst1.g_x -= tb.fhor;
+	tst1.g_y -= tb.fvert;
+	tst1.g_w += 2 * tb.fhor;
+	tst1.g_h += 2 * tb.fvert;
 	if (tb.sys & SY_OWNER) {
 		above = -1;
 		wid = 0;
-		if (new_wind_get(wid, WF_OWNER, &d, &d, &above, &d)) {
+		if (wind_get(wid, WF_OWNER, &d, &d, &above, &d)) {
 			ok = 1;
 			wid = above;
 			while (wid > 0) {
-				new_wind_get(wid, WF_CURRXYWH, &tst2.x, &tst2.y, &tst2.w, &tst2.h);
+				wind_get(wid, WF_CURRXYWH, &tst2.g_x, &tst2.g_y, &tst2.g_w, &tst2.g_h);
 				if (w != NULL)
-					*w = tst2.x + tst2.w - tst1.x;
+					*w = tst2.g_x + tst2.g_w - tst1.g_x;
 				if (rc_intersect(&tst1, &tst2))
 					return (0);
-				if (!new_wind_get(wid, WF_OWNER, &d, &d, &above, &d)) {
+				if (!wind_get(wid, WF_OWNER, &d, &d, &above, &d)) {
 					ok = 0;
 					break;
 				}
@@ -4898,7 +4788,7 @@ static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
 		tst2 = i->curr;
 		if (rc_intersect(&tst1, &tst2)) {
 			if (w != NULL)
-				*w = i->curr.x + i->curr.w - tst1.x;
+				*w = i->curr.g_x + i->curr.g_w - tst1.g_x;
 			return (0);
 		}
 	}
@@ -4919,38 +4809,38 @@ static int win_pos_ok(WININFO *win, RECT *pos, int *w) {
  interaktiv plaziert werden, falls das 14. Bit von mode gesetzt ist.
  Ansonsten wird das Fenster an der urspruenglichen Position ge”ffnet.
  -------------------------------------------------------------------------*/
-int win_open(WININFO *win, int mode) {
+short win_open(WININFO *win, short mode) {
 	WININFO *list;
 
 	if (!mode) {
 		if (win->state & WSWORKSIZE) {
 			/* Fenstergr”sse aus Arbeitsbereich berechnen */
-			wind_calc(WC_BORDER, win->flags, win->work.x, win->work.y,
-					win->work.w, win->work.h, &win->curr.x, &win->curr.y,
-					&win->curr.w, &win->curr.h);
+			wind_calc(WC_BORDER, win->flags, win->work.g_x, win->work.g_y,
+					win->work.g_w, win->work.g_h, &win->curr.g_x, &win->curr.g_y,
+					&win->curr.g_w, &win->curr.g_h);
 		}
 		if (win->state & WSDESKSIZE) {
 			/* Maximale Fenstergr”sse entspricht Desktopgr”sse */
-			win->full.x = tb.desk.x;
-			win->full.y = tb.desk.y;
-			win->full.w = tb.desk.w;
-			win->full.h = tb.desk.h;
+			win->full.g_x = tb.desk.g_x;
+			win->full.g_y = tb.desk.g_y;
+			win->full.g_w = tb.desk.g_w;
+			win->full.g_h = tb.desk.g_h;
 		}
 		if (win->state & WSFULLOPEN) {
 			/* Fenster mit maximaler Gr”sse ”ffnen */
-			win->curr.x = win->full.x;
-			win->curr.y = win->full.y;
-			win->curr.w = win->full.w;
-			win->curr.h = win->full.h;
+			win->curr.g_x = win->full.g_x;
+			win->curr.g_y = win->full.g_y;
+			win->curr.g_w = win->full.g_w;
+			win->curr.g_h = win->full.g_h;
 			win->state |= WSFULL;
 		}
 		/* Gr”že des Arbeitsbereichs berechnen */
-		wind_calc(WC_WORK, win->flags, win->curr.x, win->curr.y, win->curr.w,
-				win->curr.h, &win->work.x, &win->work.y, &win->work.w,
-				&win->work.h);
+		wind_calc(WC_WORK, win->flags, win->curr.g_x, win->curr.g_y, win->curr.g_w,
+				win->curr.g_h, &win->work.g_x, &win->work.g_y, &win->work.g_w,
+				&win->work.g_h);
 
 		/* Fenster erzeugen */
-		win->handle = wind_create(win->flags, win->full.x, win->full.y, win->full.w, win->full.h);
+		win->handle = wind_create(win->flags, win->full.g_x, win->full.g_y, win->full.g_w, win->full.g_h);
 		if (win->handle <= 0)
 			return (0);
 
@@ -4977,25 +4867,25 @@ int win_open(WININFO *win, int mode) {
 		/* Fenster ”ffnen */
 		if (mode & 0xc000) {
 			if ((mode & 0x8000) || !win_pos_ok(win, &win->curr, NULL)) {
-				RECT tst, mx;
-				int x, y, w, ok;
+				GRECT tst, mx;
+				short x, y, w, ok;
 
 				ok = 0;
 				if (mode & 0x8000) {
-					mx.x = tb.desk.x + tb.fleft;
-					mx.y = tb.desk.y + tb.fupper;
-					mx.w = tb.desk.w - tb.fleft - tb.fright;
-					mx.h = tb.desk.h - tb.fupper - tb.flower;
-					tst.w = win->curr.w = min(mx.w, win->curr.w);
-					tst.h = win->curr.h = min(mx.h, win->curr.h);
-					for (y = tb.desk.y + tb.fupper; (y + tst.h)
-							<= (mx.y + mx.h); y += 8) {
-						tst.y = y;
-						for (x = tb.desk.x + tb.fleft; (x + tst.w) <= (mx.x + mx.w); x += 8) {
-							tst.x = x;
+					mx.g_x = tb.desk.g_x + tb.fleft;
+					mx.g_y = tb.desk.g_y + tb.fupper;
+					mx.g_w = tb.desk.g_w - tb.fleft - tb.fright;
+					mx.g_h = tb.desk.g_h - tb.fupper - tb.flower;
+					tst.g_w = win->curr.g_w = min(mx.g_w, win->curr.g_w);
+					tst.g_h = win->curr.g_h = min(mx.g_h, win->curr.g_h);
+					for (y = tb.desk.g_y + tb.fupper; (y + tst.g_h)
+							<= (mx.g_y + mx.g_h); y += 8) {
+						tst.g_y = y;
+						for (x = tb.desk.g_x + tb.fleft; (x + tst.g_w) <= (mx.g_x + mx.g_w); x += 8) {
+							tst.g_x = x;
 							if (win_pos_ok(win, &tst, &w)) {
-								win->curr.x = x;
-								win->curr.y = y;
+								win->curr.g_x = x;
+								win->curr.g_y = y;
 								ok = 1;
 								break;
 							}
@@ -5007,22 +4897,22 @@ int win_open(WININFO *win, int mode) {
 					}
 				}
 				if (!ok) {
-					if ((mode & 0x4000) && grf_dragbox(win->curr.w,
-							win->curr.h, tb.desk.x, tb.desk.y, tb.desk.w
-									+ win->curr.w - 1, tb.desk.h + win->curr.h
+					if ((mode & 0x4000) && grf_dragbox(win->curr.g_w,
+							win->curr.g_h, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w
+									+ win->curr.g_w - 1, tb.desk.g_h + win->curr.g_h
 									- 1, -1, -1, &x, &y)) {
-						win->curr.x = x;
-						win->curr.y = y;
+						win->curr.g_x = x;
+						win->curr.g_y = y;
 					} else {
 						if (mode & 0x8000) {
-							if (win->curr.x < mx.x)
-								win->curr.x = mx.x;
-							if (win->curr.y < mx.y)
-								win->curr.y = mx.y;
-							if ((win->curr.x + win->curr.w) > (mx.x + mx.w))
-								win->curr.x = mx.x + mx.w - win->curr.w;
-							if ((win->curr.y + win->curr.h) > (mx.y + mx.h))
-								win->curr.y = mx.y + mx.h - win->curr.h;
+							if (win->curr.g_x < mx.g_x)
+								win->curr.g_x = mx.g_x;
+							if (win->curr.g_y < mx.g_y)
+								win->curr.g_y = mx.g_y;
+							if ((win->curr.g_x + win->curr.g_w) > (mx.g_x + mx.g_w))
+								win->curr.g_x = mx.g_x + mx.g_w - win->curr.g_w;
+							if ((win->curr.g_y + win->curr.g_h) > (mx.g_y + mx.g_h))
+								win->curr.g_y = mx.g_y + mx.g_h - win->curr.g_h;
 						}
 					}
 				}
@@ -5031,7 +4921,7 @@ int win_open(WININFO *win, int mode) {
 
 		tb.topwin = win;
 		win->state |= WSOPEN;
-		wind_open(win->handle, win->curr.x, win->curr.y, win->curr.w, win->curr.h);
+		wind_open(win->handle, win->curr.g_x, win->curr.g_y, win->curr.g_w, win->curr.g_h);
 		win_pupdate(win);
 
 		/* Slider setzen */
@@ -5066,10 +4956,10 @@ void win_close(WININFO *win) {
 		win->state &= ~WSINIT;
 		/* Falls ikonifiziert, dann urspruengliche Koordinaten eintragen */
 		if (win->state & WSICON) {
-			win->curr.x = win->save.x;
-			win->curr.y = win->save.y;
-			win->curr.w = win->save.w;
-			win->curr.h = win->save.h;
+			win->curr.g_x = win->save.g_x;
+			win->curr.g_y = win->save.g_y;
+			win->curr.g_w = win->save.g_w;
+			win->curr.g_h = win->save.g_h;
 			win->state &= ~WSICON;
 		}
 
@@ -5095,9 +4985,9 @@ void win_close(WININFO *win) {
 
  Zeichnet einen Auschnitt des Fensterinhalts.
  -------------------------------------------------------------------------*/
-void win_redraw(WININFO *win, int x, int y, int w, int h) {
-	RECT area, full, box;
-	int pxy[4];
+void win_redraw(WININFO *win, short x, short y, short w, short h) {
+	GRECT area, full, box;
+	short pxy[4];
 	FORMINFO *fi;
 
 	/* AES sperren und Maus abschalten */
@@ -5105,20 +4995,20 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	graf_mouse(M_OFF, 0L);
 
 	/* Vorbereitungen */
-	area.x = x;
-	area.y = y;
-	area.w = w;
-	area.h = h;
+	area.g_x = x;
+	area.g_y = y;
+	area.g_w = w;
+	area.g_h = h;
 
 	if (win->state & WSICON) {
 		/* Fenster ikonifiziert */
 		if (win->ictree) {
-			win->ictree->ob_x = win->work.x;
-			win->ictree->ob_y = win->work.y;
-			win->ictree->ob_width = win->work.w;
-			win->ictree->ob_height = win->work.h;
-			win->ictree[1].ob_x = (win->work.w - win->ictree[1].ob_width) / 2;
-			win->ictree[1].ob_y = (win->work.h - win->ictree[1].ob_height) / 2;
+			win->ictree->ob_x = win->work.g_x;
+			win->ictree->ob_y = win->work.g_y;
+			win->ictree->ob_width = win->work.g_w;
+			win->ictree->ob_height = win->work.g_h;
+			win->ictree[1].ob_x = (win->work.g_w - win->ictree[1].ob_width) / 2;
+			win->ictree[1].ob_y = (win->work.g_h - win->ictree[1].ob_height) / 2;
 		} else {
 			vsf_interior(tb.vdi_handle, FIS_HOLLOW);
 			vsf_perimeter(tb.vdi_handle, 0);
@@ -5140,30 +5030,30 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 	}
 
 	/* Gr”že des Arbeitsbereiches */
-	new_wind_get(win->handle, WF_CURRXYWH, &full.x, &full.y, &full.w, &full.h);
+	wind_get(win->handle, WF_CURRXYWH, &full.g_x, &full.g_y, &full.g_w, &full.g_h);
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	new_wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(win->handle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		if (rc_intersect(&full, &box)) /* sichtbar? */
 		{
 			/* Nur durchfuehren, wenn freies Rechteck innerhalb des zu
 			 zeichnenden Bereichs liegt */
 			if (rc_intersect(&area, &box)) {
 				/* Clipping ein */
-				pxy[0] = box.x;
-				pxy[1] = box.y;
-				pxy[2] = pxy[0] + box.w - 1;
-				pxy[3] = pxy[1] + box.h - 1;
+				pxy[0] = box.g_x;
+				pxy[1] = box.g_y;
+				pxy[2] = pxy[0] + box.g_w - 1;
+				pxy[3] = pxy[1] + box.g_h - 1;
 				if (win->class!=WCDIAL)
 					vs_clip(tb.vdi_handle, 1, pxy);
 
 				if (win->state & WSICON) /* Fenster ikonifiziert */
 				{
 					if (win->ictree)
-						objc_draw(win->ictree, ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
+						objc_draw(win->ictree, ROOT, MAX_DEPTH, box.g_x, box.g_y, box.g_w, box.g_h);
 					else
 						v_bar(tb.vdi_handle, pxy);
 				} else {
@@ -5177,7 +5067,7 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 			}
 		}
 		/* N„chstes freies Rechteck holen */
-		new_wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(win->handle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 
 	/* Falls Dialog dann ggf. Cursor wieder einschalten */
@@ -5196,10 +5086,10 @@ void win_redraw(WININFO *win, int x, int y, int w, int h) {
 
  Verschiebt den Fensterinhalt.
  -------------------------------------------------------------------------*/
-void win_scroll(WININFO *win, int x, int y) {
-	RECT box, rbox;
-	int pxy[8];
-	int mx, my, mw, mh;
+void win_scroll(WININFO *win, short x, short y) {
+	GRECT box, rbox;
+	short pxy[8];
+	short mx, my, mw, mh;
 
 	/* AES sperren und Maus abschalten */
 	wind_update( BEG_UPDATE);
@@ -5212,10 +5102,10 @@ void win_scroll(WININFO *win, int x, int y) {
 		win->prepare(win);
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	new_wind_get(win->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(win->handle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		/*
 		 * Nur durchfuehren, wenn Teil-Rechteck ganz oder teilweise
 		 * innerhalb des Desktops liegt.
@@ -5232,23 +5122,23 @@ void win_scroll(WININFO *win, int x, int y) {
 				my = -y;
 
 			/* Teilbereich verschieben, wenn m”glich */
-			if (mx < box.w && my < box.h) {
-				mw = box.w - mx;
-				mh = box.h - my;
+			if (mx < box.g_w && my < box.g_h) {
+				mw = box.g_w - mx;
+				mh = box.g_h - my;
 
 				/* Koordinaten fuer Verschiebung berechnen */
 				if (x > 0)
-					pxy[0] = box.x;
+					pxy[0] = box.g_x;
 				else
-					pxy[0] = box.x + box.w - mw;
+					pxy[0] = box.g_x + box.g_w - mw;
 				pxy[2] = pxy[0] + mw - 1;
 				pxy[4] = pxy[0] + x;
 				pxy[6] = pxy[2] + x;
 
 				if (y > 0)
-					pxy[1] = box.y;
+					pxy[1] = box.g_y;
 				else
-					pxy[1] = box.y + box.h - mh;
+					pxy[1] = box.g_y + box.g_h - mh;
 				pxy[3] = pxy[1] + mh - 1;
 				pxy[5] = pxy[1] + y;
 				pxy[7] = pxy[3] + y;
@@ -5260,18 +5150,18 @@ void win_scroll(WININFO *win, int x, int y) {
 				if (mx > 0) /* Fl„che 1 (senkrecht) */
 				{
 					if (x < 0)
-						rbox.x = box.x + box.w - mx;
+						rbox.g_x = box.g_x + box.g_w - mx;
 					else
-						rbox.x = box.x;
-					rbox.y = box.y;
-					rbox.h = box.h;
-					rbox.w = mx;
+						rbox.g_x = box.g_x;
+					rbox.g_y = box.g_y;
+					rbox.g_h = box.g_h;
+					rbox.g_w = mx;
 
 					/* Clipping ein */
-					pxy[0] = rbox.x;
-					pxy[1] = rbox.y;
-					pxy[2] = pxy[0] + rbox.w - 1;
-					pxy[3] = pxy[1] + rbox.h - 1;
+					pxy[0] = rbox.g_x;
+					pxy[1] = rbox.g_y;
+					pxy[2] = pxy[0] + rbox.g_w - 1;
+					pxy[3] = pxy[1] + rbox.g_h - 1;
 					vs_clip(tb.vdi_handle, 1, pxy);
 
 					/* Redraw-Prozedur aufrufen */
@@ -5283,25 +5173,25 @@ void win_scroll(WININFO *win, int x, int y) {
 				if (my > 0) /* Fl„che 2 (waagrecht) */
 				{
 					if (y < 0)
-						rbox.y = box.y + box.h - my;
+						rbox.g_y = box.g_y + box.g_h - my;
 					else
-						rbox.y = box.y;
-					rbox.x = box.x;
-					rbox.w = box.w;
-					rbox.h = my;
+						rbox.g_y = box.g_y;
+					rbox.g_x = box.g_x;
+					rbox.g_w = box.g_w;
+					rbox.g_h = my;
 
 					/* Schnittfl„che mit Fl„che 1 abschneiden */
 					if (mx > 0) {
-						rbox.w -= mx;
+						rbox.g_w -= mx;
 						if (x > 0)
-							rbox.x += x;
+							rbox.g_x += x;
 					}
 
 					/* Clipping ein */
-					pxy[0] = rbox.x;
-					pxy[1] = rbox.y;
-					pxy[2] = pxy[0] + rbox.w - 1;
-					pxy[3] = pxy[1] + rbox.h - 1;
+					pxy[0] = rbox.g_x;
+					pxy[1] = rbox.g_y;
+					pxy[2] = pxy[0] + rbox.g_w - 1;
+					pxy[3] = pxy[1] + rbox.g_h - 1;
 					vs_clip(tb.vdi_handle, 1, pxy);
 
 					/* Redraw-Prozedur aufrufen */
@@ -5313,10 +5203,10 @@ void win_scroll(WININFO *win, int x, int y) {
 			} else {
 				/* Nicht m”glich, dann komplett neu zeichnen */
 				/* Clipping ein */
-				pxy[0] = box.x;
-				pxy[1] = box.y;
-				pxy[2] = pxy[0] + box.w - 1;
-				pxy[3] = pxy[1] + box.h - 1;
+				pxy[0] = box.g_x;
+				pxy[1] = box.g_y;
+				pxy[2] = pxy[0] + box.g_w - 1;
+				pxy[3] = pxy[1] + box.g_h - 1;
 				vs_clip(tb.vdi_handle, 1, pxy);
 
 				/* Redraw-Prozedur aufrufen */
@@ -5328,7 +5218,7 @@ void win_scroll(WININFO *win, int x, int y) {
 		}
 
 		/* N„chstes freies Rechteck holen */
-		new_wind_get(win->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(win->handle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 
 	/* Maus einschalten und AES freigeben */
@@ -5343,7 +5233,7 @@ void win_scroll(WININFO *win, int x, int y) {
  -------------------------------------------------------------------------*/
 void win_pupdate(WININFO *win) {
 	/* Gr”sse des Arbeitsbereiches abfragen */
-	new_wind_get(win->handle, WF_WORKXYWH, &win->work.x, &win->work.y, &win->work.w, &win->work.h);
+	wind_get(win->handle, WF_WORKXYWH, &win->work.g_x, &win->work.g_y, &win->work.g_w, &win->work.g_h);
 
 	/* Window-Update aufrufen, falls vorhanden */
 	if (win->update)
@@ -5355,19 +5245,19 @@ void win_pupdate(WININFO *win) {
 
  Žndert die Gr”sse eines Fensters.
  -------------------------------------------------------------------------*/
-void win_size(WININFO *win, int x, int y, int w, int h) {
-	int slide;
+void win_size(WININFO *win, short x, short y, short w, short h) {
+	short slide;
 
-	if (win->curr.w != w || win->curr.h != h)
+	if (win->curr.g_w != w || win->curr.g_h != h)
 		slide = 1;
 	else
 		slide = 0;
 
 	/* Neue Gr”že eintragen */
-	win->curr.x = x;
-	win->curr.y = y;
-	win->curr.w = w;
-	win->curr.h = h;
+	win->curr.g_x = x;
+	win->curr.g_y = y;
+	win->curr.g_w = w;
+	win->curr.g_h = h;
 
 	/* Gr”že setzen */
 	wind_set(win->handle, WF_CURRXYWH, x, y, w, h);
@@ -5406,23 +5296,23 @@ void win_size(WININFO *win, int x, int y, int w, int h) {
  Zustand.
  -------------------------------------------------------------------------*/
 void win_full(WININFO *win) {
-	int x, y, w, h;
+	short x, y, w, h;
 
 	/* Fulled/Actual-Gr”že ermitteln */
 	if (win->state & WSFULL)
-		new_wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
+		wind_get(win->handle, WF_PREVXYWH, &x, &y, &w, &h);
 	else /* wind_get(win->handle,WF_FULLXYWH,&x,&y,&w,&h); */
 	{
-		x = win->full.x;
-		y = win->full.y;
-		w = win->full.w;
-		h = win->full.h;
+		x = win->full.g_x;
+		y = win->full.g_y;
+		w = win->full.g_w;
+		h = win->full.g_h;
 	}
 	wind_set(win->handle, WF_CURRXYWH, x, y, w, h);
 	/* Parameter aktualisieren */
 	win_pupdate(win);
 	/* Slider aktualisieren, falls n”tig */
-	if (win->curr.w != w || win->curr.h != h) {
+	if (win->curr.g_w != w || win->curr.g_h != h) {
 		win_slide(win, S_INIT, 0, 0);
 		/* Falls erwuenscht, dann Redraw-Message fuer kompletten Arbeits-
 		 bereich verschicken */
@@ -5439,10 +5329,10 @@ void win_full(WININFO *win) {
 		}
 	}
 	/* Gr”sse eintragen und "Fulled"-Status setzen */
-	win->curr.x = x;
-	win->curr.y = y;
-	win->curr.w = w;
-	win->curr.h = h;
+	win->curr.g_x = x;
+	win->curr.g_y = y;
+	win->curr.g_w = w;
+	win->curr.g_h = h;
 	win->state ^= WSFULL;
 }
 
@@ -5454,7 +5344,7 @@ void win_full(WININFO *win) {
  -------------------------------------------------------------------------*/
 void win_newtop(WININFO *win) {
 	EVENT mevent;
-	int exit_obj;
+	short exit_obj;
 
 	tb.topwin = win;
 	tb.topfi = 0L;
@@ -5475,10 +5365,10 @@ void win_newtop(WININFO *win) {
 		/* Dialog auf, dann ggf. Mauszeiger neu setzen */
 		mevent.ev_mflags = MU_M1 | MU_TIMER;
 		mevent.ev_mm1flags = 0;
-		mevent.ev_mm1x = tb.desk.x;
-		mevent.ev_mm1y = tb.desk.y;
-		mevent.ev_mm1width = tb.desk.w;
-		mevent.ev_mm1height = tb.desk.h;
+		mevent.ev_mm1x = tb.desk.g_x;
+		mevent.ev_mm1y = tb.desk.g_y;
+		mevent.ev_mm1width = tb.desk.g_w;
+		mevent.ev_mm1height = tb.desk.g_h;
 		mevent.ev_mtlocount = 1;
 		mevent.ev_mthicount = 0;
 		EvntMulti(&mevent);
@@ -5502,7 +5392,7 @@ void win_top(WININFO *win) {
 	else
 		twin = win;
 
-	wind_set(twin->handle, WF_TOP); /* Nach oben stellen */
+	wind_set(twin->handle, WF_TOP, 0, 0, 0, 0); /* Nach oben stellen */
 	win_newtop(twin);
 }
 
@@ -5513,9 +5403,9 @@ void win_top(WININFO *win) {
  -------------------------------------------------------------------------*/
 void win_updtinfo(WININFO *win) {
 	if (win->flags & NAME)
-		wind_set(win->handle, WF_NAME, win->name);
+		wind_set_str(win->handle, WF_NAME, win->name);
 	if (win->flags & INFO)
-		wind_set(win->handle, WF_INFO, win->info);
+		wind_set_str(win->handle, WF_INFO, win->info );
 }
 
 /**-------------------------------------------------------------------------
@@ -5523,7 +5413,7 @@ void win_updtinfo(WININFO *win) {
 
  Verschieben des Fensterinhalts, Setzen der Slider
  -------------------------------------------------------------------------*/
-void win_slide(WININFO *win, int mode, int h, int v) {
+void win_slide(WININFO *win, short mode, short h, short v) {
 	if (win->state & WSICON)
 		return;
 	if (win->slide)
@@ -5537,9 +5427,9 @@ void win_slide(WININFO *win, int mode, int h, int v) {
  man einen Zeiger auf die WININFO-Struktur oder 0L, falls kein Fenster
  mit dem angegebenen Handle vorhanden ist.
  -------------------------------------------------------------------------*/
-WININFO *win_getwinfo(int handle) {
+WININFO *win_getwinfo(short handle) {
 	WININFO *list;
-	int done;
+	short done;
 
 	if (tb.win) {
 		list = tb.win;
@@ -5564,9 +5454,9 @@ WININFO *win_getwinfo(int handle) {
 
  Fontgroessen-Unabhaengiges rsrc_obfix.
  -------------------------------------------------------------------------*/
-void rs_fix(OBJECT *tree, int orig_cw, int orig_ch) {
+void rs_fix(OBJECT *tree, short orig_cw, short orig_ch) {
 	OBJECT *obj;
-	int rest_x, rest_y, rest_w, rest_h;
+	short rest_x, rest_y, rest_w, rest_h;
 
 	for (obj = tree;;) {
 		if (orig_cw != 0) {
@@ -5614,8 +5504,8 @@ void rs_fix(OBJECT *tree, int orig_cw, int orig_ch) {
  * tree: Zeiger auf Objektbaum
  * bg: VDI-Farbindex der Hintergrundfarbe
  */
-void rs_textadjust(OBJECT *tree, int bg) {
-	int i;
+void rs_textadjust(OBJECT *tree, short bg) {
+	short i;
 
 	bg &= 0xf;
 	for (i = 0;; i++) {
@@ -5645,12 +5535,12 @@ void rs_textadjust(OBJECT *tree, int bg) {
  -------------------------------------------------------------------------*/
 void scrap_clear(void) {
 	char spath[256], l;
-	DTA *odta, dta;
+	_DTA *odta, dta;
 
 	/* Aktuellen Clipboardpfad ermitteln */
 	if (!scrp_read(spath))
 		return;
-	l = (int) strlen(spath);
+	l = (short) strlen(spath);
 	if (spath[l - 1] != '\\') {
 		strcat(spath, "\\");
 		l++;
@@ -5664,7 +5554,7 @@ void scrap_clear(void) {
 	strcpy(&spath[l], "SCRAP.*");
 	if (!Fsfirst(spath, FA_HIDDEN | FA_SYSTEM)) {
 		do {
-			strcpy(&spath[l], dta.d_fname);
+			strcpy(&spath[l], dta.dta_name);
 			Fdelete(spath);
 		} while (!Fsnext());
 	}
@@ -5679,9 +5569,9 @@ void scrap_clear(void) {
 
  "Multitasking-Version" von menu_tnormal()
  -------------------------------------------------------------------------*/
-void mn_tnormal(OBJECT *tree, int title, int normal) {
+void mn_tnormal(OBJECT *tree, short title, short normal) {
 #ifdef OLD_MENU
-	int id,state;
+	short id,state;
 
 	if(normal) state=tree[title].ob_state&~SELECTED;
 	else state=tree[title].ob_state|SELECTED;
@@ -5720,17 +5610,17 @@ void mn_tnormal(OBJECT *tree, int title, int normal) {
  wird sp„ter ausgewertet
  fid  - Beliebige ID fuer sp„tere Auswertung der Freedom-Antwort
  -------------------------------------------------------------------------*/
-int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
-		int fret, int fid) {
+short fselect(char *fs_einpath, char *fs_einsel, short *fs_eexbutton, char *elabel,
+		short fret, short fid) {
 	static Fdm_Str *fdm = NULL;
 	SLCT_STR *selectric;
 	char lpath[256 + sizeof(Fdm_Str)];
-	int ret, done;
+	short ret, done;
 	char *fpath, *fname;
 	EVENT mevent;
 	WININFO *win;
-	int handle, dummy;
-	int use_mctrl;
+	short handle, d;
+	short use_mctrl;
 
 	/* Freedom-Daten initialisieren */
 	if (!fdm)
@@ -5751,7 +5641,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 
 	strcpy(fpath, fs_einpath);
 	if (fdm)
-		strcpy(&fpath[(int) strlen(fpath) + 1], "?Fdm");
+		strcpy(&fpath[(short) strlen(fpath) + 1], "?Fdm");
 
 	/* FSEL-Cookie ermitteln */
 	if (!getCookie('FSEL', (long *) &selectric))
@@ -5793,7 +5683,7 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
 
 			/* Unter Single-TOS ggf. neues Top-Window ermitteln */
 			if (!(tb.sys & SY_MULTI) && !(tb.sys & SY_WINX)) {
-				new_wind_get(0, WF_TOP, &handle, &dummy, &dummy, &dummy);
+				wind_get(0, WF_TOP, &handle, &d, &d, &d);
 				win = win_getwinfo(handle);
 				win_newtop(win);
 			}
@@ -5885,9 +5775,9 @@ int fselect(char *fs_einpath, char *fs_einsel, int *fs_eexbutton, char *elabel,
  id == -(app_id + 1)), werden beim Umschalten auf die eigene
  Applikation auch die Fenster mitgetoppt.
  -------------------------------------------------------------------------*/
-void magx_switch(int id, int top) {
-	int ap_id, twin, magictop, notme, dummy, win, owner, above, winds;
-	static int windows[256];
+void magx_switch(short id, short top) {
+	short ap_id, twin, magictop, notme, dummy, win, owner, above, winds;
+	static short windows[256];
 
 	/* Nur wenn MagiC oder N.AES ueberhaupt vorhanden */
 	if (!(tb.sys & SY_MAGX) && !(tb.sys & SY_NAES))
@@ -5904,9 +5794,9 @@ void magx_switch(int id, int top) {
 	/* Eigentuemer der aktiven Menueleiste ermitteln */
 	ap_id = menu_bar(0x0L, -1);
 	/* Eigentuemer des obersten Fensters ermitteln */
-	if (new_wind_get(0, WF_TOP, &twin, &owner, &dummy, &magictop)) {
+	if (wind_get(0, WF_TOP, &twin, &owner, &dummy, &magictop)) {
 		if ((twin == -2) && (tb.sys & SY_MAGX)) {
-			if (!new_wind_get(magictop, WF_OWNER, &owner, &dummy, &dummy, &dummy))
+			if (!wind_get(magictop, WF_OWNER, &owner, &dummy, &dummy, &dummy))
 				owner = -1;
 		}
 	} else
@@ -5920,10 +5810,10 @@ void magx_switch(int id, int top) {
 		/* Alle Fenster der betroffenen Applikation ermitteln */
 		above = -1;
 		winds = win = 0;
-		if (new_wind_get(win, WF_OWNER, &owner, &dummy, &above, &dummy)) {
+		if (wind_get(win, WF_OWNER, &owner, &dummy, &above, &dummy)) {
 			win = above;
 			while (win > 0) {
-				if (!new_wind_get(win, WF_OWNER, &owner, &dummy, &above, &dummy))
+				if (!wind_get(win, WF_OWNER, &owner, &dummy, &above, &dummy))
 					break;
 				if (owner == id)
 					windows[winds++] = win;
@@ -5978,8 +5868,8 @@ void magx_switch(int id, int top) {
  * TRUE: Alles OK. Nur dann darf nach flag == TRUE ein Aufruf
  *       mit flag == FALSE folgen
  */
-int Screen2Buffer(int x, int y, int w, int h, int flag) {
-	int pxy[8];
+short Screen2Buffer(short x, short y, short w, short h, short flag) {
+	short pxy[8];
 	long msize;
 	static count = 0;
 	static MFDB buffers[MAX_BUFFERS];
@@ -6066,14 +5956,14 @@ int Screen2Buffer(int x, int y, int w, int h, int flag) {
  * pxy: Zeiger auf ein Array mit den x/y-Koordinaten der Eckpunkte
  * n: Anzahl der Koordinatenpaare in pxy
  */
-void grf_ghostbox(int *pxy, int n) {
-	int i, vert, swap, style, x1, x2, y1, y2, xy[4];
+void grf_ghostbox(short *pxy, short n) {
+	short i, vert, swap, style, x1, x2, y1, y2, xy[4];
 
 	vswr_mode(tb.vdi_handle, MD_XOR);
 	vsl_type(tb.vdi_handle, 7); /* LT_USERDEF */
 	vsl_ends(tb.vdi_handle, 0, 0); /* LE_SQUARED */
 	vsl_width(tb.vdi_handle, 1);
-	vsl_color(tb.vdi_handle, BLACK);
+	vsl_color(tb.vdi_handle, G_BLACK);
 	for (i = 0; i < (n - 1); i++) {
 		x1 = pxy[i * 2];
 		x2 = pxy[i * 2 + 2];
@@ -6125,10 +6015,10 @@ void grf_ghostbox(int *pxy, int n) {
  * 0: Fehler aufgetreten
  * sonst: Alles OK, Zielkoordinaten in *dx und *dy abgelegt.
  */
-int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
-		int *dx, int *dy) {
+short grf_dragbox(short w, short h, short bx, short by, short bw, short bh, short sx, short sy,
+		short *dx, short *dy) {
 	EVENT event;
-	int lx, ly, xy[10], key, d, done = 0;
+	short lx, ly, xy[10], key, d, done = 0;
 
 	if ((w <= 0) || (h <= 0) || (bx < 0) || (by < 0) || (bw <= 0) || (bh <= 0) || (w > bw) || (h > bh)) {
 		return (0);
@@ -6136,10 +6026,10 @@ int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
 	wind_update( BEG_UPDATE);
 	wind_update( BEG_MCTRL);
 	graf_mouse(FLAT_HAND, 0L);
-	xy[0] = tb.desk.x;
-	xy[1] = tb.desk.y;
-	xy[2] = tb.desk.x + tb.desk.w - 1;
-	xy[3] = tb.desk.y + tb.desk.h - 1;
+	xy[0] = tb.desk.g_x;
+	xy[1] = tb.desk.g_y;
+	xy[2] = tb.desk.g_x + tb.desk.g_w - 1;
+	xy[3] = tb.desk.g_y + tb.desk.g_h - 1;
 	vs_clip(tb.vdi_handle, 1, xy);
 	event.ev_mflags = MU_TIMER;
 	event.ev_mtlocount = 1;
@@ -6258,9 +6148,9 @@ int grf_dragbox(int w, int h, int bx, int by, int bw, int bh, int sx, int sy,
  * Eingabe:
  * wie bei v_opnvwk()
  */
-void _v_opnvwk(int *work_in, int *handle, int *work_out) {
+void _v_opnvwk(short *work_in, short *handle, short *work_out) {
 #ifdef NOVA_PATCH
-	int i, aes_handle, rgb[3];
+	short i, aes_handle, rgb[3];
 
 	aes_handle = *handle;
 #endif
@@ -6276,24 +6166,36 @@ void _v_opnvwk(int *work_in, int *handle, int *work_out) {
 }
 
 /**
- *
  */
-int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4) {
-	int hasAgi = FALSE;
-	long du;
-	AFNT *afnt;
 
-	hasAgi = ((_GemParBlk.global[0] == 0x399 && getCookie('MagX', &du))
-			|| (_GemParBlk.global[0] == 0x400 && type < 4)
-			|| (_GemParBlk.global[0] > 0x400) || (appl_find("?AGI") >= 0));
+#define AES_PARAMS(a,b,c,d,e) \
+	static short    aes_control[AES_CTRLMAX]={a,b,c,d,e}; \
+	short			aes_intin[AES_INTINMAX];			  \
+	short			aes_intout[AES_INTOUTMAX];			  \
+	long			aes_addrin[AES_ADDRINMAX];			  \
+	long			aes_addrout[AES_ADDROUTMAX];		  \
+ 														  \
+	AESPB aes_params;									  \
+  	aes_params.control = &aes_control[0];				  \
+  	aes_params.global  = &aes_global[0];				  \
+  	aes_params.intin   = &aes_intin[0]; 				  \
+  	aes_params.intout  = &aes_intout[0];				  \
+  	aes_params.addrin  = &aes_addrin[0];				  \
+  	aes_params.addrout = &aes_addrout[0]
 
-	if (hasAgi == TRUE)
-		return (appl_getinfo(type, out1, out2, out3, out4));
+short EvntMulti( EVENT *evnt_data )
+{
+	AES_PARAMS ( 25, 16, 7, 1, 0 );
+	
+	aes_params.intin = (const short*)&evnt_data->ev_mflags;			/* input integer array */
+	aes_params.intout = (short*)&evnt_data->ev_mwich;					/* output integer array */
 
-	if (getCookie('AFnt', (LONG *) &afnt) && afnt->af_magic == 'AFnt')
-		return (afnt->afnt_getinfo(type, out1, out2, out3, out4));
+	aes_addrin[0] = (long)evnt_data->ev_mmgpbuf;
 
-	return (0);
+	aes( &aes_params );
+
+	return evnt_data->ev_mwich;
+
 }
 
 /**
@@ -6311,10 +6213,10 @@ int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4) {
  * Zeiger auf statischen Puffer mit dem Applikationsnamen oder
  * deflt
  */
-char *appl_name(int id, char *deflt) {
+char *appl_name(short id, char *deflt) {
 	char namebuf[9], *p;
 	static char thename[9];
-	int mode, type, theid;
+	short mode, type, theid;
 
 	strcpy(thename, "");
 	if (tb.sys & SY_ASEARCH) {
@@ -6352,16 +6254,16 @@ char *appl_name(int id, char *deflt) {
  * par1 - par5: Die Parameter fuerr die Nachricht, die fuer msg[3] bis
  *              msg[7] eingesetzt werden. Siehe auch pointers.
  */
-void appl_send(int id, int message, int pointers, long par1, long par2,
+void appl_send(short id, short message, short pointers, long par1, long par2,
 		long par3, long par4, long par5) {
 	aesmsg[0] = message;
 	aesmsg[1] = tb.app_id;
 	aesmsg[2] = 0;
-	aesmsg[3] = (int) par1;
-	aesmsg[4] = (int) par2;
-	aesmsg[5] = (int) par3;
-	aesmsg[6] = (int) par4;
-	aesmsg[7] = (int) par5;
+	aesmsg[3] = (short) par1;
+	aesmsg[4] = (short) par2;
+	aesmsg[5] = (short) par3;
+	aesmsg[6] = (short) par4;
+	aesmsg[7] = (short) par5;
 	if (pointers & PT34)
 		long2int(par1, &aesmsg[3], &aesmsg[4]);
 	if (pointers & PT45)
@@ -6385,8 +6287,8 @@ void appl_send(int id, int message, int pointers, long par1, long par2,
  * Rueckgabe:
  * Breite von text in Pixeln
  */
-int calc_small_text_width(char *text) {
-	int attr[10], dim[8], d;
+short calc_small_text_width(char *text) {
+	short attr[10], dim[8], d;
 
 	if (!*text)
 		return (0);
@@ -6414,7 +6316,7 @@ int calc_small_text_width(char *text) {
  * 1: Semaphore erfolgreich gesetzt
  * 0: Semaphore konnte nicht gesetzt werden
  */
-int win_update(int mode) {
+short win_update(short mode) {
 	if (tb.sys & SY_WUPDATE)
 		return (wind_update(mode | 0x100));
 	wind_update(mode);

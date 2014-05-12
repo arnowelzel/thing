@@ -42,7 +42,7 @@
 
 #include <stdio.h>
 
-char *version_str(char *langver, int vers) {
+char *version_str(char *langver, short vers) {
 	static char _version_str[40];
 
 	sprintf(_version_str, langver, vers / 100, vers % 100, __DATE__);

@@ -31,7 +31,7 @@ extern UWORD arupnorm[64], arupnormdis[64], arupsel[64], ardnnorm[64],
  *
  */
 WORD cdecl arrowbutton(PARMBLK *parmblock) {
-	WORD pxy[4], cppxy[8], box_breite, color_index[] = { BLACK, WHITE };
+	WORD pxy[4], cppxy[8], box_breite, color_index[] = { G_BLACK, G_WHITE };
 	UBPARM *ubparm;
 	MFDB screen, arrow;
 
@@ -44,12 +44,12 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 	else
 		box_breite = userdef->char_w;
 
-	if (userdef->backgrd_color != WHITE) {
+	if (userdef->backgrd_color != G_WHITE) {
 		/*
 		 * Damit keine Reste von DISABLED mehr da sind, muessen wir das
 		 * ganze Objekt neuzeichnen.
 		 */
-		if (parmblock->pb_prevstate & DISABLED || parmblock->pb_currstate & DISABLED) {
+		if (parmblock->pb_prevstate & OS_DISABLED || parmblock->pb_currstate & OS_DISABLED) {
 			pxy[0] = parmblock->pb_x;
 			pxy[1] = parmblock->pb_y;
 			pxy[2] = parmblock->pb_x + parmblock->pb_w;
@@ -84,10 +84,10 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 	/* richtigen Pfeil waehlen */
 	switch ((WORD) ubparm->text[0]) {
 	case '':
-		if (parmblock->pb_currstate & SELECTED)
+		if (parmblock->pb_currstate & OS_SELECTED)
 			arrow.fd_addr = (VOID *) arupsel;
 		else {
-			if (parmblock->pb_currstate & DISABLED)
+			if (parmblock->pb_currstate & OS_DISABLED)
 				arrow.fd_addr = (VOID *) arupnormdis;
 			else
 				arrow.fd_addr = (VOID *) arupnorm;
@@ -95,10 +95,10 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 		break;
 
 	case '':
-		if (parmblock->pb_currstate & SELECTED)
+		if (parmblock->pb_currstate & OS_SELECTED)
 			arrow.fd_addr = (VOID *) ardnsel;
 		else {
-			if (parmblock->pb_currstate & DISABLED)
+			if (parmblock->pb_currstate & OS_DISABLED)
 				arrow.fd_addr = (VOID *) ardnnormdis;
 			else
 				arrow.fd_addr = (VOID *) ardnnorm;
@@ -106,10 +106,10 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 		break;
 
 	case 3/*''*/:
-		if (parmblock->pb_currstate & SELECTED)
+		if (parmblock->pb_currstate & OS_SELECTED)
 			arrow.fd_addr = (VOID *) arrtsel;
 		else {
-			if (parmblock->pb_currstate & DISABLED)
+			if (parmblock->pb_currstate & OS_DISABLED)
 				arrow.fd_addr = (VOID *) arrtnormdis;
 			else
 				arrow.fd_addr = (VOID *) arrtnorm;
@@ -117,10 +117,10 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 		break;
 
 	case '':
-		if (parmblock->pb_currstate & SELECTED)
+		if (parmblock->pb_currstate & OS_SELECTED)
 			arrow.fd_addr = (VOID *) arltsel;
 		else {
-			if (parmblock->pb_currstate & DISABLED)
+			if (parmblock->pb_currstate & OS_DISABLED)
 				arrow.fd_addr = (VOID *) arltnormdis;
 			else
 				arrow.fd_addr = (VOID *) arltnorm;
@@ -134,8 +134,8 @@ WORD cdecl arrowbutton(PARMBLK *parmblock) {
 
 	clipping(parmblock, FALSE);
 
-	parmblock->pb_currstate &= ~SELECTED;
-	parmblock->pb_currstate &= ~DISABLED;
+	parmblock->pb_currstate &= ~OS_SELECTED;
+	parmblock->pb_currstate &= ~OS_DISABLED;
 
 	return (parmblock->pb_currstate);
 }

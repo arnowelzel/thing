@@ -107,9 +107,9 @@ static void			*ctab;
  *
  * Globale Initialisierung/Exit
  */
-int init_cicon(void)
+short init_cicon(void)
 {
- int	work_in[11] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
+ short	work_in[11] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 		work_out[57],
 		d,
 		xy[12],
@@ -198,12 +198,12 @@ int init_cicon(void)
 #ifdef __PUREC__
 #pragma warn -par
 #endif
-int init_cicon_with_palette(WORD *pal)
+short init_cicon_with_palette(WORD *pal)
 {
 #ifdef WITH_NVDI5
 	static COLOR_TAB256	table;
 	WORD				i;
-	int16				idx;
+	short16				idx;
 
 	if (!init_cicon())
 		return(0);
@@ -225,11 +225,11 @@ int init_cicon_with_palette(WORD *pal)
 			idx = v_ctab_vdi2idx(handle, i);
 			table.colors[idx].rgb.reserved = i;
 			table.colors[idx].rgb.red =
-				(unsigned int)(+((LONG)*pal++ * 65535L) / 1000L);
+				(unsigned short)(+((LONG)*pal++ * 65535L) / 1000L);
 			table.colors[idx].rgb.green =
-				(unsigned int)(+((LONG)*pal++ * 65535L) / 1000L);
+				(unsigned short)(+((LONG)*pal++ * 65535L) / 1000L);
 			table.colors[idx].rgb.blue =
-				(unsigned int)(+((LONG)*pal++ * 65535L) / 1000L);
+				(unsigned short)(+((LONG)*pal++ * 65535L) / 1000L);
 		}
 		ctab = &table;
 	}
@@ -446,7 +446,7 @@ static WORD change_cicons(OBJECT *tree, WORD obj, DCINFO *dinfo)
 #endif
 	{
 #ifdef WITH_NVDI5
-		int		min_planes,
+		short		min_planes,
 				max_planes;
 		_CICON	*j;
 
@@ -579,7 +579,7 @@ static WORD change_cicons(OBJECT *tree, WORD obj, DCINFO *dinfo)
 			dest.fd_addr = new_icon;
 			dest.fd_stand = 0;
 			dest.fd_nplanes = nplanes;
-			col[0] = col[1] = BLACK;
+			col[0] = col[1] = G_BLACK;
 			vrt_cpyfm(handle, MD_ERASE, xy, &source, &dest, col);
 			if (i->sel_data)
 			{
@@ -817,7 +817,7 @@ static WORD insert_data(DRAW_CICON *p, WORD *idata, WORD *mdata,
 			xy[0] = xy[1] = xy[4] = xy[5] = 0;
 			xy[2] = xy[6] = w - 1;
 			xy[3] = xy[7] = h - 1;
-			col[0] = col[1] = BLACK;
+			col[0] = col[1] = G_BLACK;
 			vrt_cpyfm(handle, MD_TRANS, xy, &source, &dest, col);
 /*
  * Remove all pixels from the new icon that do not belong to the
@@ -828,9 +828,9 @@ static WORD insert_data(DRAW_CICON *p, WORD *idata, WORD *mdata,
 			dest.fd_addr = sidata;
 			dest.fd_nplanes = np;
 			if (truecolor)
-				col[0] = col[1] = BLACK;
+				col[0] = col[1] = G_BLACK;
 			else
-				col[0] = col[1] = WHITE;
+				col[0] = col[1] = G_WHITE;
 			vrt_cpyfm(handle, MD_ERASE, xy, &source, &dest, col);
 		}
 	}
@@ -890,10 +890,10 @@ static WORD reuse_bitmap(WORD *source, WORD *dest, WORD w, WORD h,
 			*copy,
 			xy[8],
 			col[2],
-			pixel_to_index[16] = {WHITE, RED, GREEN, YELLOW,
-				BLUE, MAGENTA, CYAN, LWHITE, LBLACK, LRED,
-				LGREEN, LYELLOW, LBLUE, LMAGENTA, LCYAN,
-				BLACK},
+			pixel_to_index[16] = {G_WHITE, G_RED, G_GREEN, G_YELLOW,
+				G_BLUE, G_MAGENTA, G_CYAN, G_LWHITE, G_LBLACK, G_LRED,
+				G_LGREEN, G_LYELLOW, G_LBLUE, G_LMAGENTA, G_LCYAN,
+				G_BLACK},
 			plane_used[16];
 	LONG	psize,
 			j,
@@ -1102,7 +1102,7 @@ static WORD cdecl draw_coloricon(PARMBLK *parms)
  * Determine if we need the bitmaps for the selected or the
  * unselected icon
  */
-	if ((selected = !!(parms->pb_currstate & SELECTED)) != 0)
+	if ((selected = !!(parms->pb_currstate & OS_SELECTED)) != 0)
 	{
 		icon = block->sel_idata;
 		mask = block->sel_mdata;
@@ -1220,7 +1220,7 @@ static WORD cdecl draw_coloricon(PARMBLK *parms)
 		parms->pb_y + block->original->monoblk.ib_yicon +
 		block->original->monoblk.ib_ychar, out);
 	/* Let the AES handle all states but SELECTED */
-	return(parms->pb_currstate & ~SELECTED);
+	return(parms->pb_currstate & ~OS_SELECTED);
 }
 
 /* EOF */

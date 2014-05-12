@@ -24,6 +24,8 @@
 #ifndef __PROTO_H__
 #define __PROTO_H__
 
+#include <thingtbx.h>
+
 #define NUM_TREE 7
 
 #define FNAME_TPL "template.grp"	/* Vorlage fÅr Ergebnisgruppe */
@@ -40,62 +42,62 @@
 #define AT_ILOAD 0x0001 /* Thing-Protokoll, Icons neuladen */
 
 typedef struct {
-	int page; /* Aktuelle Karteikarte */
-	int datecheck; /* Datumsgrenzen verwenden */
-	int sizecheck; /* Grîûenlimits verwenden */
-	int grep; /* Inhaltsmaske verwenden */
-	int verbose; /* AusfÅhrliche Statusangaben */
+	short page; /* Aktuelle Karteikarte */
+	short datecheck; /* Datumsgrenzen verwenden */
+	short sizecheck; /* Grîûenlimits verwenden */
+	short grep; /* Inhaltsmaske verwenden */
+	short verbose; /* AusfÅhrliche Statusangaben */
 	/* Bedeutung der restlichen Komponenten siehe bei search_main() */
 	long drvbits;
 	char searchpath[MAX_PLEN];
-	int follow;
+	short follow;
 	char *filemask;
-	int fm_case;
-	int fm_dirs;
-	unsigned int mindate;
-	unsigned int maxdate;
+	short fm_case;
+	short fm_dirs;
+	unsigned short mindate;
+	unsigned short maxdate;
 	long minsize;
 	long maxsize;
 	char *contentmask;
-	int cm_case;
-	int cm_binary;
+	short cm_case;
+	short cm_binary;
 } FIND_DATA;
 
 typedef struct {
-	int use3d, /* 3d-Look verwenden */
+	short use3d, /* 3d-Look verwenden */
 	backwin; /* Fenster vor Schlieûen nach hinten stellen */
-	int done, /* Programm beendet */
+	short done, /* Programm beendet */
 	menu; /* MenÅzeile aktiv */
 	char tname[MAX_PLEN], rname[MAX_PLEN], lname[MAX_PLEN];
-	int avid, tid;
-	int avflags;
+	short avid, tid;
+	short avflags;
 } GLOB;
 
-void mn_istate(int item, int enable);
+void mn_istate(short item, short enable);
 void mn_disable(void);
 void mn_update(void);
 void di_about(void);
-void de_about(int mode, int ret);
+void de_about(short mode, short ret);
 void dl_nextwin(void);
 void dl_quit(void);
 void di_find(void);
-void de_find(int mode, int ret);
+void de_find(short mode, short ret);
 void ddnak(EVENT *mevent);
-void handle_menu(int title, int item, int ks);
-void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks);
-void handle_button(int mx, int my, int but, int ks, int br);
-void handle_key(int ks, int kr);
+void handle_menu(short title, short item, short ks);
+void handle_win(short handle, short msg, short f1, short f2, short f3, short f4, short ks);
+void handle_button(short mx, short my, short but, short ks, short br);
+void handle_key(short ks, short kr);
 void handle_fmsg(EVENT *mevent, FORMINFO *fi);
-int get_buf_entry(char *buf, char *name, char **newpos);
-int main_init(void);
+short get_buf_entry(char *buf, char *name, char **newpos);
+short main_init(void);
 void main_loop(void);
 void main_exit(void);
-long search_main(long drvbits, char *searchpath, int follow, char *filemask,
-		int fm_case, int fm_dirs, unsigned int mindate, unsigned int maxdate,
-		long minsize, long maxsize, char *contentmask, int cm_case,
-		int cm_binary, int (*update)(char *current, long hits),
+long search_main(long drvbits, char *searchpath, short follow, char *filemask,
+		short fm_case, short fm_dirs, unsigned short mindate, unsigned short maxdate,
+		long minsize, long maxsize, char *contentmask, short cm_case,
+		short cm_binary, short (*update)(char *current, long hits),
 		char *resultfile, char *resulttemplate);
-int wild_match(char *string, char *pattern);
-unsigned int parse_date(char *date);
+short wild_match(char *string, char *pattern);
+unsigned short parse_date(char *date);
 
 #endif

@@ -38,7 +38,7 @@
  Handler fuer Thing-Kommandos generell
  -------------------------------------------------------------------------*/
 void tp_handle(EVENT *event) {
-	int id, cmd;
+	short id, cmd;
 	char *buf;
 	ALICE_WIN *awin;
 
@@ -67,9 +67,9 @@ void tp_handle(EVENT *event) {
 /**
  Alice-Fenster anmelden
  -------------------------------------------------------------------------*/
-ALICE_WIN *alw_add(char *name, int handle) {
+ALICE_WIN *alw_add(char *name, short handle) {
 	ALICE_WIN *awin, *aptr;
-	int i, n;
+	short i, n;
 	ICONIMG *icon, *first_icon;
 	char *suffixes[] = { ".PRG", ".APP", ".GTP", ".ACC", 0L };
 	char *suffix;
@@ -203,7 +203,7 @@ void alw_remove(ALICE_WIN *awin) {
 /**
  Alice-Fenster ermitteln
  -------------------------------------------------------------------------*/
-ALICE_WIN *alw_get(int handle) {
+ALICE_WIN *alw_get(short handle) {
 	ALICE_WIN *awin;
 
 	awin = glob.alicewin;
@@ -218,44 +218,44 @@ ALICE_WIN *alw_get(int handle) {
 /**
  Redraw eines Alice-Fenster ausfuehren
  -------------------------------------------------------------------------*/
-void alw_draw(ALICE_WIN *awin, int x, int y, int w, int h) {
-	RECT area, box, full, work;
+void alw_draw(ALICE_WIN *awin, short x, short y, short w, short h) {
+	GRECT area, box, full, work;
 
 	/* AES sperren und Maus abschalten */
 	wind_update(BEG_UPDATE);
 	graf_mouse(M_OFF, 0L);
 
 	/* Vorbereitungen */
-	area.x = x;
-	area.y = y;
-	area.w = w;
-	area.h = h;
+	area.g_x = x;
+	area.g_y = y;
+	area.g_w = w;
+	area.g_h = h;
 
 	/* Groesse des Arbeitsbereiches und erster Eintrag Rechteckliste */
-	new_wind_get(0, WF_WORKXYWH, &full.x, &full.y, &full.w, &full.h);
-	new_wind_get(awin->handle, WF_WORKXYWH, &work.x, &work.y, &work.w, &work.h);
-	new_wind_get(awin->handle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(0, WF_WORKXYWH, &full.g_x, &full.g_y, &full.g_w, &full.g_h);
+	wind_get(awin->handle, WF_WORKXYWH, &work.g_x, &work.g_y, &work.g_w, &work.g_h);
+	wind_get(awin->handle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Objektbaum anpassen */
-	awin->tree[0].ob_x = work.x;
-	awin->tree[0].ob_y = work.y;
-	awin->tree[0].ob_width = work.w;
-	awin->tree[0].ob_height = work.h;
-	awin->tree[1].ob_x = (work.w - awin->tree[1].ob_width) / 2;
-	awin->tree[1].ob_y = (work.h - awin->tree[1].ob_height) / 2;
+	awin->tree[0].ob_x = work.g_x;
+	awin->tree[0].ob_y = work.g_y;
+	awin->tree[0].ob_width = work.g_w;
+	awin->tree[0].ob_height = work.g_h;
+	awin->tree[1].ob_x = (work.g_w - awin->tree[1].ob_width) / 2;
+	awin->tree[1].ob_y = (work.g_h - awin->tree[1].ob_height) / 2;
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		/* sichtbar? */
 		if (rc_intersect(&full, &box)) {
 			/* Nur durchfuehren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
 			if (rc_intersect(&area, &box)) {
-				objc_draw(awin->tree, ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
+				objc_draw(awin->tree, ROOT, MAX_DEPTH, box.g_x, box.g_y, box.g_w, box.g_h);
 			}
 		}
 
 		/* Naechstes Rechteck holen */
-		new_wind_get(awin->handle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(awin->handle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 
 	/* Maus einschalten und AES freigeben */

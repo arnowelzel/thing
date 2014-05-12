@@ -3,7 +3,7 @@
 
 #include <portab.h>
 
-#include <aes.h>
+#include <gem.h>
 
 static char rs_s0[] = "";
 static char rs_s1[] = "";
@@ -37,8 +37,8 @@ OBJECT rs_obj[] = {
 #define TR0 0
 /* TREE 0 */
 	-1, -1, -1, G_BOXTEXT,			/*** 0 ***/
-	LASTOB,
-	NORMAL,
+	OF_LASTOB,
+	OS_NORMAL,
 	(long) &rs_tedinfo[0],
 	0, 0, 34, 1
 };

@@ -57,10 +57,10 @@ WORD cdecl separator(PARMBLK *parmblock) {
 		vswr_mode(userdef->vdi_handle, MD_REPLACE);
 		vsf_interior(userdef->vdi_handle, FIS_PATTERN);
 		vsf_style(userdef->vdi_handle, 4);
-		vsf_color(userdef->vdi_handle, BLACK);
+		vsf_color(userdef->vdi_handle, G_BLACK);
 	} else {
 		vswr_mode(userdef->vdi_handle, MD_TRANS);
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 		vsf_color(userdef->vdi_handle, ubparm->te_rahmencol);
 	}
 

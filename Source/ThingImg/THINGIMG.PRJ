@@ -16,7 +16,12 @@ src\thingimg.c (include\thingimg.h)
 ; -------------------------------------------------------------------
 ; external libraries
 ; -------------------------------------------------------------------
+; MiNTLib
+mintflt.lib
+mintlib.lib
+
 ; PureC Lib
 pcstdlib.lib
-pcgemlib.lib
-pctoslib.lib
+
+;GEMLib
+gem.lib

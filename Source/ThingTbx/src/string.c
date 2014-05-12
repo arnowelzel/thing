@@ -48,10 +48,10 @@
  * @param *src der Quell-String
  * @param limit Anzahl der Zeichen, auf die der String begrenzt werden soll
  */
-void strShortener(char *dest, char *src, int limit) {
-	int len;
+void strShortener(char *dest, char *src, short limit) {
+	short len;
 
-	len = (int) strlen(src);
+	len = (short) strlen(src);
 	if (len > limit) {
 		strncpy(dest, src, 10);
 		strcpy(&dest[10], "...");
@@ -70,7 +70,7 @@ void strShortener(char *dest, char *src, int limit) {
  * 1: s enthaelt mindestens ein Wildcard-Zeichen
  * 0: sonst
  */
-int isWildcard(char c) {
+short isWildcard(char c) {
 	switch (c) {
 	case '[':
 	case ']':
@@ -92,7 +92,7 @@ int isWildcard(char c) {
  * 1: s enthaelt mindestens ein Wildcard-Zeichen
  * 0: sonst
  */
-int hasWildcards(char *str) {
+short hasWildcards(char *str) {
 	unsigned char c;
 
 	while ((c = *str++) != 0) {
@@ -112,12 +112,12 @@ int hasWildcards(char *str) {
  * 1: s passt auf Maske p
  * 0: sonst
  */
-int patternMatching(register char *pattern, register char *str) {
-	register int scc;
-	int ok, lc;
-	int c, cc;
+short patternMatching(register char *pattern, register char *str) {
+	register short scc;
+	short ok, lc;
+	short c, cc;
 	char *t;
-	int l;
+	short l;
 
 	for (;;) {
 		scc = *str++ & 0177;
@@ -201,9 +201,9 @@ int patternMatching(register char *pattern, register char *str) {
  zweiten AnfÅhrungszeichen (einschlieûlich einer Leerstelle
  Zwischenraum) geliefert.
  -------------------------------------------------------------------------*/
-char *get_text(char *str, char *buf, int maxlen) {
-	int i, j, p, done;
-	int val;
+char *get_text(char *str, char *buf, short maxlen) {
+	short i, j, p, done;
+	short val;
 	char vbuf[4];
 
 	i = 0;
@@ -270,7 +270,7 @@ char *get_text(char *str, char *buf, int maxlen) {
  Konvertiert einen String und schreibt diesen in die angegebene Datei
  -------------------------------------------------------------------------*/
 void put_text(FILE *fh, char *str) {
-	int i, j;
+	short i, j;
 	unsigned char *p;
 	char outbuf[1024];
 
@@ -279,7 +279,7 @@ void put_text(FILE *fh, char *str) {
 	j = 0;
 	while (p[i]) {
 		if (p[i] < 32) {
-			sprintf(&outbuf[j], "@%02d", (int) p[i]);
+			sprintf(&outbuf[j], "@%02d", (short) p[i]);
 			j += 3;
 		} else {
 			switch (p[i]) {
@@ -316,7 +316,7 @@ void put_text(FILE *fh, char *str) {
 	p = (unsigned char *) str;
 	while (*p) {
 		if ((*p < 32) || (*p == '\"') || (*p == '@'))
-			fprintf(fh, "@%02d", (int) *p);
+			fprintf(fh, "@%02d", (short) *p);
 		else
 			fprintf(fh, "%c", *p);
 		p++;

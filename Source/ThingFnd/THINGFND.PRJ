@@ -19,7 +19,7 @@ crt0.o
 ; -------------------------------------------------------------------
 ; Source(s) for ThingFind
 ; -------------------------------------------------------------------
-src\thingfnd.c (src\rsrc\thgfndde.h, include\thingfnd.h)
+src\thingfnd.c (src\rsrc\thingfnd.h, include\thingfnd.h)
 src\search.c (include\thingfnd.h)
 src\date.c (include\thingfnd.h)
 
@@ -46,7 +46,9 @@ mintflt.lib
 
 ; PureC Lib
 pcstdlib.lib
-pcgemlib.lib
+
+;GEMLib
+gem.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
 ;memdebug.lib

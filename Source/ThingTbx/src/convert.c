@@ -32,9 +32,9 @@
  * hi: Zeiger auf die Adresse fuer die oberen 16 Bit
  * lo: Zeiger auf die Adresse fuer die unteren 16 Bit
  */
-void long2int(long lword, int *hi, int *lo) {
-	*hi = (int) (lword >> 16L);
-	*lo = (int) (lword & 0xffffL);
+void long2int(long lword, short *hi, short *lo) {
+	*hi = (short) (lword >> 16L);
+	*lo = (short) (lword & 0xffffL);
 }
 
 /**
@@ -49,7 +49,7 @@ void long2int(long lword, int *hi, int *lo) {
  * Rueckgabe:
  * lo + hi * 65536UL
  */
-unsigned long int2long(unsigned int hi, unsigned int lo) {
+unsigned long int2long(unsigned short hi, unsigned short lo) {
 	return ((unsigned long) lo + ((unsigned long) hi << 16UL));
 }
 #endif
@@ -58,9 +58,9 @@ unsigned long int2long(unsigned int hi, unsigned int lo) {
  * Rechnet Desktop-Koordinaten in ein relatives System (0-32767) um und
  umgekehrt.
  -------------------------------------------------------------------------*/
-int abs2rel(int rel, int abs, int value) {
+short abs2rel(short rel, short abs, short value) {
 	double res;
 
 	res = (double) rel * (double) value / (double) abs;
-	return (int) (res + 0.5);
+	return (short) (res + 0.5);
 }

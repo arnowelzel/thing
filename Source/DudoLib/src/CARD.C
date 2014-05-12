@@ -44,7 +44,7 @@ void handleEditfields(CARD *card, WORD objectIdx, BOOLEAN show);
  * @param head Objekt-Index des Reiters
  * @param body Objekt-Index der Karteikarte
  */
-int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx) {
+short cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBodyIdx) {
 	WORD i;
 	CARD *newCard = NULL, *dummyCard = NULL;
 
@@ -67,7 +67,7 @@ int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBody
 		 */
 		setObjectSelected(newCard->objectTree, newCard->head);
 		newCard->top = TRUE;
-		setObjectFlags(newCard->objectTree, newCard->body, HIDETREE, FALSE);
+		setObjectFlags(newCard->objectTree, newCard->body, OF_HIDETREE, FALSE);
 		handleEditfields(newCard, newCard->body, TRUE);
 
 		*card = newCard;
@@ -80,7 +80,7 @@ int cardAdd(CARD **card, OBJECT *objectTree, WORD objectHeadIdx, WORD objectBody
 		/* alle weiteren Karteikarten liegen deaktiviert im Hintergrund */
 		unsetObjectSelected(newCard->objectTree, newCard->head);
 		newCard->top = FALSE;
-		setObjectFlags(newCard->objectTree, newCard->body, HIDETREE, TRUE);
+		setObjectFlags(newCard->objectTree, newCard->body, OF_HIDETREE, TRUE);
 		handleEditfields(newCard, newCard->body, FALSE);
 
 		(*card)->next = newCard;
@@ -152,7 +152,7 @@ void cardDisable(CARD *card, WORD objectHeadIdx) {
 	}
 
 	setObjectDisabled(disableCard->objectTree, disableCard->head);
-	setObjectFlags(disableCard->objectTree, disableCard->head, SELECTABLE | TOUCHEXIT, FALSE);
+	setObjectFlags(disableCard->objectTree, disableCard->head, OF_SELECTABLE | OF_TOUCHEXIT, FALSE);
 }
 
 /**
@@ -178,7 +178,7 @@ void cardEnable(CARD *card, WORD objectHeadIdx) {
 	}
 
 	unsetObjectDisabled(enableCard->objectTree, enableCard->head);
-	setObjectFlags(enableCard->objectTree, enableCard->head, SELECTABLE | TOUCHEXIT, TRUE);
+	setObjectFlags(enableCard->objectTree, enableCard->head, OF_SELECTABLE | OF_TOUCHEXIT, TRUE);
 }
 
 /**
@@ -210,7 +210,7 @@ CARD *getActiveCard(CARD *card) {
  * @param *card Zeiger auf die Struktur der Karteikarten
  * @return Objekt-Index der aktiven Karteikarte
  */
-int getActiveCardBodyIdx(CARD *card) {
+short getActiveCardBodyIdx(CARD *card) {
 	CARD *activeCard = NULL;
 
 	activeCard = getActiveCard(card);
@@ -227,7 +227,7 @@ int getActiveCardBodyIdx(CARD *card) {
  * @param objectHeadIdx Objekt-Index des Reiters, dessen zugehoerige Karteikarte angezeigt werden soll
  * @param redraw TRUE - Karteikarte/Reiter neu zeichnen, FALSE sonst
  */
-void setActiveCard(CARD *card, WORD objectHeadIdx, BOOLEAN redraw) {
+void setActiveCard(CARD *card, short objectHeadIdx, BOOLEAN redraw) {
 	BOOLEAN identicalCardBody;
 	WORD x, y;
 	CARD *activeCard, *newActiveCard;
@@ -268,11 +268,11 @@ void setActiveCard(CARD *card, WORD objectHeadIdx, BOOLEAN redraw) {
 		identicalCardBody = FALSE;
 
 		/* aktuelle Karteikarte verstecken */
-		setObjectFlags(activeCard->objectTree, activeCard->body, HIDETREE, TRUE);
+		setObjectFlags(activeCard->objectTree, activeCard->body, OF_HIDETREE, TRUE);
 		handleEditfields(activeCard, activeCard->body, FALSE);
 
 		/* zukuenftig aktive Karteikarte anzeigen */
-		setObjectFlags(newActiveCard->objectTree, newActiveCard->body, HIDETREE, FALSE);
+		setObjectFlags(newActiveCard->objectTree, newActiveCard->body, OF_HIDETREE, FALSE);
 		handleEditfields(newActiveCard, newActiveCard->body, TRUE);
 	} else {
 		identicalCardBody = TRUE;
@@ -331,16 +331,16 @@ void handleEditfields(CARD *card, WORD objectIdx, BOOLEAN show) {
 	for (i = card->objectTree[objectIdx].ob_head; (i != objectIdx) && (i != NIL); i = card->objectTree[i].ob_next) {
 		/* editierbare Objekte finden: */
 		if (show) {
-			if (card->savedObjectFlags[i] & EDITABLE) {
+			if (card->savedObjectFlags[i] & OF_EDITABLE) {
 				/* -> gespeicherte Flags loeschen, Objekt-Flags anpassen */
-				setObjectFlags(card->objectTree, i, EDITABLE, TRUE);
-				card->savedObjectFlags[i] &= ~EDITABLE;
+				setObjectFlags(card->objectTree, i, OF_EDITABLE, TRUE);
+				card->savedObjectFlags[i] &= ~OF_EDITABLE;
 			}
 		} else {
-			if (getObjectFlags(card->objectTree, i, EDITABLE)) {
+			if (getObjectFlags(card->objectTree, i, OF_EDITABLE)) {
 				/* -> alte Flags merken, Objekt-Flags anpassen */
-				card->savedObjectFlags[i] |= EDITABLE;
-				setObjectFlags(card->objectTree, i, EDITABLE, FALSE);
+				card->savedObjectFlags[i] |= OF_EDITABLE;
+				setObjectFlags(card->objectTree, i, OF_EDITABLE, FALSE);
 			}
 		}
 

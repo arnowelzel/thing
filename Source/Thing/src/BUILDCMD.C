@@ -65,7 +65,7 @@
  * 0: error occured. No assumptions about the validity of the resultant commandline can be made in this case.
  */
 #pragma warn -sig
-int build_commandline(char *dest, size_t len, char *format, char *params,
+short build_commandline(char *dest, size_t len, char *format, char *params,
 		char *curdir) {
 	char *fmt_pos; /* Current position in format string */
 	char *dest_pos; /* Current position in dest. Next char is copied here. */
@@ -80,14 +80,14 @@ int build_commandline(char *dest, size_t len, char *format, char *params,
 
 	while (*fmt_pos != '\0') {
 		if (*fmt_pos == '$') { /* It's an argument to be replaced */
-			int inbracket = 0; /* Flag whether we are inside parentheses */
-			int pfirst = -1, plast = -1; /* First and last param to replace (default "none") */
-			int pos; /* Current position in argument */
-			int cur_arg; /* Used for finding right argument */
-			int status; /* Current status from get_buf_entry */
+			short inbracket = 0; /* Flag whether we are inside parentheses */
+			short pfirst = -1, plast = -1; /* First and last param to replace (default "none") */
+			short pos; /* Current position in argument */
+			short cur_arg; /* Used for finding right argument */
+			short status; /* Current status from get_buf_entry */
 			char buf[127 + 1]; /* Buffer */
-			int length, doquote;
-			int insert_type; /* Signals from where to insert arguments */
+			short length, doquote;
+			short insert_type; /* Signals from where to insert arguments */
 			fmt_pos++;
 			if (*fmt_pos == '(') {
 				inbracket = 1;

@@ -35,6 +35,6 @@
 #define DD_PRINTER    5    /* Ziel ist ein Drucker-Icon         */
 #define DD_CLIPBOARD  6    /* Ziel ist ein Klemmbrett-Icon      */
 
-int ddcreate(int myid, int apid, int winid, int msx, int msy, int kstate, void *ext, void **oldpipesig);
-int ddstry(int handle, unsigned long ext, char *name, long size);
-void ddclose(int handle, void *oldpipesig);
+short ddcreate(short myid, short apid, short winid, short msx, short msy, short kstate, void *ext, void **oldpipesig);
+short ddstry(short handle, unsigned long ext, char *name, long size);
+void ddclose(short handle, void *oldpipesig);

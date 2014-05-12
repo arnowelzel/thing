@@ -140,7 +140,7 @@
  * 24.08.1996: Erl„uterungen an neue Strukturversion (1.02) angepažt
  */
 
-#include <tos.h>
+#include <mintbind.h>
 #include <string.h>
 #include "thingimg.h"
 
@@ -150,7 +150,7 @@
 #define PH		200L
 #define PICSIZE	(+((PW + 15) / 16) * PH * 2)
 
-long cdecl main(long magic, int what, THINGIMG *img_info) {
+long cdecl main(long magic, short what, THINGIMG *img_info) {
 	MFDB src;
 
 	/*
@@ -197,9 +197,9 @@ long cdecl main(long magic, int what, THINGIMG *img_info) {
 			memset(img_info->picture.fd_addr, 24, PICSIZE);
 
 			/* Der restliche MFDB muž noch aufgefllt werden! */
-			img_info->picture.fd_w = (int)PW;
-			img_info->picture.fd_h = (int)PH;
-			img_info->picture.fd_wdwidth = (int)((PW + 15) / 16);
+			img_info->picture.fd_w = (short)PW;
+			img_info->picture.fd_h = (short)PH;
+			img_info->picture.fd_wdwidth = (short)((PW + 15) / 16);
 			img_info->picture.fd_stand = 0;
 			img_info->picture.fd_nplanes = 1;
 			src = img_info->picture;

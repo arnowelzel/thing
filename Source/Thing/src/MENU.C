@@ -46,7 +46,7 @@ static clock_t timer2;
  * @param item
  * @param enable
  */
-void mn_istate(int item, int enable) {
+void mn_istate(short item, short enable) {
 	setObjectState(rs_trindex[MAINMENU], item, DISABLED, !enable);
 }
 
@@ -56,14 +56,14 @@ void mn_istate(int item, int enable) {
  * @param *objectTree
  */
 static void mn_redraw(OBJECT *objectTree) {
-	int top, dummy;
+	short top, d;
 
 	wind_update (BEG_MCTRL);
 	if (!(tb.sys & SY_MULTI) || (tb.app_id == menu_bar(0L, -1))) {
-		new_wind_get(0, WF_TOP, &top, &dummy, &dummy, &dummy);
+		wind_get(0, WF_TOP, &top, &d, &d, &d);
 		menu_bar(objectTree, 1);
 		if (top > 0)
-			wind_set(top, WF_TOP);
+			wind_set(top, WF_TOP, 0, 0, 0,0 );
 	}
 	wind_update (END_MCTRL);
 }
@@ -82,9 +82,9 @@ static void mn_redraw(OBJECT *objectTree) {
  *       Verhalten der Funktion undefiniert)
  * enable: Alle Eintraege aktivieren (1) oder deaktivieren (0)
  */
-static void mn_all_ienable(OBJECT *tree, int enable) {
-	int i, j, k, in_acc = 2;
-	static int state = 1;
+static void mn_all_ienable(OBJECT *tree, short enable) {
+	short i, j, k, in_acc = 2;
+	static short state = 1;
 
 	enable = !!enable;
 	if (enable == state)
@@ -122,12 +122,8 @@ void mn_disable(void) {
  * "Haeckchen" in den Menueeintraegen entsprechend der Konfiguration setzen
  */
 void mn_check(void) {
-	int check, text, sortby;
+	short check, text, sortby;
 	OBJECT *objectTree;
-
-#ifdef _DEBUG
-	debugMain("MENU: Start mn_check --->");
-#endif
 
 #ifdef TIMER
 	timer1 = clock();
@@ -195,26 +191,21 @@ void mn_check(void) {
 	timer1 = clock() - timer1;
 	fprintf(stdout, "\033H\n\nmn_check(): %ld \n", (long)timer1);
 #endif
-
-#ifdef _DEBUG
-	debugMain("MENU: <---");
-#endif
-
 }
 
 /**
  * Menueeintrage je nach Situation DISABLEn
  */
 void mn_update(void) {
-	int i, nt;
-	int m_info, m_open, m_show, m_del, m_path, m_idx, m_sort, m_close, m_eject;
-	int m_nwin, m_cwin, m_cpwin, m_ctwin, m_pwin, m_font, m_print, m_save,
+	short i, nt;
+	short m_info, m_open, m_show, m_del, m_path, m_idx, m_sort, m_close, m_eject;
+	short m_nwin, m_cwin, m_cpwin, m_ctwin, m_pwin, m_font, m_print, m_save,
 			m_sall;
 	WININFO *win;
 	FORMINFO *fi;
 	char *item, *title;
-	int tlen, usewin;
-	int handle;
+	short tlen, usewin;
+	short handle;
 	OBJECT *objectTree;
 
 	if (tb.sm_modal)
@@ -327,7 +318,7 @@ void mn_update(void) {
 				title = &win->name[1];
 			else
 				title = &win->name[2];
-			tlen = (int) strlen(title);
+			tlen = (short) strlen(title);
 			if (tlen > 23) {
 				strncpy(&item[2], title, 6);
 				strcpy(&item[8], "...");

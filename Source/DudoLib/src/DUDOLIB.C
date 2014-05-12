@@ -26,11 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef __MINT__
 #include <mintbind.h>
-#else
-#include <tos.h>
-#endif
 
 #pragma warn -rpt
 #pragma warn -sus
@@ -143,7 +139,7 @@ WORD initDudolib(void) {
 	if (vq_gdos() != 0 && appl_xgetinfo(0, &fontheight, &fontid, &fonttype, &du) > 0) {
 		/* Workaround fuer WDIALOG-Problem mit N.AES */
 		while ((fontid == 0) && (fontheight == 0)) {
-			evnt_timer(100, 0);
+			evnt_timer(100L);
 			appl_xgetinfo(0, &fontheight, &fontid, &fonttype, &du);
 		}
 		if (fontid != vst_font(userdef->vdi_handle, fontid)) {
@@ -189,7 +185,7 @@ WORD initDudolib(void) {
 		set3dLook(FALSE);
 	} else {
 		set3dLook(TRUE);
-		setShortcutLineColor(RED);
+		setShortcutLineColor(G_RED);
 	}
 	setBackgroundBorder(TRUE);
 
@@ -273,7 +269,7 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 					}
 
 					/* Menueleisten-Trenner ist ein Separator mit best. Aussehen */
-					ubparm->te_rahmencol = LBLACK;
+					ubparm->te_rahmencol = G_LBLACK;
 					ubparm->te_thickness = 2;
 					ubparm->isMenu = TRUE;
 					ubparm->separator3d = FALSE;
@@ -358,8 +354,8 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 				/* Default-Werte setzen. */
 				ubparm->uline_pos = -1;
 				ubparm->te_just = TA_LEFT;
-				ubparm->te_rahmencol = BLACK;
-				ubparm->te_textcol = BLACK;
+				ubparm->te_rahmencol = G_BLACK;
+				ubparm->te_textcol = G_BLACK;
 				ubparm->te_thickness = 1;
 				ubparm->text = "";
 
@@ -641,11 +637,11 @@ void set3dLook(BOOLEAN flag) {
 
 	if (flag == TRUE && userdef->colors >= 16) {
 		userdef->draw_3d = TRUE;
-		userdef->backgrd_color = LWHITE;
+		userdef->backgrd_color = G_LWHITE;
 	} else {
 		userdef->draw_3d = FALSE;
-		userdef->backgrd_color = WHITE;
-		setShortcutLineColor(BLACK);
+		userdef->backgrd_color = G_WHITE;
+		setShortcutLineColor(G_BLACK);
 	}
 }
 
@@ -656,7 +652,7 @@ void set3dLook(BOOLEAN flag) {
  */
 WORD getBackgroundColor(void) {
 	if (userdef == NULL)
-		return (BLACK);
+		return (G_BLACK);
 
 	return (userdef->backgrd_color);
 }
@@ -668,7 +664,7 @@ WORD getBackgroundColor(void) {
  */
 WORD getShortcutLineColor(void) {
 	if (userdef == NULL)
-		return (BLACK);
+		return (G_BLACK);
 
 	return (userdef->uline_color);
 }
@@ -1282,25 +1278,4 @@ static BOOLEAN get_cookie(LONG cookie, LONG *value) {
 	} while (cookiejar[-2]);
 
 	return (FALSE);
-}
-
-/**
- *
- */
-WORD appl_xgetinfo(WORD type, WORD *out1, WORD *out2, WORD *out3, WORD *out4) {
-	BOOLEAN hasAgi = FALSE;
-	LONG du;
-	AFNT *afnt;
-
-	hasAgi = ((_GemParBlk.global[0] == 0x399 && get_cookie('MagX', &du))
-			|| (_GemParBlk.global[0] == 0x400 && type < 4)
-			|| (_GemParBlk.global[0] > 0x400) || (appl_find("?AGI") >= 0));
-
-	if (hasAgi == TRUE)
-		return (appl_getinfo(type, out1, out2, out3, out4));
-
-	if (get_cookie('AFnt', (LONG *) &afnt) && afnt->af_magic == 'AFnt')
-		return (afnt->afnt_getinfo(type, out1, out2, out3, out4));
-
-	return (0);
 }

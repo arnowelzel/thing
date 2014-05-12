@@ -188,7 +188,7 @@ BOOLEAN getObjectState(OBJECT *objectTree, WORD objectIdx, BOOLEAN objectState) 
  * @returns TRUE - Objekt selektiert, FALSE - sonst
  */
 BOOLEAN isObjectSelected(OBJECT *objectTree, WORD objectIdx) {
-	return (!!(objectTree[objectIdx].ob_state & SELECTED));
+	return (!!(objectTree[objectIdx].ob_state & OS_SELECTED));
 }
 
 /**
@@ -200,7 +200,7 @@ BOOLEAN isObjectSelected(OBJECT *objectTree, WORD objectIdx) {
  * @returns TRUE - Objekt disabled, FALSE - sonst
  */
 BOOLEAN isObjectDisabled(OBJECT *objectTree, WORD objectIdx) {
-	return (!!(objectTree[objectIdx].ob_state & DISABLED));
+	return (!!(objectTree[objectIdx].ob_state & OS_DISABLED));
 }
 
 /**
@@ -225,7 +225,7 @@ void setObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState, BOOLEA
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt  werden sollen
  */
 void setObjectSelected(OBJECT *objectTree, WORD objectIdx) {
-	objectTree[objectIdx].ob_state |= SELECTED;
+	objectTree[objectIdx].ob_state |= OS_SELECTED;
 }
 
 /*
@@ -234,7 +234,7 @@ void setObjectSelected(OBJECT *objectTree, WORD objectIdx) {
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt  werden sollen
  */
 void unsetObjectSelected(OBJECT *objectTree, WORD objectIdx) {
-	objectTree[objectIdx].ob_state &= ~SELECTED;
+	objectTree[objectIdx].ob_state &= ~OS_SELECTED;
 }
 
 /*
@@ -243,7 +243,7 @@ void unsetObjectSelected(OBJECT *objectTree, WORD objectIdx) {
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt  werden sollen
  */
 void setObjectDisabled(OBJECT *objectTree, WORD objectIdx) {
-	objectTree[objectIdx].ob_state |= DISABLED;
+	objectTree[objectIdx].ob_state |= OS_DISABLED;
 }
 
 /*
@@ -252,5 +252,5 @@ void setObjectDisabled(OBJECT *objectTree, WORD objectIdx) {
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt  werden sollen
  */
 void unsetObjectDisabled(OBJECT *objectTree, WORD objectIdx) {
-	objectTree[objectIdx].ob_state &= ~DISABLED;
+	objectTree[objectIdx].ob_state &= ~OS_DISABLED;
 }

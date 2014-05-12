@@ -40,14 +40,14 @@
 #undef ORIG_DIRCHECK
 
 #ifdef ORIG_DIRCHECK
-static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
-		int *nlinks, int follow);
-static int dirx_file(char *path,int *nfiles,long *size,int *nlinks,
-		int follow);
+static short dirx_dir(char *path,short *nfiles,short *nfolders,long *size,
+		short *nlinks, short follow);
+static short dirx_file(char *path,short *nfiles,long *size,short *nlinks,
+		short follow);
 #else
-static int build_filename(char *dst, char *a, char *b);
+static short build_filename(char *dst, char *a, char *b);
 #endif
-void title_update(int drive);
+void title_update(short drive);
 
 /*------------------------------------------------------------------*/
 /*  global variables                                                */
@@ -67,7 +67,7 @@ void put_text(FILE *fh, char *str) {
 	p = (unsigned char *) str;
 	while (*p) {
 		if ((*p < 32) || (*p == '\"') || (*p == '@'))
-			fprintf(fh, "@%02d", (int) *p);
+			fprintf(fh, "@%02d", (short) *p);
 		else
 			fprintf(fh, "%c", *p);
 		p++;
@@ -81,7 +81,7 @@ void put_text(FILE *fh, char *str) {
  PrÅft, ob das angegebene Laufwerk existiert und falls ja, um welchen
  Typ es sich handelt (Floppy, HD, sonstige)
  -------------------------------------------------------------------------*/
-int chk_drive(int drv) {
+short chk_drive(short drv) {
 	long dmap, dtst;
 
 	dtst = 1L << (long) drv;
@@ -104,17 +104,17 @@ int chk_drive(int drv) {
  einschliesslich aller Unterverzeichnisse
  -------------------------------------------------------------------------*/
 #if ORIG_DIRCHECK
-static int dlevel,xlen;
+static short dlevel,xlen;
 static char xname[MAX_PLEN];
 
-static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
-		int *nlinks, int follow)
+static short dirx_dir(char *path,short *nfiles,short *nfolders,long *size,
+		short *nlinks, short follow)
 {
 	char lpath[MAX_PLEN];
 	char dbuf[MAX_FLEN+4];
 	long dhandle;
-	int done;
-	int usexread;
+	short done;
+	short usexread;
 	XATTR xattr;
 	long xret,dret;
 
@@ -122,7 +122,7 @@ static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
 	dhandle=Dopendir(path,0);
 	/* Bei schwerem Fehler sofort raus */
 	if(dhandle==-32L) return -32;
-	if((dhandle&0xff000000L)==0xff000000L) return (int)dhandle;
+	if((dhandle&0xff000000L)==0xff000000L) return (short)dhandle;
 
 	/* Sonst normal behandeln */
 	dret=dhandle;
@@ -138,7 +138,7 @@ static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
 			dret=Dreaddir(MAX_FLEN + 4, dhandle, dbuf);
 			if(dret==0L)
 			{
-				if(((int)strlen(lpath) + (int)strlen(&dbuf[4]) + 4) < MAX_PLEN &&
+				if(((short)strlen(lpath) + (short)strlen(&dbuf[4]) + 4) < MAX_PLEN &&
 						dlevel < 17)
 				{
 					strcpy(lpath, path);
@@ -165,7 +165,7 @@ static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
 
 					/* Sicherheitscheck: Nur bearbeiten, wenn Pfad-Name nicht
 					 zu lang wird bzw. nicht mehr als 20 Hirarchie-Ebenen */
-					if(((int)strlen(lpath)+(int)strlen(&dbuf[4])+4)<MAX_PLEN && dlevel<17)
+					if(((short)strlen(lpath)+(short)strlen(&dbuf[4])+4)<MAX_PLEN && dlevel<17)
 					{
 						strcpy(lpath,path);strcat(lpath,"\\");strcat(lpath,&dbuf[4]);
 						dret=(long)dirx_dir(lpath,nfiles,nfolders,size);
@@ -194,24 +194,24 @@ static int dirx_dir(char *path,int *nfiles,int *nfolders,long *size,
 			else dret=0L;
 		}
 	}
-	return (int)dret;
+	return (short)dret;
 }
 
-static int dirx_file(char *path,int *nfiles,long *size,int *nlinks,
-		int follow)
+static short dirx_file(char *path,short *nfiles,long *size,short *nlinks,
+		short follow)
 {
 	long fret;
 	XATTR xattr;
 
 	fret=Fxattr(1,path,&xattr);
 	if(fret==-32L) return -32;
-	if((fret&0xff000000L)==0xff000000L) return (int)fret;
+	if((fret&0xff000000L)==0xff000000L) return (short)fret;
 	*nfiles=*nfiles+1;
 	*size=*size+xattr.size;
 	return 0;
 }
 #else
-static int build_filename(char *dst, char *a, char *b) {
+static short build_filename(char *dst, char *a, char *b) {
 	if ((strlen(a) + strlen(b)) < (long) MAX_PLEN) {
 		strcpy(dst, a);
 		strcat(dst, b);
@@ -223,13 +223,13 @@ static int build_filename(char *dst, char *a, char *b) {
 }
 #endif
 
-int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
-		int *nlinks, int follow, int sub)
+short dir_check(char *path, short *nfiles, short *nfolders, unsigned long *size,
+		short *nlinks, short follow, short sub)
 #ifndef ORIG_DIRCHECK
 		{
-	int fret, xread, len;
+	short fret, xread, len;
 	static XATTR xattr;
-	DTA *old_dta, mydta;
+	_DTA *old_dta, mydta;
 	long dirh, xfret;
 	char *fpath;
 	static char fname[MAX_FLEN + 4];
@@ -246,7 +246,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 	}
 	xname = fpath + MAX_PLEN;
 	strcpy(fpath, path);
-	len = (int) strlen(fpath);
+	len = (short) strlen(fpath);
 	if (!len) {
 		pfree(fpath);
 		return (1);
@@ -282,7 +282,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 		if ((dirh & 0xff000000L) == 0xff000000L) {
 			err_file(rs_frstr[ALPREAD], dirh, fpath);
 			pfree(fpath);
-			return ((int) dirh);
+			return ((short) dirh);
 		}
 	}
 	fret = 0;
@@ -290,11 +290,11 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 		xread = 1;
 		while (fret == 0) {
 			if (xread)
-				fret = (int) Dxreaddir(MAX_FLEN + 4, dirh, fname, &xattr, &xfret);
+				fret = (short) Dxreaddir(MAX_FLEN + 4, dirh, fname, &xattr, &xfret);
 			if (follow || !xread || (fret == -32L)) {
 				if (!xread || (fret == -32L)) {
 					xread = 0;
-					fret = (int) Dreaddir(MAX_FLEN + 4, dirh, fname);
+					fret = (short) Dreaddir(MAX_FLEN + 4, dirh, fname);
 				}
 				if (fret)
 					break;
@@ -313,7 +313,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 			if (fret)
 				break;
 			if (xfret) {
-				fret = (int) xfret;
+				fret = (short) xfret;
 				break;
 			}
 			xattr.mode &= S_IFMT;
@@ -336,18 +336,18 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 		}
 		Dclosedir(dirh);
 	} else {
-		len = (int) strlen(fpath);
+		len = (short) strlen(fpath);
 		strcat(fpath, "*.*");
 		old_dta = Fgetdta();
 		Fsetdta(&mydta);
 		for (fret = Fsfirst(fpath, 0x17); fret == 0; fret = Fsnext()) {
-			if (mydta.d_attrib == 0xf) /* Filter VFAT entries under TOS */
+			if (mydta.dta_attribute == 0xf) /* Filter VFAT entries under TOS */
 				continue;
-			if (mydta.d_attrib & FA_SUBDIR) {
-				if (!strcmp(mydta.d_fname, ".") || !strcmp(mydta.d_fname, ".."))
+			if (mydta.dta_attribute & FA_SUBDIR) {
+				if (!strcmp(mydta.dta_name, ".") || !strcmp(mydta.dta_name, ".."))
 					continue;
 				fpath[len] = 0;
-				if ((fret = build_filename(xname, fpath, mydta.d_fname)) != 0)
+				if ((fret = build_filename(xname, fpath, mydta.dta_name)) != 0)
 					break;
 				fpath[len] = '*';
 				fret = dir_check(xname, nfiles, nfolders, size, nlinks, follow,
@@ -358,7 +358,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 				}
 			} else {
 				(*nfiles)++;
-				*size += mydta.d_length;
+				*size += mydta.dta_size;
 			}
 		}
 		fpath[len] = 0;
@@ -380,7 +380,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 }
 #else
 {
-	int fret;
+	short fret;
 	DTA dta,*odta;
 	char lpath[MAX_PLEN];
 	char *p;
@@ -391,7 +391,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 		dlevel=0;
 		/* Geht Dopendir() usw.? */
 		strcpy(xname,path);
-		xlen=(int)strlen(xname);
+		xlen=(short)strlen(xname);
 		if(xlen>4)
 		{
 			if(!strcmp(&xname[xlen-4],"\\*.*"))
@@ -425,7 +425,7 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
 
 				/* Sicherheitscheck: Nur bearbeiten, wenn Pfad-Name nicht
 				 zu lang wird bzw. nicht mehr als 20 Hirarchie-Ebenen */
-				if(((int)strlen(lpath)+(int)strlen(dta.d_fname)+4)<MAX_PLEN && dlevel<17)
+				if(((short)strlen(lpath)+(short)strlen(dta.d_fname)+4)<MAX_PLEN && dlevel<17)
 				{
 					strcat(lpath,dta.d_fname);strcat(lpath,"\\*.*");
 					fret=dir_check(lpath,nfiles,nfolders,size,1);
@@ -472,9 +472,9 @@ int dir_check(char *path, int *nfiles, int *nfolders, unsigned long *size,
  PrÅft, ob eine Maske (Wildcard) zu einem Dateinamen passt.
  -------------------------------------------------------------------------*/
 #if 0
-static int has_wildcards(char *s) {
+static short has_wildcards(char *s) {
 	unsigned char c;
-	int *is_w;
+	short *is_w;
 
 	is_w = is_wild;
 	while ((c = *s++) != 0) {
@@ -484,12 +484,12 @@ static int has_wildcards(char *s) {
 	return (0);
 }
 
-int wild_match2(register char *pattern, register char *str) {
-	register int scc;
-	int ok, lc;
-	int c, cc;
+short wild_match2(register char *pattern, register char *str) {
+	register short scc;
+	short ok, lc;
+	short c, cc;
 	char *t;
-	int l;
+	short l;
 
 	for (;;) {
 		scc = *str++ & 0177;
@@ -562,14 +562,14 @@ int wild_match2(register char *pattern, register char *str) {
 }
 #endif
 
-int wild_match1(char *p, char *str) {
+short wild_match1(char *p, char *str) {
 	if (*p == '~')
 		return (!patternMatching(++p, str));
 	else
 		return (patternMatching(p, str));
 }
 
-int wild_match(char *mask, char *name) {
+short wild_match(char *mask, char *name) {
 	char *p;
 
 	p = strrchr(name, '\\');
@@ -580,34 +580,19 @@ int wild_match(char *mask, char *name) {
 	return wild_match1(mask, p);
 }
 
-#if 0
-/**
- abs2rel()
-
- Rechnet Desktop-Koordinaten in ein relatives System (0-32767) um und
- umgekehrt.
- -------------------------------------------------------------------------*/
-int abs2rel(int rel, int abs, int value) {
-	double res;
-
-	res = (double) rel * (double) value / (double) abs;
-	return (int) (res + 0.5);
-}
-#endif
-
 /**
  va_open()
 
  ôffnen eines beliebigen Objekts nach einer empfangenen VA_START-
  oder AV_PROGSTART-Meldung
  -------------------------------------------------------------------------*/
-int va_open(char *name) {
+short va_open(char *name) {
 	APPLINFO *appl, app;
 	char *full, *afile, *apath;
 	char *parm;
-	int t, aok;
-	int intern, rex;
-	int ret;
+	short t, aok;
+	short intern, rex;
+	short ret;
 	FILESYS fs;
 
 	if ((full = pmalloc(MAX_PLEN * 3L)) == NULL) {
@@ -712,7 +697,7 @@ int va_open(char *name) {
  -------------------------------------------------------------------------*/
 void err_file(char *alstr, long code, char *name) {
 	char lname[31], msg[256];
-	int i, c;
+	short i, c;
 
 	strShortener(lname, name, 30);
 	i = c = 0;
@@ -735,9 +720,9 @@ void err_file(char *alstr, long code, char *name) {
  -------------------------------------------------------------------------*/
 void show_help(char *ref) {
 #if 0
-	int ap_id;
+	short ap_id;
 #endif
-	int ok, rex;
+	short ok, rex;
 	APPLINFO app;
 	char *p;
 
@@ -798,7 +783,7 @@ void show_help(char *ref) {
  -------------------------------------------------------------------------*/
 void key_clr(void) {
 	EVENT event;
-	int done;
+	short done;
 
 	event.ev_mflags = MU_TIMER | MU_KEYBD;
 	event.ev_mtlocount = 10;
@@ -820,7 +805,7 @@ void key_clr(void) {
  -------------------------------------------------------------------------*/
 void msg_clr(void) {
 	EVENT event;
-	int done, top;
+	short done, top;
 
 	/* Evtl. laufende Hintergrund-Jobs einfrieren. */
 	glob.sm_format++;
@@ -877,7 +862,7 @@ void msg_clr(void) {
  -------------------------------------------------------------------------*/
 void prlong(unsigned long v, char *str) {
 	char lstr[10];
-	int i, j;
+	short i, j;
 
 	sprintf(lstr, "%9lu", v);
 	j = 0;
@@ -896,7 +881,7 @@ void prlong(unsigned long v, char *str) {
 
 void prlong11(unsigned long v, char *str) {
 	char lstr[11];
-	int i, j;
+	short i, j;
 
 	sprintf(lstr, "%10lu", v);
 	j = 0;
@@ -919,8 +904,8 @@ void prlong11(unsigned long v, char *str) {
  PrÅft, ob es sich bei der angegebenen Datei um eine 'interne' Datei
  handelt (z.B. Gruppen, Icons etc.) und îffnet diese ggf.
  -------------------------------------------------------------------------*/
-int sys_open(char *path, char *name) {
-	int ret, i;
+short sys_open(char *path, char *name) {
+	short ret, i;
 	char full[MAX_PLEN], lname[MAX_FLEN];
 
 	ret = 0;
@@ -957,7 +942,7 @@ int sys_open(char *path, char *name) {
  Kommentar am Anfang von Konfigurationsdateien erzeugen
  -------------------------------------------------------------------------*/
 void file_header(FILE *fh, char *msg, char *name) {
-	unsigned int sdate, stime;
+	unsigned short sdate, stime;
 
 	sdate = Tgetdate();
 	stime = Tgettime();
@@ -977,7 +962,7 @@ void file_header(FILE *fh, char *msg, char *name) {
  * Eingabe:
  * drive: Betroffenes Laufwerk (0 = A:, ...)
  */
-void title_update(int drive) {
+void title_update(short drive) {
 	char label[MAX_FLEN];
 	ICONDESK *p;
 
@@ -1003,7 +988,7 @@ void title_update(int drive) {
  Infos Åber ein Dateisystem ermitteln
  -------------------------------------------------------------------------*/
 #ifdef DEBUG
-void fsinfo_debug(char *file, int line, char *name, FILESYS *fs) {
+void fsinfo_debug(char *file, short line, char *name, FILESYS *fs) {
 DEBUGLOG((0, "fsinfo() called in file %s, line %d\n", file, line));
 	fs_info(name, fs);
 }
@@ -1012,7 +997,7 @@ DEBUGLOG((0, "fsinfo() called in file %s, line %d\n", file, line));
 void fs_info(char *name, FILESYS *filesys) {
 	XATTR xattr;
 	long mode, ret;
-	int namelen;
+	short namelen;
 	char lpath[MAX_PLEN], *p;
 
 DEBUGLOG((0, "fsinfo(%s)\n", name));
@@ -1062,7 +1047,7 @@ DEBUGLOG((0, "fsinfo: max. mode for Dpathconf(): %ld\n", mode));
 		if (ret == 0x7fffffffL)
 			namelen = MAX_FLEN - 1;
 		else
-			namelen = (int) ret;
+			namelen = (short) ret;
 		if (namelen >= MAX_FLEN)
 			namelen = MAX_FLEN - 1;
 		if (namelen < 12)
@@ -1077,7 +1062,7 @@ DEBUGLOG((0, "fsinfo: max. mode for Dpathconf(): %ld\n", mode));
 		if (ret < 0L)
 			ret = Dpathconf(lpath, 5);
 		if (ret >= 0L)
-			switch ((int) ret) {
+			switch ((short) ret) {
 			case 0: /* Kein TOS-System */
 			case 1:
 				filesys->flags &= ~TOS;
@@ -1096,7 +1081,7 @@ DEBUGLOG((0, "fsinfo: max. mode for Dpathconf(): %ld\n", mode));
 		if (ret < 0L)
 			ret = Dpathconf(lpath, 6);
 		if (ret >= 0L)
-			switch ((int) ret) {
+			switch ((short) ret) {
 			case 0: /* case-sensitiv */
 			case 2:
 				filesys->flags &= ~UPCASE;
@@ -1149,7 +1134,7 @@ DEBUGLOG((0, "fsinfo: Dpathconf(7) -> %lo (0x%lx)\n", ret, ret));
 				ret = Fxattr(1, ".", &xattr);
 				if (ret < 0L)
 					ret = Fxattr(1, lpath, &xattr);
-				if ((ret == 0L) && ((int) xattr.dev >= 0) && (xattr.dev < 32))
+				if ((ret == 0L) && ((short) xattr.dev >= 0) && (xattr.dev < 32))
 					filesys->biosdev = xattr.dev;
 			}
 		}
@@ -1183,7 +1168,7 @@ void clr_drv(void) {
  * @param *filesys
  */
 void fsconv(char *name, FILESYS *filesys) {
-	int i, j, isfl;
+	short i, j, isfl;
 	char *p, *pn;
 	char newname[MAX_FLEN];
 
@@ -1265,7 +1250,7 @@ DEBUGLOG((0, "fsconv: filesys->namelen: %d\n", filesys->namelen));
 		}
 	} else {
 		/* Kein TOS-System, dann evtl. LÑngenbegrenzung */
-		i = (int) strlen(pn);
+		i = (short) strlen(pn);
 		if (i > filesys->namelen)
 			pn[filesys->namelen - 1] = 0;
 		if (isfl)
@@ -1278,8 +1263,8 @@ DEBUGLOG((0, "fsconv: filesys->namelen: %d\n", filesys->namelen));
 
  Setzt die wÑhlbaren EintrÑge im F-Tasten-Popup
  -------------------------------------------------------------------------*/
-int setfpop(char *name) {
-	int i, ret;
+short setfpop(char *name) {
+	short i, ret;
 
 	ret = 4;
 	for (i = 5; i < 45; i++) {
@@ -1318,12 +1303,12 @@ int setfpop(char *name) {
  * <0: Fehler beim Einlesen aufgetreten (Spezialfall: -49 (ENMFIL),
  *     keine weiteren Files mehr)
  */
-long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
-	static int first_call = 1;
-	static int has_dxreaddir = 1;
+long get_dir_entry(char *dirpath, char *buf, short len, XATTR *xattr) {
+	static short first_call = 1;
+	static short has_dxreaddir = 1;
 	static long dirhandle = 0L;
-	static DTA my_dta;
-	DTA *old_dta;
+	static _DTA my_dta;
+	_DTA *old_dta;
 	long ret, xret;
 	char temp[MAX_PLEN + MAX_FLEN];
 
@@ -1342,12 +1327,12 @@ long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
 				strcat(temp, "\\");
 			strcat(temp, "*.*");
 			ret = Fsfirst(temp, 0x17);
-			while (!ret && (my_dta.d_attrib == 0xf))
+			while (!ret && (my_dta.dta_attribute == 0xf))
 				ret = Fsnext();
 			Fsetdta(old_dta);
 			if (ret >= 0L) {
 				*(long *) buf = 0L;
-				strcpy(&buf[4], my_dta.d_fname);
+				strcpy(&buf[4], my_dta.dta_name);
 				fill_xattr(dirpath, xattr, &my_dta);
 				first_call = 0;
 			}
@@ -1388,20 +1373,19 @@ long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
 			Fsetdta(&my_dta);
 			do {
 				ret = Fsnext();
-			} while (!ret && (my_dta.d_attrib == 0xf));
+			} while (!ret && (my_dta.dta_attribute == 0xf));
 			Fsetdta(old_dta);
 			if (ret >= 0L) {
 				*(long *) buf = 0L;
-				strcpy(&buf[4], my_dta.d_fname);
+				strcpy(&buf[4], my_dta.dta_name);
 				fill_xattr(dirpath, xattr, &my_dta);
 			} else
 				first_call = 1;
 			return (ret);
 		}
 	}
-#ifdef __AHCC__
-	return (-34L);
-#endif
+
+  return (-34L);
 }
 
 /**
@@ -1414,27 +1398,27 @@ long get_dir_entry(char *dirpath, char *buf, int len, XATTR *xattr) {
  * xattr: Zeiger auf die zu fÅllende XATTR-Struktur
  * the_dta: Zeiger auf die Quell-DTA
  */
-void fill_xattr(char *path, XATTR *xattr, DTA *the_dta) {
-	xattr->mode = (the_dta->d_attrib & 16) ?
+void fill_xattr(char *path, XATTR *xattr, _DTA *the_dta) {
+	xattr->mode = (the_dta->dta_attribute & 16) ?
 					(S_IFDIR | (0777 & ~glob.umask)) :
 					(S_IFREG | (0666 & ~glob.umask));
-	if (the_dta->d_attrib & 1)
+	if (the_dta->dta_attribute & 1)
 		xattr->mode &= ~0222;
 	xattr->index = 0L;
 	if (path[1] == ':')
 		xattr->dev = (path[1] & ~32) - 'A';
 	else
-		xattr->dev = (int) Dgetdrv();
+		xattr->dev = (short) Dgetdrv();
 	xattr->nlink = 1;
 	xattr->uid = xattr->gid = 0;
-	xattr->size = the_dta->d_length;
+	xattr->size = the_dta->dta_size;
 	xattr->blksize = 1024L;
-	xattr->nblocks = the_dta->d_length / 1024L;
-	if (the_dta->d_length % 1024L)
+	xattr->nblocks = the_dta->dta_size / 1024L;
+	if (the_dta->dta_size % 1024L)
 		xattr->nblocks++;
-	xattr->mtime = xattr->atime = xattr->ctime = the_dta->d_time;
-	xattr->mdate = xattr->adate = xattr->cdate = the_dta->d_date;
-	xattr->attr = the_dta->d_attrib;
+	xattr->mtime = xattr->atime = xattr->ctime = the_dta->dta_time;
+	xattr->mdate = xattr->adate = xattr->cdate = the_dta->dta_date;
+	xattr->attr = the_dta->dta_attribute;
 }
 
 /**
@@ -1463,10 +1447,10 @@ void fill_xattr(char *path, XATTR *xattr, DTA *the_dta) {
  *    z.B. ungÅltig, wenn er falsch gequotet wurde)
  * 1: name enthÑlt den nÑchsten Filenamen
  */
-int get_buf_entry(char *buf, char *name, char **newpos) {
+short get_buf_entry(char *buf, char *name, char **newpos) {
 	static char *bufpos;
 	char *pos;
-	int closed;
+	short closed;
 
 	if (buf != 0L)
 		pos = buf;
@@ -1553,8 +1537,8 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
  * sonst: GEMDOS-Fehlermeldung, File existiert nicht,
  *        Inhalt von *xattr undefiniert
  */
-int file_exists(char *fname, int follow, XATTR *xattr) {
-	DTA my_dta, *old_dta;
+short file_exists(char *fname, short follow, XATTR *xattr) {
+	_DTA my_dta, *old_dta;
 	XATTR the_xattr;
 	long ret;
 
@@ -1565,7 +1549,7 @@ int file_exists(char *fname, int follow, XATTR *xattr) {
 		return (0);
 	}
 	if (ret != -32L)
-		return ((int) ret);
+		return ((short) ret);
 	old_dta = Fgetdta();
 	Fsetdta(&my_dta);
 	ret = (long) Fsfirst(fname, 0x17);
@@ -1575,7 +1559,7 @@ int file_exists(char *fname, int follow, XATTR *xattr) {
 			fill_xattr(fname, xattr, &my_dta);
 		return (0);
 	}
-	return ((int) ret);
+	return ((short) ret);
 }
 
 /**
@@ -1589,13 +1573,13 @@ int file_exists(char *fname, int follow, XATTR *xattr) {
  * _3dcol: Hintergrundfarbe fÅr 3D-Look (wenn _3d == 1)
  * tree: Nummer des Baums (-1 fÅr alle)
  */
-void adjust_text(int _3d, int _3dcol, int tree) {
-	int bg, i;
+void adjust_text(short _3d, short _3dcol, short tree) {
+	short bg, i;
 
 	if (_3d && (tb.colors >= 16))
 		bg = _3dcol;
 	else
-		bg = WHITE;
+		bg = G_WHITE;
 	if (tree == -1) {
 		for (i = 0; i < NUM_TREE; i++)
 			rs_textadjust(rs_trindex[i], bg);
@@ -1615,7 +1599,7 @@ void adjust_text(int _3d, int _3dcol, int tree) {
  * NULL: Zu dieser UID existiert kein Name mit maximal 8 Zeichen
  * sonst: Zeiger auf Usernamen
  */
-char *get_username(int uid) {
+char *get_username(short uid) {
 	UGNAME *search;
 
 	for (search = glob.usernames; search != NULL; search = search->next) {
@@ -1637,7 +1621,7 @@ char *get_username(int uid) {
  * NULL: Zu dieser GID existiert kein Name mit maximal 8 Zeichen
  * sonst: Zeiger auf Gruppennamen
  */
-char *get_groupname(int gid) {
+char *get_groupname(short gid) {
 	UGNAME *search;
 
 	for (search = glob.groupnames; search != NULL; search = search->next) {
@@ -1687,8 +1671,8 @@ void quote(char *fname) {
  * 0: Puffer ist quotefrei
  * sonst: Puffer enthÑlt entsprechend viele gequotete Filenamen
  */
-int has_quotes(char *buf) {
-	int cnt;
+short has_quotes(char *buf) {
+	short cnt;
 	char hlp[MAX_PLEN], *pos;
 
 	pos = buf;
@@ -1713,8 +1697,8 @@ int has_quotes(char *buf) {
  * RÅckgabe:
  * Anzahl der Vorkommen von which in str.
  */
-int count_char(char *str, char which) {
-	int count = 0;
+short count_char(char *str, char which) {
+	short count = 0;
 	char *p;
 
 	for (p = str; *p;) {
@@ -1747,8 +1731,8 @@ int count_char(char *str, char which) {
  * 0: Laufwerk sicher nicht auswerfbar
  * sonst: Laufwerk mîglicherweise auswerfbar
  */
-int drv_ejectable(int drv) {
-	unsigned int maj, min;
+short drv_ejectable(short drv) {
+	unsigned short maj, min;
 	unsigned long flags;
 
 	if ((drv < 0) || (drv > 32))
@@ -1794,9 +1778,9 @@ int drv_ejectable(int drv) {
  * 1: Dateiauswahl erfolgreich, ausgewÑhlte Datei steht in full
  * 2: Dateiauswahl erfolgreich, ausgewÑhlter Ordner steht in full
  */
-int full_fselect(char *full, char *deflt, char *ext, int dironly, char *title, int freedret, int freedid, FORMINFO *fi) {
+short full_fselect(char *full, char *deflt, char *ext, short dironly, char *title, short freedret, short freedid, FORMINFO *fi) {
 	char path[MAX_PLEN], name[MAX_FLEN], *p;
-	int exbut, ret;
+	short exbut, ret;
 	FILESYS fs;
 
 	if (!*full) {

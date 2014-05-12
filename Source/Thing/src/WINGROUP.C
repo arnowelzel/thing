@@ -40,7 +40,7 @@
 
  ™ffnen einer Gruppe
  -------------------------------------------------------------------------*/
-int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
+short wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 	WININFO *win;
 	W_GRP *wgrp;
 	WG_ENTRY *new = NULL;
@@ -49,10 +49,10 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 	char inbuf[1024], *inbuf5 = &inbuf[5], *tx;
 	unsigned long id;
 	FILE *fh;
-	int x, y, w, h, n, i, b, fok, cok, gtaok, aclok, grok, bpok;
+	short x, y, w, h, n, i, b, fok, cok, gtaok, aclok, grok, bpok;
 	char tbuf[33];
 	double lx, ly, lw, lh;
-	int realwin = 1;
+	short realwin = 1;
 
 	/* Falls die Gruppe schon auf ist, dann nur nach vorne holen */
 	win = tb.win;
@@ -61,7 +61,7 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 			wgrp = (W_GRP *) win->user;
 			if (!strcmp(wgrp->name, name)) {
 				if (win->state & WSICON)
-					win_unicon(win, win->save.x, win->save.y, win->save.w, win->save.h);
+					win_unicon(win, win->save.g_x, win->save.g_y, win->save.g_w, win->save.g_h);
 				win_top(win);
 				mn_check();
 				return (1);
@@ -145,8 +145,8 @@ int wgrp_open(char *name, WININFO *uwin, unsigned long wait) {
 			wgrp->fcol = font.fcol;
 			wgrp->bcol = font.bcol;
 		} else {
-			wgrp->fcol = BLACK;
-			wgrp->bcol = WHITE;
+			wgrp->fcol = G_BLACK;
+			wgrp->bcol = G_WHITE;
 		}
 		wgrp->img_info = glob.img_info;
 		strcpy(wgrp->img, "");
@@ -188,29 +188,29 @@ grouperr:
 						if (realwin) {
 							tx = get_text(inbuf5, wgrp->title, MAX_FLEN - 1);
 							sscanf(tx, "%d %d %d %d %d %d", &x, &y, &w, &h, &wgrp->text, &wgrp->autosave);
-							lx = (double) tb.desk.w * (double) x / 10000L;
-							x = tb.desk.x + (int) (lx + 0.5);
-							ly = (double) tb.desk.h * (double) y / 10000L;
-							y = tb.desk.y + (int) (ly + 0.5);
-							lw = (double) tb.desk.w * (double) w / 10000L;
-							w = (int) (lw + 0.5);
-							lh = (double) tb.desk.h * (double) h / 10000L;
-							h = (int) (lh + 0.5);
-							n = tb.desk.x + tb.desk.w - 16;
+							lx = (double) tb.desk.g_w * (double) x / 10000L;
+							x = tb.desk.g_x + (short) (lx + 0.5);
+							ly = (double) tb.desk.g_h * (double) y / 10000L;
+							y = tb.desk.g_y + (short) (ly + 0.5);
+							lw = (double) tb.desk.g_w * (double) w / 10000L;
+							w = (short) (lw + 0.5);
+							lh = (double) tb.desk.g_h * (double) h / 10000L;
+							h = (short) (lh + 0.5);
+							n = tb.desk.g_x + tb.desk.g_w - 16;
 							if (x > n)
 								x = n;
-							n = tb.desk.y + tb.desk.h - 16;
+							n = tb.desk.g_y + tb.desk.g_h - 16;
 							if (y > n)
 								y = n;
-							if (w > tb.desk.w)
-								w = tb.desk.w;
-							if (h > tb.desk.h)
-								h = tb.desk.h;
-							win->curr.x = x;
-							win->curr.y = y;
-							win->curr.w = w;
-							win->curr.h = h;
-							wind_calc(WC_WORK, win->flags, x, y, w, h, &win->work.x, &win->work.y, &win->work.w, &win->work.h);
+							if (w > tb.desk.g_w)
+								w = tb.desk.g_w;
+							if (h > tb.desk.g_h)
+								h = tb.desk.g_h;
+							win->curr.g_x = x;
+							win->curr.g_y = y;
+							win->curr.g_w = w;
+							win->curr.g_h = h;
+							wind_calc(WC_WORK, win->flags, x, y, w, h, &win->work.g_x, &win->work.g_y, &win->work.g_w, &win->work.g_h);
 							win->name[0] = 0;
 							wgrp_title(win);
 						}
@@ -337,7 +337,7 @@ grouperr:
 
 			/* Mausklicks auch im Hintergrund */
 			if (conf.bsel)
-				wind_set(win->handle, WF_BEVENT, 1);
+				wind_set(win->handle, WF_BEVENT, 1, 0, 0, 0);
 
 			/* Hintergrundbild */
 			if (wgrp->img_planes <= tb.planes) {
@@ -366,7 +366,7 @@ grouperr:
 
  Gruppen-Eintrag hinzufgen
  -------------------------------------------------------------------------*/
-WG_ENTRY *wgrp_add(W_GRP *wgrp, WG_ENTRY *gprev, int class, char *title, char *name, char *parm) {
+WG_ENTRY *wgrp_add(W_GRP *wgrp, WG_ENTRY *gprev, short class, char *title, char *name, char *parm) {
 	WG_ENTRY *entry,*eptr;
 
 	/* Speicher reservieren */
@@ -451,14 +451,14 @@ void wgrp_remove(W_GRP *wgrp, WG_ENTRY *item) {
  -------------------------------------------------------------------------*/
 void wgrp_eupdate(W_GRP *grp, WG_ENTRY *item) {
 	ICONIMG *icon, *ticon;
-	int inum, i, j;
+	short inum, i, j;
 	char *p;
 	char name[MAX_FLEN], wename[MAX_FLEN], xname[MAX_PLEN];
-	int isdrive;
+	short isdrive;
 
 	p = item->name;
 	isdrive = wild_match1("[A-Za-z]:\\", p);
-	i = (int) strlen(p) - 1;
+	i = (short) strlen(p) - 1;
 	if (i > 0) {
 		if (p[i] == '\\')
 			i--;
@@ -568,7 +568,7 @@ void wgrp_update(WININFO *win) {
 void wgrp_title(WININFO *win) {
 	W_GRP *wgrp;
 	char title[MAX_FLEN + 2];
-	int doup;
+	short doup;
 
 	wgrp = (W_GRP *) win->user;
 	if (wgrp->changed)
@@ -614,9 +614,9 @@ void wgrp_tree(WININFO *win) {
 	W_GRP *wgrp;
 	OBJECT *tree;
 	ICONBLK *iblk, *tiblk;
-	int i, n, mx, my, nx, ix, iy, iw, ih;
-	int tx, tw, ob;
-	int out[8], namelen;
+	short i, n, mx, my, nx, ix, iy, iw, ih;
+	short tx, tw, ob;
+	short out[8], namelen;
 	WG_ENTRY *entry;
 
 	/* Bisherigen Objektbaum freigeben */
@@ -680,7 +680,7 @@ void wgrp_tree(WININFO *win) {
 		wgrp->tlen += namelen; /* Titel */
 		wgrp->tlen += wgrp->clw + 1; /* Rechter Rand */
 
-		mx = (win->work.w - 10 + 2 * wgrp->clw) / wgrp->tlen;
+		mx = (win->work.g_w - 10 + 2 * wgrp->clw) / wgrp->tlen;
 		if (mx == 0)
 			mx = 1;
 		my = wgrp->e_num / mx;
@@ -710,10 +710,10 @@ void wgrp_tree(WININFO *win) {
 	tree[0].ob_spec.obspec.framecol = 0;
 	tree[0].ob_spec.obspec.fillpattern = (tb.colors < 16) ? wgrp->bpat : wgrp->bpat16;
 	tree[0].ob_spec.obspec.interiorcol = wgrp->font.bcol;
-	tree[0].ob_x = win->work.x;
-	tree[0].ob_y = win->work.y;
-	tree[0].ob_width = win->work.w;
-	tree[0].ob_height = win->work.h;
+	tree[0].ob_x = win->work.g_x;
+	tree[0].ob_y = win->work.g_y;
+	tree[0].ob_width = win->work.g_w;
+	tree[0].ob_height = win->work.g_h;
 
 	if (wgrp->e_num < 1)
 		return;
@@ -761,7 +761,7 @@ void wgrp_tree(WININFO *win) {
 		/* Breite der Icon-Texte */
 		tw = namelen - 4;
 
-		mx = win->work.w / namelen; /* Anzahl der Icons pro Zeile */
+		mx = win->work.g_w / namelen; /* Anzahl der Icons pro Zeile */
 		if (mx > wgrp->e_num)
 			mx = wgrp->e_num;
 		if (!mx)
@@ -772,7 +772,7 @@ void wgrp_tree(WININFO *win) {
 		tree[0].ob_head = 1;
 		tree[0].ob_tail = wgrp->e_num;
 		tree[0].ob_flags = NONE;
-		if (mx * namelen > win->work.w)
+		if (mx * namelen > win->work.g_w)
 			tree[0].ob_width = mx * namelen;
 
 		nx = 0;
@@ -852,8 +852,8 @@ void wgrp_tree(WININFO *win) {
 
  Selektiert einen oder mehrere Eintr„ge in einem Gruppenfenster
  -------------------------------------------------------------------------*/
-void wgrp_esel1(WININFO *win, WG_ENTRY *entry, int sel, RECT *wrect, int *rd) {
-	int x, y, w, h, n, osel, yg;
+void wgrp_esel1(WININFO *win, WG_ENTRY *entry, short sel, GRECT *wrect, short *rd) {
+	short x, y, w, h, n, osel, yg;
 	W_GRP *wgrp;
 	OBJECT *tree;
 	ICONBLK *iconblk;
@@ -872,8 +872,8 @@ void wgrp_esel1(WININFO *win, WG_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 		if (wgrp->text) {
 			/* Darstellung als Text */
 			yg = (n - 1) / wgrp->imx;
-			x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.x + 10 - wgrp->offx;
-			y = yg * (wgrp->clh + 1) + win->work.y + 2 - wgrp->offy;
+			x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.g_x + 10 - wgrp->offx;
+			y = yg * (wgrp->clh + 1) + win->work.g_y + 2 - wgrp->offy;
 
 			w = wgrp->tlen - wgrp->clw * 2;
 			h = wgrp->clh;
@@ -898,23 +898,23 @@ void wgrp_esel1(WININFO *win, WG_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 		if (*rd == 0) {
 			/* Koordinaten fuer Redraw anpassen */
 			*rd = 1;
-			wrect->x = x;
-			wrect->y = y;
-			wrect->w = w;
-			wrect->h = h;
+			wrect->g_x = x;
+			wrect->g_y = y;
+			wrect->g_w = w;
+			wrect->g_h = h;
 		} else {
-			if (x < wrect->x) {
-				wrect->w += (wrect->x - x);
-				wrect->x = x;
+			if (x < wrect->g_x) {
+				wrect->g_w += (wrect->g_x - x);
+				wrect->g_x = x;
 			}
-			if (x + w > wrect->x + wrect->w)
-				wrect->w = x + w - wrect->x;
-			if (y < wrect->y) {
-				wrect->h += (wrect->y - y);
-				wrect->y = y;
+			if (x + w > wrect->g_x + wrect->g_w)
+				wrect->g_w = x + w - wrect->g_x;
+			if (y < wrect->g_y) {
+				wrect->g_h += (wrect->g_y - y);
+				wrect->g_y = y;
 			}
-			if (y + h > wrect->y + wrect->h)
-				wrect->h = y + h - wrect->y;
+			if (y + h > wrect->g_y + wrect->g_h)
+				wrect->g_h = y + h - wrect->g_y;
 		}
 	}
 }
@@ -922,11 +922,11 @@ void wgrp_esel1(WININFO *win, WG_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 /**
  * 
  */
-void wgrp_esel(WININFO *win, WG_ENTRY *entry, int add, int sel) {
+void wgrp_esel(WININFO *win, WG_ENTRY *entry, short add, short sel) {
 	W_GRP *wgrp;
 	WG_ENTRY *item;
-	RECT wrect;
-	int rd, i;
+	GRECT wrect;
+	short rd, i;
 
 	wgrp = (W_GRP *) win->user;
 	rd = 0;
@@ -942,7 +942,7 @@ void wgrp_esel(WININFO *win, WG_ENTRY *entry, int add, int sel) {
 			item = item->next;
 		}
 		if (rd)
-			win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+			win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 	} else {
 		/* Einzelnen Eintrag bearbeiten */
 		if (!add) {
@@ -954,13 +954,13 @@ void wgrp_esel(WININFO *win, WG_ENTRY *entry, int add, int sel) {
 				item = item->next;
 			}
 			if (rd)
-				win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+				win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 			rd = 0;
 		}
 		/* Status „ndern */
 		wgrp_esel1(win, entry, sel, &wrect, &rd);
 		if (rd)
-			win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+			win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 	}
 }
 
@@ -970,13 +970,13 @@ void wgrp_esel(WININFO *win, WG_ENTRY *entry, int add, int sel) {
  Scrollt den Fensterinhalt bei Bedarf, damit die selektierten Eintr„ge
  sichtbar sind.
  -------------------------------------------------------------------------*/
-void wgrp_showsel(WININFO *win, int doscroll) {
-	int rd, n, sx, sy;
-	int x, y, w, h, yg;
-	RECT wrect, irect;
+void wgrp_showsel(WININFO *win, short doscroll) {
+	short rd, n, sx, sy;
+	short x, y, w, h, yg;
+	GRECT wrect, irect;
 	W_GRP *wgrp;
 	WG_ENTRY *item;
-	int dx, i, c;
+	short dx, i, c;
 
 	rd = 0;
 	wgrp = (W_GRP *) win->user;
@@ -1002,8 +1002,8 @@ void wgrp_showsel(WININFO *win, int doscroll) {
 			n = item->obnum;
 			if (wgrp->text) {
 				yg = (n - 1) / wgrp->imx;
-				x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.x + 10 - wgrp->offx;
-				y = yg * (wgrp->clh + 1) + win->work.y + 2 - wgrp->offy;
+				x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + win->work.g_x + 10 - wgrp->offx;
+				y = yg * (wgrp->clh + 1) + win->work.g_y + 2 - wgrp->offy;
 
 				w = wgrp->tlen - wgrp->clw * 2;
 				h = wgrp->clh;
@@ -1015,23 +1015,23 @@ void wgrp_showsel(WININFO *win, int doscroll) {
 			}
 			if (!rd) {
 				rd = 1;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 			} else {
-				if (x < irect.x) {
-					irect.w += (irect.x - x);
-					irect.x = x;
+				if (x < irect.g_x) {
+					irect.g_w += (irect.g_x - x);
+					irect.g_x = x;
 				}
-				if (x + w > irect.x + irect.w)
-					irect.w = x + w - irect.x;
-				if (y < irect.y) {
-					irect.h += (irect.y - y);
-					irect.y = y;
+				if (x + w > irect.g_x + irect.g_w)
+					irect.g_w = x + w - irect.g_x;
+				if (y < irect.g_y) {
+					irect.g_h += (irect.g_y - y);
+					irect.g_y = y;
 				}
-				if (y + h > irect.y + irect.h)
-					irect.h = y + h - irect.y;
+				if (y + h > irect.g_y + irect.g_h)
+					irect.g_h = y + h - irect.g_y;
 			}
 		}
 		item = item->next;
@@ -1039,27 +1039,27 @@ void wgrp_showsel(WININFO *win, int doscroll) {
 	}
 
 	/* Fensterarbeitsbereich */
-	memcpy(&wrect, &win->work, sizeof(RECT));
+	memcpy(&wrect, &win->work, sizeof(GRECT));
 
 	/* Scroll */
 	if (rd) {
-		wrect.x += dx;
-		wrect.w -= dx;
-		sx = wrect.x - irect.x;
-		sy = wrect.y - irect.y;
+		wrect.g_x += dx;
+		wrect.g_w -= dx;
+		sx = wrect.g_x - irect.g_x;
+		sy = wrect.g_y - irect.g_y;
 		if (sy <= 0) {
-			if (irect.h > wrect.h)
-				irect.h = wrect.h;
-			if (irect.y + irect.h > wrect.y + wrect.h)
-				sy = -(irect.y - wrect.y - wrect.h + irect.h);
+			if (irect.g_h > wrect.g_h)
+				irect.g_h = wrect.g_h;
+			if (irect.g_y + irect.g_h > wrect.g_y + wrect.g_h)
+				sy = -(irect.g_y - wrect.g_y - wrect.g_h + irect.g_h);
 			else
 				sy = 0;
 		}
 		if (sx <= 0) {
-			if (irect.w > wrect.w)
-				irect.w = wrect.w;
-			if (irect.x + irect.w > wrect.x + wrect.w)
-				sx = -(irect.x - wrect.x - wrect.w + irect.w);
+			if (irect.g_w > wrect.g_w)
+				irect.g_w = wrect.g_w;
+			if (irect.g_x + irect.g_w > wrect.g_x + wrect.g_w)
+				sx = -(irect.g_x - wrect.g_x - wrect.g_w + irect.g_w);
 			else
 				sx = 0;
 		}
@@ -1084,21 +1084,21 @@ void wgrp_showsel(WININFO *win, int doscroll) {
  Ist x gleich -1, wird die Nummer des ersten im Fenster sichtbaren
  Objektes + 1 geliefert.
  -------------------------------------------------------------------------*/
-WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
+WG_ENTRY *wgrp_efind(WININFO *win, short x, short y, WG_ENTRY **prev) {
 	W_GRP *wgrp;
 	WG_ENTRY * item, *this, *lprev;
 	OBJECT *tree;
 	ICONBLK *iblk;
-	int i, j, px, py;
-	int ix, iw, ih, tx, ty, tw, th;
-	int mx, my, onum;
+	short i, j, px, py;
+	short ix, iw, ih, tx, ty, tw, th;
+	short mx, my, onum;
 
 	wgrp = (W_GRP *) win->user;
 	lprev = this = 0L;
 
 	/* Absolute Koordinaten innerhalb der Arbeitsflaeche */
-	mx = x - win->work.x - wgrp->offx;
-	my = y - win->work.y - wgrp->offy;
+	mx = x - win->work.g_x - wgrp->offx;
+	my = y - win->work.g_y - wgrp->offy;
 
 	/* Falls ikonifiziert oder keine Objekte, dann raus */
 	if (win->state & WSICON || wgrp->e_num == 0) {
@@ -1107,7 +1107,7 @@ WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
 	}
 
 	/* Nur innerhalb des Arbeitsbereichs des Fensters suchen */
-	if ((x == -1) || (x >= win->work.x && x <= win->work.x + win->work.w - 1 && y >= win->work.y && y <= win->work.y + win->work.h - 1)) {
+	if ((x == -1) || (x >= win->work.g_x && x <= win->work.g_x + win->work.g_w - 1 && y >= win->work.g_y && y <= win->work.g_y + win->work.g_h - 1)) {
 		tree = wgrp->tree;
 
 		if (wgrp->text) {
@@ -1123,11 +1123,11 @@ WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
 			i = 0;
 			while (item) {
 				ty = i / wgrp->imx;
-				px = (i - ty * wgrp->imx) * wgrp->tlen + win->work.x + 10 - wgrp->offx;
-				py = ty * (wgrp->clh + 1) + win->work.y + 2 - wgrp->offy;
+				px = (i - ty * wgrp->imx) * wgrp->tlen + win->work.g_x + 10 - wgrp->offx;
+				py = ty * (wgrp->clh + 1) + win->work.g_y + 2 - wgrp->offy;
 
 				if (x == -1) {
-					if (py >= win->work.y)
+					if (py >= win->work.g_y)
 						return ((WG_ENTRY *) (i + 1));
 				} else {
 					iw = wgrp->tlen - wgrp->clw * 2;
@@ -1165,7 +1165,7 @@ WG_ENTRY *wgrp_efind(WININFO *win, int x, int y, WG_ENTRY **prev) {
 				px = tree->ob_x + tree[i].ob_x;
 				py = tree->ob_y + tree[i].ob_y;
 				if (x == -1) {
-					if (py >= win->work.y)
+					if (py >= win->work.g_y)
 						return ((WG_ENTRY *) j);
 				} else {
 					iblk = &wgrp->wicon[i - 1].ciconblk.monoblk;
@@ -1256,24 +1256,24 @@ void wgrp_eabs(W_GRP *wgrp, WG_ENTRY *entry, char *buf) {
 
  Drag&Drop der Gruppenobjekte
  -------------------------------------------------------------------------*/
-void wgrp_edrag(int mx, int my, int mk, int ks) {
-	int lmx, lmy, lmk, lks;
-	int *pxy, *obnum;
-	int i, n, pn, px, py;
-	int p, x, y, w, h, ix, iw, tx, ty, tw;
-	int tx1, ty1, tx2, ty2;
-	int otx, oty;
-	int obj, obj1, whandle, drag, drag1;
-	int moved = 0;
+void wgrp_edrag(short mx, short my, short mk, short ks) {
+	short lmx, lmy, lmk, lks;
+	short *pxy, *obnum;
+	short i, n, pn, px, py;
+	short p, x, y, w, h, ix, iw, tx, ty, tw;
+	short tx1, ty1, tx2, ty2;
+	short otx, oty;
+	short obj, obj1, whandle, drag, drag1;
+	short moved = 0;
 	WININFO *win, *iwin, *iwin1;
 	ACWIN *accwin;
 	WP_ENTRY *item, *item1;
 	WG_ENTRY *gitem, *gitem1, *gprev;
-	int yg, wx, wy;
+	short yg, wx, wy;
 	W_GRP *wgrp;
 	WG_ENTRY *litem;
-	RECT irect, wrect;
-	int wrd, first;
+	GRECT irect, wrect;
+	short wrd, first;
 	ICONBLK *iblk;
 	XATTR xattr;
 	FILESYS fs;
@@ -1283,8 +1283,8 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 	lmk = mk;
 	lks = ks;
 	wgrp = (W_GRP *) desk.sel.win->user;
-	wx = desk.sel.win->work.x;
-	wy = desk.sel.win->work.y;
+	wx = desk.sel.win->work.g_x;
+	wy = desk.sel.win->work.g_y;
 
 	/* Aktuelle Auswahl sichern und Anzahl selektierter Objekte ermitteln */
 	n = 0;
@@ -1298,22 +1298,22 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 
 	/* Polygone fuer die Darstellung am Bildschirm aufbauen */
 	if (wgrp->text)
-		pxy = pmalloc(sizeof(int) * n * 10); /* Text: Je Eintrag 5 xy-Punkte */
+		pxy = pmalloc(sizeof(short) * n * 10); /* Text: Je Eintrag 5 xy-Punkte */
 	else
-		pxy = pmalloc(sizeof(int) * n * 18); /* Icons: Je Icon 9 xy-Punkte */
+		pxy = pmalloc(sizeof(short) * n * 18); /* Icons: Je Icon 9 xy-Punkte */
 	if (!pxy) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
-	obnum = pmalloc(sizeof(int) * n); /* Objektnummern */
+	obnum = pmalloc(sizeof(short) * n); /* Objektnummern */
 	if (!obnum) {
 		pfree(pxy);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
 
-	tx1 = tb.desk.x + tb.desk.w; /* t... Position/Maže des Gesamtrechtecks */
-	ty1 = tb.desk.y + tb.desk.h;
+	tx1 = tb.desk.g_x + tb.desk.g_w; /* t... Position/Maže des Gesamtrechtecks */
+	ty1 = tb.desk.g_y + tb.desk.g_h;
 	tx2 = ty2 = 0;
 
 	p = 0;
@@ -1329,15 +1329,15 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				x = (i - yg * wgrp->imx) * wgrp->tlen + wx + 10 - wgrp->offx;
 				y = yg * (wgrp->clh + 1) + wy + 2 - wgrp->offy;
 				w = wgrp->tlen - wgrp->clw * 2;
-				if (w > tb.desk.w)
-					w = tb.desk.w;
+				if (w > tb.desk.g_w)
+					w = tb.desk.g_w;
 				h = wgrp->clh;
-				if (h > tb.desk.h)
-					h = tb.desk.h;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				if (h > tb.desk.g_h)
+					h = tb.desk.g_h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 				/* Nur verwenden, wenn Icon sichtbar */
 				if (rc_intersect(&tb.desk, &irect) && rc_intersect(&desk.sel.win->work, &irect)) {
 					/* Polygonzug berechnen */
@@ -1367,12 +1367,12 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				tx = iblk->ib_xtext;
 				ty = iblk->ib_ytext;
 				tw = iblk->ib_wtext;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 				/* Nur verwenden, wenn Icon sichtbar */
-				if (rc_intersect(&tb.desk, &irect) && rc_intersect(&desk.sel.win->work, &irect)) {
+				if (rc_intersect((GRECT *)&tb.desk, (GRECT *)&irect) && rc_intersect((GRECT *)&desk.sel.win->work, (GRECT *)&irect)) {
 					/* Polygonzug berechnen */
 					wc_icon(&pxy[p * 18], &x, &y, &w, &h, ix, iw, tx, ty, tw);
 					p++;
@@ -1415,20 +1415,20 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 	while (lmk & 3) {
 		if (1) /*if(x!=lmx || y!=lmy)*//* Mausposition ver„ndert ? */
 		{
-			evnt_timer(10, 0);
+			evnt_timer(10L);
 			first = 0;
 			/* xy-Delta berechnen */
 			w = lmx - x;
 			h = lmy - y;
 			/* Verschiebung des Gesamtrechtecks auf Desktopbereich begrenzen */
-			if (tx1 + w < tb.desk.x)
-				w = tb.desk.x - tx1;
-			if (ty1 + h < tb.desk.y)
-				h = tb.desk.y - ty1;
-			if (tx2 + w > tb.desk.x + tb.desk.w)
-				w = (tb.desk.x + tb.desk.w) - tx2;
-			if (ty2 + h > tb.desk.y + tb.desk.h)
-				h = (tb.desk.y + tb.desk.h) - ty2;
+			if (tx1 + w < tb.desk.g_x)
+				w = tb.desk.g_x - tx1;
+			if (ty1 + h < tb.desk.g_y)
+				h = tb.desk.g_y - ty1;
+			if (tx2 + w > tb.desk.g_x + tb.desk.g_w)
+				w = (tb.desk.g_x + tb.desk.g_w) - tx2;
+			if (ty2 + h > tb.desk.g_y + tb.desk.g_h)
+				h = (tb.desk.g_y + tb.desk.g_h) - ty2;
 
 			/* Nur aktualisieren, wenn xy-Delta != 0 */
 			if (w != 0 || h != 0) {
@@ -1660,7 +1660,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 							drag = 0;
 					}
 				} else {
-					if (lmx < tb.desk.x || lmy < tb.desk.y)
+					if (lmx < tb.desk.g_x || lmy < tb.desk.g_y)
 						drag = 0;
 					else
 						drag = 1;
@@ -1750,7 +1750,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 			}
 		} else {
 			/* kein Zielfenster - dann Icons auf den Desktop legen */
-			int jumps = 0;
+			short jumps = 0;
 
 			if (drag) {
 				/* Ablegen m”glich ? */
@@ -1760,10 +1760,10 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				wrd = 0;
 
 				/* Fr Textdarstellung, Position fr Plazierung merken */
-				otx = lmx - tb.desk.x - 40;
+				otx = lmx - tb.desk.g_x - 40;
 				if (otx < 0)
 					otx = 0;
-				oty = lmy - tb.desk.y - 20;
+				oty = lmy - tb.desk.g_y - 20;
 				if (oty < 0)
 					oty = 0;
 				px = otx;
@@ -1771,8 +1771,8 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 				pn = 0;
 
 				/* Position/Maže des Gesamtrechtecks fr Desktop-Redraw */
-				tx1 = tb.desk.x + tb.desk.w;
-				ty1 = tb.desk.y + tb.desk.h;
+				tx1 = tb.desk.g_x + tb.desk.g_w;
+				ty1 = tb.desk.g_y + tb.desk.g_h;
 				tx2 = ty2 = 0;
 
 				/* Freies Desktop-Icon suchen */
@@ -1837,19 +1837,19 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 								desk.dicon[i].select = 1;
 								desk.dicon[i].prevsel = 0;
 								if (wgrp->text) {
-									if (px + 76 > tb.desk.w)
-										px = tb.desk.w - 76;
-									if (py + 40 > tb.desk.h)
-										py = tb.desk.h - 40;
+									if (px + 76 > tb.desk.g_w)
+										px = tb.desk.g_w - 76;
+									if (py + 40 > tb.desk.g_h)
+										py = tb.desk.g_h - 40;
 									desk.dicon[i].x = px;
 									desk.dicon[i].y = py;
 									px += 80;
 									pn++;
-									if (px + 76 > tb.desk.w || pn >= wgrp->imx) {
+									if (px + 76 > tb.desk.g_w || pn >= wgrp->imx) {
 										pn = 0;
 										px = otx + jumps * 80;
 										py += 48;
-										if ((py + 48) > tb.desk.h) {
+										if ((py + 48) > tb.desk.g_h) {
 											py = oty;
 											px += 80 * wgrp->imx;
 											jumps += wgrp->imx;
@@ -1858,7 +1858,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 								} else {
 									iblk = &wgrp->wicon[litem->obnum-1].ciconblk.monoblk;
 									desk.dicon[i].x = pxy[p * 18 + 0] + iblk->ib_wicon / 2;
-									desk.dicon[i].y = pxy[p * 18 + 1] - tb.desk.y;
+									desk.dicon[i].y = pxy[p * 18 + 1] - tb.desk.g_y;
 								}
 								icon_update(i);
 								objc_offset(rs_trindex[DESKTOP], i, &x, &y);
@@ -1899,7 +1899,7 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 					litem = litem->next;
 				}
 				if (wrd)
-					win_redraw(desk.sel.win, wrect.x, wrect.y, wrect.w, wrect.h);
+					win_redraw(desk.sel.win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 
 				/* Erg„nzen: Ggf. bercksichtigen, dass Icons aus der Gruppe entfernt wurden */
 
@@ -1918,11 +1918,11 @@ void wgrp_edrag(int mx, int my, int mk, int ks) {
 
  Auswahl mit "Gummiband" in einem Gruppenfenster
  -------------------------------------------------------------------------*/
-int wgrp_einrect(W_GRP *wgrp, int wx, int wy, WG_ENTRY *ob, RECT *rect) {
+short wgrp_einrect(W_GRP *wgrp, short wx, short wy, WG_ENTRY *ob, GRECT *rect) {
 	OBJECT *tree;
 	ICONBLK *iblk;
-	RECT irect;
-	int px, py, yg, is_in, n;
+	GRECT irect;
+	short px, py, yg, is_in, n;
 
 	if (!wgrp->e_num)
 		return (0);
@@ -1932,11 +1932,11 @@ int wgrp_einrect(W_GRP *wgrp, int wx, int wy, WG_ENTRY *ob, RECT *rect) {
 	if (wgrp->text) {
 		/* Darstellung als Text */
 		yg = (n - 1) / wgrp->imx;
-		irect.x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + wx + 10 - wgrp->offx;
-		irect.y = yg * (wgrp->clh + 1) + wy + 2 - wgrp->offy;
+		irect.g_x = (n - 1 - yg * wgrp->imx) * wgrp->tlen + wx + 10 - wgrp->offx;
+		irect.g_y = yg * (wgrp->clh + 1) + wy + 2 - wgrp->offy;
 
-		irect.w = wgrp->tlen - wgrp->clw * 2;
-		irect.h = wgrp->clh;
+		irect.g_w = wgrp->tlen - wgrp->clw * 2;
+		irect.g_h = wgrp->clh;
 		is_in = rc_intersect(rect, &irect);
 	} else {
 		/* Darstellung als Icons */
@@ -1950,18 +1950,18 @@ int wgrp_einrect(W_GRP *wgrp, int wx, int wy, WG_ENTRY *ob, RECT *rect) {
 		is_in = 0;
 
 		/* Text-Bereich */
-		irect.x = px + iblk->ib_xtext;
-		irect.y = py + iblk->ib_ytext;
-		irect.w = iblk->ib_wtext;
-		irect.h = iblk->ib_htext;
+		irect.g_x = px + iblk->ib_xtext;
+		irect.g_y = py + iblk->ib_ytext;
+		irect.g_w = iblk->ib_wtext;
+		irect.g_h = iblk->ib_htext;
 		if (rc_intersect(rect, &irect))
 			is_in = 1;
 
 		/* Image-Bereich */
-		irect.x = px + iblk->ib_xicon;
-		irect.y = py;
-		irect.w = iblk->ib_wicon;
-		irect.h = iblk->ib_hicon;
+		irect.g_x = px + iblk->ib_xicon;
+		irect.g_y = py;
+		irect.g_w = iblk->ib_wicon;
+		irect.g_h = iblk->ib_hicon;
 		if (rc_intersect(rect, &irect))
 			is_in = 1;
 	}
@@ -1969,15 +1969,15 @@ int wgrp_einrect(W_GRP *wgrp, int wx, int wy, WG_ENTRY *ob, RECT *rect) {
 	return (is_in);
 }
 
-void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
+void wgrp_exsel(WININFO *win, short mx, short my, short mk, short ks) {
 	W_GRP *wgrp;
 	WG_ENTRY *item;
 	OBJECT *tree;
-	int lmx, lmy, lmk, lks;
-	int i, rd, dx, dy;
-	RECT sel, sel2, rsel, wrect, crect;
-	int rxy[4], cxy[4], dn;
-	int offx, offy, maxx, maxy;
+	short lmx, lmy, lmk, lks;
+	short i, rd, dx, dy;
+	GRECT sel, sel2, rsel, wrect, crect;
+	short rxy[4], cxy[4], dn;
+	short offx, offy, maxx, maxy;
 
 	wgrp = (W_GRP *) win->user;
 	tree = wgrp->tree;
@@ -1990,10 +1990,10 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 	/* Clipping-Rechteck fuer Gummiband */
 	crect = win->work;
 	rc_intersect(&tb.desk, &crect);
-	cxy[0] = crect.x;
-	cxy[1] = crect.y;
-	cxy[2] = cxy[0] + crect.w - 1;
-	cxy[3] = cxy[1] + crect.h - 1;
+	cxy[0] = crect.g_x;
+	cxy[1] = crect.g_y;
+	cxy[2] = cxy[0] + crect.g_w - 1;
+	cxy[3] = cxy[1] + crect.g_h - 1;
 
 	/* Maximale Offsets berechnen */
 	if (wgrp->e_num == 0 || (!wgrp->text && !tree)) {
@@ -2001,11 +2001,11 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 		maxy = 0;
 	} else {
 		if (wgrp->text) {
-			maxx = wgrp->tlen * wgrp->imx + 20 - wgrp->clw * 2 - win->work.w;
-			maxy = wgrp->imy * (wgrp->clh + 1) + 3 - win->work.h;
+			maxx = wgrp->tlen * wgrp->imx + 20 - wgrp->clw * 2 - win->work.g_w;
+			maxy = wgrp->imy * (wgrp->clh + 1) + 3 - win->work.g_h;
 		} else {
-			maxx = tree->ob_width - win->work.w;
-			maxy = tree->ob_height - win->work.h;
+			maxx = tree->ob_width - win->work.g_w;
+			maxy = tree->ob_height - win->work.g_h;
 		}
 	}
 
@@ -2017,9 +2017,9 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 	}
 
 	/* Startrechteck merken */
-	sel.x = sel2.x = lmx;
-	sel.y = sel2.y = lmy;
-	sel.w = sel.h = 0;
+	sel.g_x = sel2.g_x = lmx;
+	sel.g_y = sel2.g_y = lmy;
+	sel.g_w = sel.g_h = 0;
 
 	/* Auf gehts ... */
 	graf_mouse(POINT_HAND, 0L);
@@ -2029,34 +2029,34 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 		/* Neue Mausposition holen */
 		graf_mkstate(&lmx, &lmy, &lmk, &lks);
 		/* Neues Auswahlrechteck berechnen */
-		sel2.w = lmx - sel.x + 1;
-		sel2.h = lmy - sel.y + 1;
+		sel2.g_w = lmx - sel.g_x + 1;
+		sel2.g_h = lmy - sel.g_y + 1;
 		/* Begrenzung auf Fenster */
-		if (sel2.y + sel2.h - 1 < crect.y)
-			sel2.h = crect.y - sel2.y + 1;
-		if (sel2.y + sel2.h > crect.y + crect.h)
-			sel2.h = crect.y + crect.h - sel2.y;
-		if (sel2.x + sel2.w - 1 < crect.x)
-			sel2.w = crect.x - sel2.x + 1;
-		if (sel2.x + sel2.w > crect.x + crect.w)
-			sel2.w = crect.x + crect.w - sel2.x;
+		if (sel2.g_y + sel2.g_h - 1 < crect.g_y)
+			sel2.g_h = crect.g_y - sel2.g_y + 1;
+		if (sel2.g_y + sel2.g_h > crect.g_y + crect.g_h)
+			sel2.g_h = crect.g_y + crect.g_h - sel2.g_y;
+		if (sel2.g_x + sel2.g_w - 1 < crect.g_x)
+			sel2.g_w = crect.g_x - sel2.g_x + 1;
+		if (sel2.g_x + sel2.g_w > crect.g_x + crect.g_w)
+			sel2.g_w = crect.g_x + crect.g_w - sel2.g_x;
 		/* Bei Aenderung oder Scroll Auswahlrechteck neu zeichnen */
 		dn = 0;
 		/* ... Žnderung des Auswahlrechtecks */
-		if (sel.w != sel2.w || sel.h != sel2.h)
+		if (sel.g_w != sel2.g_w || sel.g_h != sel2.g_h)
 			dn = 1;
 		/* ... Scroll */
 		offx = wgrp->offx;
 		offy = wgrp->offy;
 		dx = dy = 0;
-		if (lmx < crect.x && offx > 0)
-			dx = crect.x - lmx;
-		if (lmy < crect.y && offy > 0)
-			dy = crect.y - lmy;
-		if (lmx > crect.x + crect.w - 1 && offx < maxx)
-			dx = (crect.x + crect.w - 1) - lmx;
-		if (lmy > crect.y + crect.h - 1 && offy < maxy)
-			dy = (crect.y + crect.h - 1) - lmy;
+		if (lmx < crect.g_x && offx > 0)
+			dx = crect.g_x - lmx;
+		if (lmy < crect.g_y && offy > 0)
+			dy = crect.g_y - lmy;
+		if (lmx > crect.g_x + crect.g_w - 1 && offx < maxx)
+			dx = (crect.g_x + crect.g_w - 1) - lmx;
+		if (lmy > crect.g_y + crect.g_h - 1 && offy < maxy)
+			dy = (crect.g_y + crect.g_h - 1) - lmy;
 		dx *= conf.scroll;
 		dy *= conf.scroll;
 		if (dx != 0 || dy != 0)
@@ -2066,28 +2066,28 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 			/* L”schen und neue Maže verwenden */
 			vs_clip(tb.vdi_handle, 1, cxy);
 			rub_frame(&sel);
-			sel.w = sel2.w;
-			sel.h = sel2.h;
+			sel.g_w = sel2.g_w;
+			sel.g_h = sel2.g_h;
 
 			/* Fenster scrollen, wenn n”tig */
 			if (dx != 0 || dy != 0) {
 				win_slide(win, S_PABS, dx, dy);
 				dx = offx - wgrp->offx;
 				dy = offy - wgrp->offy;
-				sel.x += dx;
-				sel.w -= dx;
-				sel.y += dy;
-				sel.h -= dy;
+				sel.g_x += dx;
+				sel.g_w -= dx;
+				sel.g_y += dy;
+				sel.g_h -= dy;
 				sel2 = sel;
 			}
 			vs_clip(tb.vdi_handle, 1, cxy);
 			rub_frame(&sel);
 
 			/* Icons im Auswahlbereich selektieren */
-			rxy[0] = sel.x;
-			rxy[1] = sel.y;
-			rxy[2] = sel.x + sel.w - 1;
-			rxy[3] = sel.y + sel.h - 1;
+			rxy[0] = sel.g_x;
+			rxy[1] = sel.g_y;
+			rxy[2] = sel.g_x + sel.g_w - 1;
+			rxy[3] = sel.g_y + sel.g_h - 1;
 			if (rxy[2] < rxy[0]) {
 				i = rxy[2];
 				rxy[2] = rxy[0];
@@ -2098,17 +2098,17 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 				rxy[3] = rxy[1];
 				rxy[1] = i;
 			}
-			rsel.x = rxy[0];
-			rsel.y = rxy[1];
-			rsel.w = rxy[2] - rxy[0] + 1;
-			rsel.h = rxy[3] - rxy[1] + 1;
+			rsel.g_x = rxy[0];
+			rsel.g_y = rxy[1];
+			rsel.g_w = rxy[2] - rxy[0] + 1;
+			rsel.g_h = rxy[3] - rxy[1] + 1;
 
 			rd = 0;
 			item = wgrp->entry;
 			while (item) {
-				int psel;
+				short psel;
 
-				if (wgrp_einrect(wgrp, win->work.x, win->work.y, item, &rsel)) {
+				if (wgrp_einrect(wgrp, win->work.g_x, win->work.g_y, item, &rsel)) {
 					if (!item->sel && !item->prevsel)
 						wgrp_esel1(win, item, 1, &wrect, &rd);
 					else if (item->sel && item->prevsel) {
@@ -2128,7 +2128,7 @@ void wgrp_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 			if (rd) {
 				vs_clip(tb.vdi_handle, 1, cxy);
 				rub_frame(&sel);
-				win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+				win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 				vs_clip(tb.vdi_handle, 1, cxy);
 				rub_frame(&sel);
 			}

@@ -12,7 +12,7 @@
 ;--------------------------------------------------------------------------
 ;Zeiger auf den OS-Header holen
 ;
-;Deklaration: SYSHDR *get_oshdr(void)
+;Deklaration: OSHEADER *get_oshdr(void)
 ;--------------------------------------------------------------------------
 
 module get_oshdr

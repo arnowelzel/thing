@@ -34,7 +34,8 @@
 #include "rsrc\thgtxt.h"
 
 #ifdef __MINT__
-extern BASPAG *_base;
+#include <basepage.h>
+extern BASEPAGE *_base;
 #define _BasPag	_base
 #endif
 
@@ -60,12 +61,12 @@ void res_free(void) {
 /**
  *
  */
-int res_exit(char *appname) {
-  int dummy;
+short res_exit(char *appname) {
 	WINOPEN *wopen, *wopen1;
 	WININFO *win;
 	W_PATH *wpath;
 	W_GRP *wgrp;
+	short d;
 
 	/* Registrierung */
 	if ((glob.openwin = (WINOPEN *) pmalloc(sizeof(WINOPEN))) != 0L) {
@@ -100,8 +101,8 @@ int res_exit(char *appname) {
 				wopen->istop = 1;
 			else
 				wopen->istop = 0;
-			new_wind_get(win->handle, WF_HSLIDE, &wopen->sh, &dummy, &dummy, &dummy);
-			new_wind_get(win->handle, WF_VSLIDE, &wopen->sv, &dummy, &dummy, &dummy);
+			wind_get(win->handle, WF_HSLIDE, &wopen->sh, &d, &d, &d);
+			wind_get(win->handle, WF_VSLIDE, &wopen->sv, &d, &d, &d);
 
 			switch (win->class) {
 			case WCPATH:
@@ -139,10 +140,10 @@ int res_exit(char *appname) {
 	ldesk.ob_flags = LASTOB;
 	ldesk.ob_state = 0;
 	ldesk.ob_spec.userblk = &lusr;
-	ldesk.ob_x = tb.desk.x;
-	ldesk.ob_y = tb.desk.y;
-	ldesk.ob_width = tb.desk.w;
-	ldesk.ob_height = tb.desk.h;
+	ldesk.ob_x = tb.desk.g_x;
+	ldesk.ob_y = tb.desk.g_y;
+	ldesk.ob_width = tb.desk.g_w;
+	ldesk.ob_height = tb.desk.g_h;
 	lusr.ub_code = desk_usr;
 	lusr.ub_parm = 0L;
 
@@ -160,8 +161,13 @@ int res_exit(char *appname) {
 	menu_register(-1, appname);
 	wind_update (BEG_UPDATE);
 	wind_new();
-	wind_set(0, WF_NEWDESK, &ldesk, ROOT);
-	form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+  {
+    unsigned short *ss;
+    
+    ss = (unsigned short *) &ldesk;
+    wind_set(0, WF_NEWDESK, ss[0], ss[1], ROOT, d);
+  }
+	form_dial(FMD_FINISH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 	appl_exit();
 
 	return (1);
@@ -170,7 +176,9 @@ int res_exit(char *appname) {
 /**
  *
  */
-int res_init(void) {
+short res_init(void) {
+  short d = 0;
+  
 	/* Bei den AES anmelden */
 	tb.app_id = appl_init();
 	if (tb.app_id < 0) {
@@ -192,11 +200,16 @@ int res_init(void) {
 
 	/* MenÅs und Desktop anmelden */
 	menu_bar(rs_trindex[MAINMENU], 1);
-	wind_set(0, WF_NEWDESK, rs_trindex[DESKTOP], ROOT);
+  {
+    unsigned short *ss;
+    
+    ss = (unsigned short *) rs_trindex[DESKTOP];
+    wind_set(0, WF_NEWDESK, ss[0], ss[1], ROOT, d);
+  }
 
 	/* Gesicherte Fenster îffnen */
 	{
-		int otmp;
+		short otmp;
 
 		otmp = glob.tmp;
 		glob.tmp = 1;
@@ -222,9 +235,9 @@ int res_init(void) {
  * 0: Benutzer hat "Abbruch" gewÑhlt, Programm nicht starten
  * sonst: Benutzer hat Hinweis bestÑtigt, Programm starten
  */
-static int display_alert(APPLINFO *aptr) {
+static short display_alert(APPLINFO *aptr) {
 	char *src, *dst, *p, copy[61];
-	int cnt;
+	short cnt;
 
 #define LINELEN	30
 
@@ -274,7 +287,7 @@ static int display_alert(APPLINFO *aptr) {
 		if ((cnt + strlen(src)) <= LINELEN) {
 			/* Fall 2 */
 			strcat(dst, src);
-			cnt += (int) strlen(src);
+			cnt += (short) strlen(src);
 			src = p + 1;
 			continue;
 		}
@@ -311,9 +324,9 @@ static int display_alert(APPLINFO *aptr) {
  * 1: Programm wurde erfolgreich gestartet
  * -1: Programm nicht gestartet, ohne TOS2GEM nochmal probieren
  */
-int run_conwin(APPLINFO *aptr, char *cmd, int argv, char *env, char *oldenv,
-		int copen) {
-	int aret, cret;
+short run_conwin(APPLINFO *aptr, char *cmd, short argv, char *env, char *oldenv,
+		short copen) {
+	short aret, cret;
 	char *abuf;
 	long pret;
 
@@ -404,10 +417,10 @@ int run_conwin(APPLINFO *aptr, char *cmd, int argv, char *env, char *oldenv,
  * -1: Programm als MagiC-Overlay starten
  * -2: Programm als MultiTOS-Overlay starten
  */
-int run_app(APPLINFO *aptr, char *cmd, int is_gr, int argv, int doex,
+short run_app(APPLINFO *aptr, char *cmd, short is_gr, short argv, short doex,
 		char *mpar, char *env) {
 	char *argvenv, *oldenv;
-	int ret = 0;
+	short ret = 0;
 
 	if (aptr->overlay || conf.texit) {
 		if (tb.sys & SY_MSHELL)
@@ -446,38 +459,38 @@ int run_app(APPLINFO *aptr, char *cmd, int is_gr, int argv, int doex,
 	return (ret);
 }
 
-int app_start(APPLINFO *appl, char *parm, char *apath, int *rex) {
-	int argv, exist;
+short app_start(APPLINFO *appl, char *parm, char *apath, short *rex) {
+	short argv, exist;
 	char *cmd, *path, name[MAX_FLEN], appname[9];
 	char *abuf, acmd[2], *ps;
 	long mpar[5];
 	char *mpath;
-	int is_gr, p, app, cmdlen;
+	short is_gr, p, app, cmdlen;
 #if 0
-	int drv;
+	short drv;
 #endif
-	int done, ret, atype, aret;
+	short done, ret, atype, aret;
 	char title[80];
 	long ldummy;
 	char *spec, *pipname;
-	int copen;
+	short copen;
 	XATTR xattr;
 	OBJECT *objectTree;
-	int doex;
+	short doex;
 	/* FÅr Auslagerung von Thing */
 	FILE *rfh;
-	int multi;
-	int has_wdef = 0, d;
+	short multi;
+	short has_wdef = 0, d;
 	char *rname, *rcmd;
 	/* FÅr TOSRUN */
-	int trunok;
+	short trunok;
 	long trunfd;
 	char *trunbuf;
 	/* FÅr Auswertung ausstehender shel_write()s unter Single-TOS */
 	char scmd[256], stail[256];
 	APPLINFO sappl;
 	/* FÅr lokales Environment */
-	int i, euse;
+	short i, euse;
 	char *env, *oldenv;
 	/* FÅr indirekten Start Åber Datei */
 	APPLINFO *aptr, iappl;
@@ -772,7 +785,7 @@ else aptr=appl;
 	}
 
 app_start1:
-	cmdlen = (int) strlen(&cmd[1]);
+	cmdlen = (short) strlen(&cmd[1]);
 	argv = 0;
 	if ((cmdlen <= 124) && !has_quotes(&cmd[1]) && !aptr->unixpaths) {
 		cmd[0] = (char) cmdlen;
@@ -850,7 +863,7 @@ app_start1:
 						}
 						aret = shel_write(3, 1, 0, aptr->startname, "\0");
 						if (aret) {
-							evnt_timer(1000, 0);
+							evnt_timer(1000L);
 							if ((app = appl_find(appname)) >= 0)
 								goto call_acc;
 							else
@@ -863,9 +876,9 @@ app_start1:
 					}
 				} else {
 					if (tb.sys & SY_AGI) {
-						int max_shwr, du;
+						short max_shwr, du;
 
-						if (appl_xgetinfo(10, &max_shwr, &du, &du, &du)) {
+						if (appl_getinfo(10, &max_shwr, &du, &du, &du)) {
 							max_shwr &= 0xff;
 							if (max_shwr >= 3) /* oder wenn shel_write-Modus 3 vorhanden */
 								goto run_acc;
@@ -906,7 +919,7 @@ app_start1:
 		if (tb.sys & SY_MULTI) {
 			/* Single-Mode unter MagiC */
 			if (aptr->single && tb.sys & SY_MSHELL) {
-				int mode;
+				short mode;
 
 				magic_overlay: mode = aptr->single ? SHW_SINGLE : SHW_CHAIN;
 				/* ARGV unter MagiC!3 */
@@ -1075,9 +1088,9 @@ app_start1:
 						/* TOSWIN anwerfen */
 						appl_send(app, AC_OPEN, 0, 0, 0, 0, 0, 0);
 						/* TOSWIN etwas Bedenkzeit geben */
-						evnt_timer(200, 0);
+						evnt_timer(200L);
 						/* Buffer fÅr Parameter reservieren */
-						cmdlen = (int) strlen(aptr->startname) + 2 + (int) strlen(cmd);
+						cmdlen = (short) strlen(aptr->startname) + 2 + (short) strlen(cmd);
 						trunbuf = pmalloc((long) cmdlen);
 						if (!trunbuf)
 							frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
@@ -1094,16 +1107,16 @@ app_start1:
 
 							/* Pipe fÅr TOSRUN îffnen */
 							pipname = "U:\\pipe\\tosrun";
-							trunfd = Fopen(pipname, FO_RW);
+							trunfd = Fopen(pipname, 2 /* FO_RW */);
 							if (trunfd >= 0L) {
 								/* Parameter in die Pipe schreiben */
-								cmdlen = (int) strlen(trunbuf) + 1;
-								if (Fwrite((int) trunfd, (long) cmdlen, trunbuf) == (long) cmdlen) {
+								cmdlen = (short) strlen(trunbuf) + 1;
+								if (Fwrite((short) trunfd, (long) cmdlen, trunbuf) == (long) cmdlen) {
 									trunok = 1;
 									aret = 1;
 								}
 								/* Pipe schlieûen */
-								Fclose((int) trunfd);
+								Fclose((short) trunfd);
 							} else {
 								if (!glob.toserr) {
 									err_file(rs_frstr[ALFLCREATE], trunfd, pipname);
@@ -1130,9 +1143,9 @@ app_start1:
 								strcpy(objectTree->ob_spec.tedinfo->te_ptext, name);
 								objectTree->ob_x = 0;
 								objectTree->ob_y = 0;
-								objectTree->ob_width = tb.desk.w;
-								objectTree->ob_height = tb.desk.y - 1;
-								objc_draw(objectTree, ROOT, MAX_DEPTH, 0, 0, tb.desk.w, tb.desk.y - 1);
+								objectTree->ob_width = tb.desk.g_w;
+								objectTree->ob_height = tb.desk.g_y - 1;
+								objc_draw(objectTree, ROOT, MAX_DEPTH, 0, 0, tb.desk.g_w, tb.desk.g_y - 1);
 							} else {
 								/* Text-Applikation */
 								v_hide_c(tb.vdi_handle);
@@ -1179,8 +1192,13 @@ app_start1:
 											/* Ok - dann jetzt starten */
 											wind_update (BEG_UPDATE);
 											wind_new();
-											wind_set(0, WF_NEWDESK, &ldesk, ROOT);
-											form_dial(FMD_FINISH, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+										  {
+										    unsigned short *ss;
+										    
+										    ss = (unsigned short *) &ldesk;
+										    wind_set(0, WF_NEWDESK, ss[0], ss[1], ROOT, 0);
+										  }
+											form_dial(FMD_FINISH, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 											strcpy(sappl.name, scmd);
 											if (Pexec(0, scmd, stail, 0L) == 0L)
 												aret = 1;
@@ -1251,7 +1269,7 @@ app_start1:
 				fclose(rfh);
 				conf_save(1);
 				if (tb.sys & SY_AGI) {
-					if (appl_xgetinfo(5, &d, &d, &d, &has_wdef) == 0)
+					if (appl_getinfo(5, &d, &d, &d, &has_wdef) == 0)
 						has_wdef = 0;
 				}
 				if (has_wdef)
@@ -1314,7 +1332,7 @@ APPLINFO *app_add(void) {
 
 void app_remove(APPLINFO *appl) {
 	APPLINFO *aprev, *anext;
-	int i;
+	short i;
 
 	aprev = appl->prev;
 	anext = appl->next;
@@ -1346,7 +1364,7 @@ void app_remove(APPLINFO *appl) {
 APPLINFO *app_find(char *name) {
 	APPLINFO *aptr;
 	char *name1, *name2, *name3, *path, *c1, *c2;
-	int i;
+	short i;
 
 	name1 = pmalloc(MAX_PLEN * 4L);
 	if (name1 == NULL)
@@ -1429,9 +1447,9 @@ APPLINFO *app_get(char *title) {
  -------------------------------------------------------------------------*/
 /* qsort fÅr app_list() */
 
-void apl_qsort(APPLINFO **list, int left, int right) {
-	int i, last;
-	void apl_swap(APPLINFO **list, int i, int j);
+void apl_qsort(APPLINFO **list, short left, short right) {
+	short i, last;
+	void apl_swap(APPLINFO **list, short i, short j);
 
 	if (left >= right)
 		return;
@@ -1446,7 +1464,7 @@ void apl_qsort(APPLINFO **list, int left, int right) {
 	apl_qsort(list, last + 1, right);
 }
 
-void apl_swap(APPLINFO **list, int i, int j) {
+void apl_swap(APPLINFO **list, short i, short j) {
 	APPLINFO *temp;
 
 	temp = list[i];
@@ -1454,8 +1472,8 @@ void apl_swap(APPLINFO **list, int i, int j) {
 	list[j] = temp;
 }
 
-APPLINFO **app_list(int *n) {
-	int i;
+APPLINFO **app_list(short *n) {
+	short i;
 	APPLINFO *appl, **list;
 
 	/* Anzahl der Applikationen ermitteln */
@@ -1500,7 +1518,7 @@ APPLINFO **app_list(int *n) {
  -------------------------------------------------------------------------*/
 void app_opensel(APPLINFO *appl) {
 	char *p;
-	int rex;
+	short rex;
 	char apath[MAX_PLEN], aname[MAX_FLEN];
 
 	rex = 0;
@@ -1546,7 +1564,7 @@ void app_opensel(APPLINFO *appl) {
  -------------------------------------------------------------------------*/
 char *app_env(APPLINFO *appl) {
 	char *env,*new;
-	int elen, nlen, i, j, p, done;
+	short elen, nlen, i, j, p, done;
 
 	/* Grîûe des aktuellen Environments ermitteln */
 	elen = 0;
@@ -1566,7 +1584,7 @@ char *app_env(APPLINFO *appl) {
 	/* Grîûe des zusÑtzlichen lokalen Environments */
 	for (i = 0; i < MAX_EVAR; i++)
 		if (appl->evar[i])
-			nlen += (int) (strlen(appl->evar[i]) + 1);
+			nlen += (short) (strlen(appl->evar[i]) + 1);
 
 	nlen++; /* Abschliessendes Nullbyte */
 
@@ -1609,8 +1627,8 @@ char *app_env(APPLINFO *appl) {
  ein Programm mit dem ARGV-Verfahren, dass mit Pexec() gestartet
  wird.
  -------------------------------------------------------------------------*/
-static void insert_parm(char *dest, int *destidx, char *parm, int unixpaths) {
-	int i;
+static void insert_parm(char *dest, short *destidx, char *parm, short unixpaths) {
+	short i;
 
 	if (unixpaths) {
 		if (wild_match1("[a-tA-Tv-zV-Z]:\\*", parm)) {
@@ -1631,10 +1649,10 @@ static void insert_parm(char *dest, int *destidx, char *parm, int unixpaths) {
 	dest[(*destidx)++] = 0;
 }
 
-char *app_argv(char *cmd, char *prog, int unixpaths) {
+char *app_argv(char *cmd, char *prog, short unixpaths) {
 	char *env, *new;
 	char parm[MAX_PLEN], *buf;
-	int elen, nlen, p, done;
+	short elen, nlen, p, done;
 
 	/* Grîûe des aktuellen Environments ermitteln */
 	elen = 0;
@@ -1653,8 +1671,8 @@ char *app_argv(char *cmd, char *prog, int unixpaths) {
 
 	/* Grîûe fÅr ARGV-Buffer berechnen */
 	nlen += 9; /* 'ARGV=1\0\0' und abschliessendes Doppelnullbyte */
-	nlen += ((int) strlen(prog)) + 1; /* Programmname als argv[0] */
-	nlen += ((int) strlen(cmd)) + 1; /* Parameter ab argv[1] */
+	nlen += ((short) strlen(prog)) + 1; /* Programmname als argv[0] */
+	nlen += ((short) strlen(cmd)) + 1; /* Parameter ab argv[1] */
 
 	/* Buffer reservieren */
 	new = pmalloc(nlen);
@@ -1694,13 +1712,13 @@ char *app_argv(char *cmd, char *prog, int unixpaths) {
  zustÑndige Applikation gibt, der zurÅckgelieferte Zeiger sagt in
  diesem Fall nur "Ja" (!= NULL) oder "Nein" (== NULL) aus.
  -------------------------------------------------------------------------*/
-APPLINFO *app_match(int mode, char *name, int *ok) {
+APPLINFO *app_match(short mode, char *name, short *ok) {
 	APPLINFO *appl, *aptr, *aplist[10];
 	OBJECT *objectTree;
 	char *aptxt[10], apall[10], *tptr, *spec;
 	char mask[61], *help, *wild, wildcard[61], wname[MAX_PLEN];
-	int n, i, j, match, amatch, done;
-	int ret, dclick;
+	short n, i, j, match, amatch, done;
+	short ret, dclick;
 
 	aptr = 0L;
 	if (ok)
@@ -1933,7 +1951,7 @@ APPLINFO *app_match(int mode, char *name, int *ok) {
  -------------------------------------------------------------------------*/
 void app_default(APPLINFO *appl) {
 	char *p;
-	int t, i;
+	short t, i;
 
 	p = strrchr(appl->name, '\\');
 	if (p)
@@ -1977,7 +1995,7 @@ void app_default(APPLINFO *appl) {
  -------------------------------------------------------------------------*/
 APPLINFO *app_isdrag(char *name) {
 	APPLINFO *appl, *aptr;
-	int i, j, all, match;
+	short i, j, all, match;
 	char *wild, wildcard[61], mask[61], wname[MAX_FLEN], *p;
 
 	aptr = 0L;

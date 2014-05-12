@@ -37,7 +37,7 @@
 #ifdef TIMER
 static clock_t timer;
 #endif
-static void wpath_iconupdate(W_PATH *wpath, int first, int last);
+static void wpath_iconupdate(W_PATH *wpath, short first, short last);
 
 /**-------------------------------------------------------------------------
  wpath_find()
@@ -46,7 +46,7 @@ static void wpath_iconupdate(W_PATH *wpath, int first, int last);
  -------------------------------------------------------------------------*/
 WININFO *wpath_find(char *path) {
 	W_PATH *wpath;
-	int n;
+	short n;
 
 	n = 0;
 	while (n < MAX_PWIN) {
@@ -66,12 +66,12 @@ WININFO *wpath_find(char *path) {
 
  Neues Verzeichnisfenster oeffnen und angegeben Datei darin selektieren
  -------------------------------------------------------------------------*/
-int wpath_obfind(char *full) {
+short wpath_obfind(char *full) {
 	char path[MAX_PLEN], name[MAX_FLEN];
 	W_PATH *wpath;
 	WP_ENTRY *item, *sitem;
-	RECT wrect;
-	int i, wrd;
+	GRECT wrect;
+	short i, wrd;
 
 	full2comp(full, path, name);
 	if (wpath_open(path, "*", 1, 0L, conf.index.text, -1, conf.index.sortby)) {
@@ -107,13 +107,13 @@ int wpath_obfind(char *full) {
 void wpath_name(WININFO *win) {
 	W_PATH *wpath;
 	char wtitle[MAX_PLEN];
-	int i, r;
+	short i, r;
 
 	wpath = ((W_PATH *) win->user);
 
 	strcpy(wtitle, wpath->path);
 	if (wpath->rel) {
-		i = (int) strlen(wpath->path) - 2;
+		i = (short) strlen(wpath->path) - 2;
 		if (i > 0) {
 			r = wpath->rel;
 			while (r > 1) {
@@ -141,7 +141,7 @@ void wpath_name(WININFO *win) {
 		sprintf(win->name, " %s ", wtitle);
 	else
 		sprintf(win->name, " %s%s ", wtitle, wpath->index.wildcard);
-	wind_set(win->handle, WF_NAME, win->name);
+	wind_set_str(win->handle, WF_NAME, win->name);
 }
 
 /**-------------------------------------------------------------------------
@@ -151,12 +151,12 @@ void wpath_name(WININFO *win) {
  Hauptverzeichnis, oder tritt ein Fehler auf wird als Ergebnis 0
  zurueckgeliefert
  -------------------------------------------------------------------------*/
-int wpath_parent(WININFO *win, int new, int rel) {
+short wpath_parent(WININFO *win, short new, short rel) {
 	W_PATH *wpath;
 	WP_ENTRY *item, *sitem;
-	RECT wrect;
-	int wrd;
-	int i, p, l,ret, wrel;
+	GRECT wrect;
+	short wrd;
+	short i, p, l,ret, wrel;
 	char path[MAX_PLEN], foldr[MAX_FLEN];
 	WININFO *lwin;
 
@@ -191,7 +191,7 @@ int wpath_parent(WININFO *win, int new, int rel) {
 		}
 	}
 
-	l = (int)strlen(wpath->path);
+	l = (short)strlen(wpath->path);
 	if (l == 3)
 		return (0);
 	else {
@@ -312,7 +312,7 @@ void wpath_tfree(WININFO *win) {
  Žndert Muster und Farbe des Hintergrunds der Verzeichnisfenster
  -------------------------------------------------------------------------*/
 void wpath_pat(void) {
-	int i;
+	short i;
 	W_PATH *wpath;
 	OBJECT *tree;
 
@@ -323,7 +323,7 @@ void wpath_pat(void) {
 			if (tree) {
 				tree->ob_spec.obspec.interiorcol = conf.font.bcol;
 				tree->ob_spec.obspec.fillpattern = conf.bpat;
-				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 			}
 		}
 	}
@@ -338,13 +338,13 @@ void wpath_tree(WININFO *win) {
 	W_PATH *wpath;
 	OBJECT *tree;
 	ICONBLK *iblk, *tiblk;
-	int i, n, nname, next, mx, my, nx, ix, iy, iw, ih;
-	int tx, tw;
-	int out[8], namelen;
-	int uidlen, gidlen;
+	short i, n, nname, next, mx, my, nx, ix, iy, iw, ih;
+	short tx, tw;
+	short out[8], namelen;
+	short uidlen, gidlen;
 	WP_ENTRY *entry;
-	int cld, crd;
-	int tos;
+	short cld, crd;
+	short tos;
 	char *xch = "rhaswx";
 
 	/* Bisherigen Objektbaum freigeben */
@@ -525,7 +525,7 @@ void wpath_tree(WININFO *win) {
 		}
 		wpath->tlen += wpath->clw + 1; /* Rechter Rand */
 
-		mx = (win->work.w - 10 + 2 * wpath->clw) / wpath->tlen;
+		mx = (win->work.g_w - 10 + 2 * wpath->clw) / wpath->tlen;
 		if (mx == 0)
 			mx = 1;
 		my = wpath->e_total / mx;
@@ -556,10 +556,10 @@ void wpath_tree(WININFO *win) {
 	tree->ob_spec.obspec.framecol = 0;
 	tree->ob_spec.obspec.fillpattern = conf.bpat;
 	tree->ob_spec.obspec.interiorcol = conf.font.bcol;
-	tree->ob_x = win->work.x;
-	tree->ob_y = win->work.y;
-	tree->ob_width = win->work.w;
-	tree->ob_height = win->work.h;
+	tree->ob_x = win->work.g_x;
+	tree->ob_y = win->work.g_y;
+	tree->ob_width = win->work.g_w;
+	tree->ob_height = win->work.g_h;
 
 	if (wpath->e_total < 1)
 		return;
@@ -606,7 +606,7 @@ void wpath_tree(WININFO *win) {
 		/* Breite der Icon-Texte */
 		tw = namelen - 4;
 
-		mx = win->work.w / namelen; /* Anzahl der Icons pro Zeile */
+		mx = win->work.g_w / namelen; /* Anzahl der Icons pro Zeile */
 		if (mx > wpath->e_total)
 			mx = wpath->e_total;
 		if (!mx)
@@ -617,7 +617,7 @@ void wpath_tree(WININFO *win) {
 		tree->ob_head = 1;
 		tree->ob_tail = wpath->e_total;
 		tree->ob_flags = NONE;
-		if (mx * namelen > win->work.w)
+		if (mx * namelen > win->work.g_w)
 			tree->ob_width = mx * namelen;
 
 		nx = 0;
@@ -689,31 +689,31 @@ void wpath_tree(WININFO *win) {
 
  Liest ein Verzeichnis ein und baut daraus eine verkettete Liste auf
  -------------------------------------------------------------------------*/
-int wpath_update(WININFO *win) {
+short wpath_update(WININFO *win) {
 	W_PATH *wpath;
 	WP_ENTRY *entry;
 	char *p, *ename;
 	char full[MAX_PLEN];
-	int num, i, wret, fs, toolong;
+	short num, i, wret, fs, toolong;
 	long lret, xret;
-	DTA dta, *odta;
+	_DTA dta, *odta;
 	long dhandle;
-	unsigned int fmode;
-	int usemint, usexr;
+	unsigned short fmode;
+	short usemint, usexr;
 	char dbuf[MAX_FLEN + 4];
 	char *fname;
 	XATTR xattr, xattrl;
-	int link, retry, useit, lmax;
-	int uid, gid;
-	int adate, atime, cdate, ctime;
+	short link, retry, useit, lmax;
+	short uid, gid;
+	short adate, atime, cdate, ctime;
 	char inbuf[1024];
 	FILE *handle;
 	unsigned long id;
-	int depth;
+	short depth;
 #if 0
 	/* Workaround fuer Links */
 	char lbuf[MAX_PLEN];
-	int llen;
+	short llen;
 #endif
 
 #ifdef TIMER
@@ -782,7 +782,7 @@ DEBUGLOG((0, "wpath_update(%s)\n", wpath->path));
 
 wpath_update2:
 	if (getCookie('MgMc', 0L) && getCookie('SCSI', 0L)) {
-		DISKINFO dummy;
+		_DISKINFO dummy;
 
 		Dfree(&dummy, (wpath->path[0] & ~32) - 'A');
 	}
@@ -805,9 +805,9 @@ wpath_update2:
 	/* Verzeichnis lesen */
 	fs = toolong = 0; /* Flag fr Fehler l”schen */
 	usexr = 1;
-	if ((int) strlen(wpath->path) > 3) {
+	if ((short) strlen(wpath->path) > 3) {
 		strcpy(full, wpath->path);
-		full[(int) strlen(full) - 1] = 0;
+		full[(short) strlen(full) - 1] = 0;
 
 		dhandle = Dopendir(wpath->path, 0);
 		if (dhandle == -32L) {
@@ -816,8 +816,8 @@ wpath_update2:
 			lret = (long) Fsfirst(full, FA_SUBDIR | FA_HIDDEN | FA_SYSTEM);
 			if (lret != 0L)
 				fs = 1; /* Fehler? */
-			wpath->fdate = dta.d_date;
-			wpath->ftime = dta.d_time;
+			wpath->fdate = dta.dta_date;
+			wpath->ftime = dta.dta_time;
 			fmode = 0;
 		} else {
 			/* Eventuell Fehler bei Dopendir() aufgetreten? */
@@ -864,7 +864,7 @@ DEBUGLOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 			if (wpath->rel) {
 				wret = 0;
 			} else {
-				i = (int) strlen(wpath->path) - 2;
+				i = (short) strlen(wpath->path) - 2;
 				while (wpath->path[i] != '\\')
 					i--;
 				i++;
@@ -876,7 +876,7 @@ DEBUGLOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 			if (lret == -14L || lret == -58L) {
 				/* Bei Lock kurze Pause einlegen */
 				if (lret == -58L)
-					evnt_timer(500, 0);
+					evnt_timer(500L);
 				retry++;
 				if (retry < 2)
 					goto wpath_update2;
@@ -887,14 +887,14 @@ DEBUGLOG((0, "After opening %s: fs: %d, lret: %ld\n", wpath->path, fs, lret));
 	} else {
 		/* Keine Fehler... */
 		if (!usemint) {
-			fname = dta.d_fname;
+			fname = dta.dta_name;
 			fmode = 0;
 			strcpy(full, wpath->path);
 			strcat(full, "*.*");
 			lret = (long) Fsfirst(full, FA_SUBDIR | FA_HIDDEN | FA_SYSTEM);
 			if (lret == 0L) {
-				adate = cdate = dta.d_date;
-				atime = ctime = dta.d_time;
+				adate = cdate = dta.dta_date;
+				atime = ctime = dta.dta_time;
 				uid = gid = 0;
 			}
 		} else {
@@ -923,10 +923,10 @@ DEBUGLOG((0, "wpath_update: Setting dir to %s\n", wpath->path));
 				if (xret != 0L)
 					lret = xret;
 				else {
-					dta.d_date = xattr.mdate;
-					dta.d_time = xattr.mtime;
-					dta.d_attrib = xattr.attr;
-					dta.d_length = xattr.size;
+					dta.dta_date = xattr.mdate;
+					dta.dta_time = xattr.mtime;
+					dta.dta_attribute = xattr.attr;
+					dta.dta_size = xattr.size;
 					fmode = xattr.mode;
 					if (!(wpath->filesys.flags & UNIXATTR))
 						fmode &= S_IFMT;
@@ -993,17 +993,17 @@ DEBUGLOG((0, "wpath_update: Setting dir to %s\n", wpath->path));
 			}
 			/* Pruefen, ob der Eintrag verwendet wird */
 			useit = 1;
-			if (dta.d_attrib & FA_SUBDIR && (fname[0] == '.' && fname[1] == 0) || (fname[0] == '.' && fname[1] == '.' && fname[2] == 0))
+			if (dta.dta_attribute & FA_SUBDIR && (fname[0] == '.' && fname[1] == 0) || (fname[0] == '.' && fname[1] == '.' && fname[2] == 0))
 				useit = 0;
 
 			if (!conf.hidden) {
-				if ((dta.d_attrib & FA_HIDDEN) || (!(wpath->filesys.flags & TOS) && (fname[0] == '.'))) {
+				if ((dta.dta_attribute & FA_HIDDEN) || (!(wpath->filesys.flags & TOS) && (fname[0] == '.'))) {
 					useit = 0;
 				}
 			}
 
 			/* Win '95-Eintraege ausfiltern */
-			if (dta.d_attrib & FA_VOLUME)
+			if (dta.dta_attribute & FA_VOLUME)
 				useit = 0;
 
 			if (useit) {
@@ -1013,11 +1013,11 @@ DEBUGLOG((0, "wpath_update: Setting dir to %s\n", wpath->path));
 DEBUGLOG((0, "wpath_update: Following link %s\n", fname));
 					if (Fxattr(0, fname, &xattrl) == 0L) {
 						/* Alles klar - Attribute des Originals merken */
-						dta.d_attrib = xattrl.attr;
-						dta.d_date = xattrl.mdate;
-						dta.d_time = xattrl.mtime;
-						dta.d_attrib = xattrl.attr;
-						dta.d_length = xattrl.size;
+						dta.dta_attribute = xattrl.attr;
+						dta.dta_date = xattrl.mdate;
+						dta.dta_time = xattrl.mtime;
+						dta.dta_attribute = xattrl.attr;
+						dta.dta_size = xattrl.size;
 						fmode = xattrl.mode;
 						if (!(wpath->filesys.flags & UNIXATTR))
 							fmode &= S_IFMT;
@@ -1059,7 +1059,7 @@ DEBUGLOG((0, "wpath_update: Link is orphaned\n"));
 					entry->fext = strrchr(ename, '.');
 
 					/* Directory? */
-					if (dta.d_attrib & FA_SUBDIR) {
+					if (dta.dta_attribute & FA_SUBDIR) {
 						entry->class = EC_FOLDER;
 						entry->size = 0L;
 						entry->attr = 0;
@@ -1070,16 +1070,16 @@ DEBUGLOG((0, "wpath_update: Link is orphaned\n"));
 					} else {
 						/* Nein - Datei */
 						entry->class = EC_FILE;
-						entry->size = dta.d_length;
-						entry->attr = dta.d_attrib;
+						entry->size = dta.dta_size;
+						entry->attr = dta.dta_attribute;
 						if (entry->link != 2)
 							entry->aptype = is_app(ename, fmode);
 						else
 							entry->aptype = 0;
 					}
 				}
-				entry->date = dta.d_date;
-				entry->time = dta.d_time;
+				entry->date = dta.dta_date;
+				entry->time = dta.dta_time;
 				entry->uid = uid;
 				entry->gid = gid;
 				entry->adate = adate;
@@ -1100,8 +1100,8 @@ get_next:
 				lret = (long)Fsnext();
 				if (lret == 0L) {
 					uid = gid = 0;
-					adate = cdate = dta.d_date;
-					atime = ctime = dta.d_time;
+					adate = cdate = dta.dta_date;
+					atime = ctime = dta.dta_time;
 				}
 			} else {
 				/* Wenn moeglich, Dxreaddir() verwenden */
@@ -1115,10 +1115,10 @@ get_next:
 					if (lret == 0L)
 						xret = Fxattr(1, fname, &xattr);
 				}
-				dta.d_date = xattr.mdate;
-				dta.d_time = xattr.mtime;
-				dta.d_attrib = xattr.attr;
-				dta.d_length = xattr.size;
+				dta.dta_date = xattr.mdate;
+				dta.dta_time = xattr.mtime;
+				dta.dta_attribute = xattr.attr;
+				dta.dta_size = xattr.size;
 				fmode = xattr.mode; /* Dateityp maskieren */
 				if (!(wpath->filesys.flags & UNIXATTR))
 					fmode &= S_IFMT;
@@ -1174,7 +1174,7 @@ wpath_update3:
 			wpath->list = 0L;
 		}
 		else
-		Mshrink(0, wpath->list, (long)wpath->e_num*sizeof(WP_ENTRY));
+		Mshrink(wpath->list, (long)wpath->e_num*sizeof(WP_ENTRY));
 	}
 
 	/* Liste anlegen */
@@ -1229,10 +1229,10 @@ wpath_update1:;
   a[c] = tmp;\
  }
 
-void wpi_qsort(WP_ENTRY **list, int left, int right, int mode) {
-	int i, last;
-	int v, m, f;
-	int f1, f2, n1, n2, u1, u2;
+void wpi_qsort(WP_ENTRY **list, short left, short right, short mode) {
+	short i, last;
+	short v, m, f;
+	short f1, f2, n1, n2, u1, u2;
 	long r;
 	WP_ENTRY *li, *lleft;
 	char *exti, *extl;
@@ -1358,10 +1358,10 @@ void wpi_qsort(WP_ENTRY **list, int left, int right, int mode) {
 	wpi_qsort(list, last + 1, right, mode);
 }
 
-void wpath_iupdate(WININFO *win, int dosort) {
+void wpath_iupdate(WININFO *win, short dosort) {
 	W_PATH *wpath;
 	WP_ENTRY *entry;
-	int i, n, wi, wj, wdone, showall;
+	short i, n, wi, wj, wdone, showall;
 	char wildcard[MAX_FLEN], iwild[MAX_FLEN];
 
 	for (i = 0; i < MAX_PWIN; i++) {
@@ -1450,8 +1450,8 @@ void wpath_iupdate(WININFO *win, int dosort) {
 			if (!win) {
 				wpath_tree(&glob.win[i]);
 				win_slide(&glob.win[i], S_INIT, 0, 0);
-				win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w,
-						tb.desk.h);
+				win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w,
+						tb.desk.g_h);
 			}
 		}
 	}
@@ -1462,11 +1462,11 @@ void wpath_iupdate(WININFO *win, int dosort) {
 
  oeffnet ein Verzeichnisfenster
  -------------------------------------------------------------------------*/
-int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
-		int num, int sortby) {
+short wpath_open(char *path, char *wildcard, short rel, char *relname, short text,
+		short num, short sortby) {
 	WININFO *win;
 	W_PATH *wpath;
-	int n, wret;
+	short n, wret;
 	char full[MAX_PLEN];
 	long dhandle, fret;
 
@@ -1568,7 +1568,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 	wpath->index.text = text; /* Text/Icon */
 	strcpy(wpath->index.wildcard, wildcard); /* Maske */
 	{
-		int i;
+		short i;
 
 		for (i = 0; i < 10; i++)
 			wpath->oindex[i] = wpath->index;
@@ -1586,7 +1586,7 @@ int wpath_open(char *path, char *wildcard, int rel, char *relname, int text,
 
 	/* Mausklicks auch im Hintergrund */
 	if (conf.bsel)
-		wind_set(win->handle, WF_BEVENT, 1);
+		wind_set(win->handle, WF_BEVENT, 1, 0, 0, 0);
 
 	/* Fenster ”ffnen */
 	if (!glob.placement)
@@ -1607,7 +1607,7 @@ void wpath_info(WININFO *win) {
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	char is[128], s[128], fs[20];
-	int i;
+	short i;
 
 	wpath = (W_PATH *) win->user;
 	wpath->e_total = 0;
@@ -1675,7 +1675,7 @@ void wpath_info(WININFO *win) {
 
 	if (strcmp(win->info, s) != 0) {
 		strcpy(win->info, s);
-		wind_set(win->handle, WF_INFO, win->info);
+		wind_set_str(win->handle, WF_INFO, win->info);
 	}
 }
 
@@ -1686,21 +1686,21 @@ void wpath_info(WININFO *win) {
  Ist x gleich -1, wird die Nummer des ersten im Fenster sichtbaren
  Objektes + 1 geliefert.
  -------------------------------------------------------------------------*/
-WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
+WP_ENTRY *wpath_efind(WININFO *win, short x, short y) {
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	OBJECT *tree;
 	ICONBLK *iblk;
-	int i, px, py;
-	int ix, iw, ih, tx, ty, tw, th;
+	short i, px, py;
+	short ix, iw, ih, tx, ty, tw, th;
 
 	/* Falls ikonifiziert, dann gibt es keine Objekte */
 	if (win->state & WSICON)
 		return (0L);
 
 	/* Nur innerhalb des Arbeitsbereichs des Fensters suchen */
-	if ((x == -1) || (x >= win->work.x && x <= win->work.x + win->work.w - 1
-			&& y >= win->work.y && y <= win->work.y + win->work.h - 1)) {
+	if ((x == -1) || (x >= win->work.g_x && x <= win->work.g_x + win->work.g_w - 1
+			&& y >= win->work.g_y && y <= win->work.g_y + win->work.g_h - 1)) {
 		wpath = (W_PATH *) win->user;
 		tree = wpath->tree;
 
@@ -1714,16 +1714,16 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 
 				if (conf.vert) {
 					tx = i / wpath->imy;
-					px = tx * wpath->tlen + win->work.x + 10 - wpath->offx;
-					py = (i - tx * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+					px = tx * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+					py = (i - tx * wpath->imy) * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 				} else {
 					ty = i / wpath->imx;
-					px = (i - ty * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
-					py = ty * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+					px = (i - ty * wpath->imx) * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+					py = ty * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 				}
 
 				if (x == -1) {
-					if (py >= win->work.y)
+					if (py >= win->work.g_y)
 						return ((WP_ENTRY *) (i + 1));
 					continue;
 				}
@@ -1746,7 +1746,7 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 				px = tree->ob_x + tree[i].ob_x;
 				py = tree->ob_y + tree[i].ob_y;
 				if (x == -1) {
-					if (py >= win->work.y)
+					if (py >= win->work.g_y)
 						return ((WP_ENTRY *) i);
 					continue;
 				}
@@ -1778,8 +1778,8 @@ WP_ENTRY *wpath_efind(WININFO *win, int x, int y) {
 
  Selektiert eines oder mehrere Eintraege in einem Verzeichnisfenster
  -------------------------------------------------------------------------*/
-void wpath_esel1(WININFO *win, WP_ENTRY *entry, int sel, RECT *wrect, int *rd) {
-	int x, y, w, h, n, osel, xg, yg;
+void wpath_esel1(WININFO *win, WP_ENTRY *entry, short sel, GRECT *wrect, short *rd) {
+	short x, y, w, h, n, osel, xg, yg;
 	W_PATH *wpath;
 	OBJECT *tree;
 	ICONBLK *iconblk;
@@ -1799,12 +1799,12 @@ void wpath_esel1(WININFO *win, WP_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 			/* Darstellung als Text */
 			if (conf.vert) {
 				xg = (n - 1) / wpath->imy;
-				x = xg * wpath->tlen + win->work.x + 10 - wpath->offx;
-				y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+				x = xg * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+				y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 			} else {
 				yg = (n - 1) / wpath->imx;
-				x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
-				y = yg * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+				x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+				y = yg * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 			}
 
 			w = wpath->tlen - wpath->clw * 2;
@@ -1829,24 +1829,24 @@ void wpath_esel1(WININFO *win, WP_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 		/* Koordinaten fuer Redraw anpassen */
 		if (*rd == 0) {
 			*rd = 1;
-			wrect->x = x;
-			wrect->y = y;
-			wrect->w = w;
-			wrect->h = h;
+			wrect->g_x = x;
+			wrect->g_y = y;
+			wrect->g_w = w;
+			wrect->g_h = h;
 		} else {
-			if (x < wrect->x) {
-				wrect->w += (wrect->x - x);
-				wrect->x = x;
+			if (x < wrect->g_x) {
+				wrect->g_w += (wrect->g_x - x);
+				wrect->g_x = x;
 			}
-			if (x + w > wrect->x + wrect->w)
-				wrect->w = x + w - wrect->x;
+			if (x + w > wrect->g_x + wrect->g_w)
+				wrect->g_w = x + w - wrect->g_x;
 
-			if (y < wrect->y) {
-				wrect->h += (wrect->y - y);
-				wrect->y = y;
+			if (y < wrect->g_y) {
+				wrect->g_h += (wrect->g_y - y);
+				wrect->g_y = y;
 			}
-			if (y + h > wrect->y + wrect->h)
-				wrect->h = y + h - wrect->y;
+			if (y + h > wrect->g_y + wrect->g_h)
+				wrect->g_h = y + h - wrect->g_y;
 		}
 	}
 }
@@ -1854,11 +1854,11 @@ void wpath_esel1(WININFO *win, WP_ENTRY *entry, int sel, RECT *wrect, int *rd) {
 /**
  *
  */
-void wpath_esel(WININFO *win, WP_ENTRY *entry, int add, int sel, int doinfo) {
+void wpath_esel(WININFO *win, WP_ENTRY *entry, short add, short sel, short doinfo) {
 	W_PATH *wpath;
 	WP_ENTRY *item;
-	RECT wrect;
-	int rd, i;
+	GRECT wrect;
+	short rd, i;
 
 	if (!win)
 		return;
@@ -1875,7 +1875,7 @@ void wpath_esel(WININFO *win, WP_ENTRY *entry, int add, int sel, int doinfo) {
 				wpath_esel1(win, item, sel, &wrect, &rd);
 		}
 		if (rd)
-			win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+			win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 		if (doinfo)
 			wpath_info(win);
 	} else {
@@ -1889,14 +1889,14 @@ void wpath_esel(WININFO *win, WP_ENTRY *entry, int add, int sel, int doinfo) {
 					wpath_esel1(win, item, 0, &wrect, &rd);
 			}
 			if (rd)
-				win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+				win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 			rd = 0;
 
 		}
 		/* Status aendern */
 		wpath_esel1(win, entry, sel, &wrect, &rd);
 		if (rd)
-			win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+			win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 		if (doinfo)
 			wpath_info(win);
 	}
@@ -1907,11 +1907,11 @@ void wpath_esel(WININFO *win, WP_ENTRY *entry, int add, int sel, int doinfo) {
 
  Auswahl mit "Gummiband" in einem Verzeichnisfenster
  -------------------------------------------------------------------------*/
-int wpath_einrect(W_PATH *wpath, int wx, int wy, WP_ENTRY *ob, RECT *rect) {
+short wpath_einrect(W_PATH *wpath, short wx, short wy, WP_ENTRY *ob, GRECT *rect) {
 	OBJECT *tree;
 	ICONBLK *iblk;
-	RECT irect;
-	int px, py, xg, yg, is_in, n;
+	GRECT irect;
+	short px, py, xg, yg, is_in, n;
 
 	if (!wpath->e_total || ob->class==EC_PARENT)
 		return 0;
@@ -1922,19 +1922,19 @@ int wpath_einrect(W_PATH *wpath, int wx, int wy, WP_ENTRY *ob, RECT *rect) {
 		/* Darstellung als Text */
 		if (conf.vert) {
 			xg = (n - 1) / wpath->imy;
-			irect.x = xg * wpath->tlen + wx + 10 - wpath->offx;
-			irect.y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + wy + 2
+			irect.g_x = xg * wpath->tlen + wx + 10 - wpath->offx;
+			irect.g_y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + wy + 2
 					- wpath->offy;
 		} else {
 			yg = (n - 1) / wpath->imx;
-			irect.x = (n - 1 - yg * wpath->imx) * wpath->tlen + wx + 10
+			irect.g_x = (n - 1 - yg * wpath->imx) * wpath->tlen + wx + 10
 					- wpath->offx;
-			irect.y = yg * (wpath->clh + 1) + wy + 2 - wpath->offy;
+			irect.g_y = yg * (wpath->clh + 1) + wy + 2 - wpath->offy;
 		}
 
-		irect.w = wpath->tlen - wpath->clw * 2;
-		irect.h = wpath->clh;
-		is_in = rc_intersect(rect, &irect);
+		irect.g_w = wpath->tlen - wpath->clw * 2;
+		irect.g_h = wpath->clh;
+		is_in = rc_intersect((GRECT *)rect, (GRECT *)&irect);
 	} else {
 		/* Darstellung als Icons */
 		tree = wpath->tree;
@@ -1947,18 +1947,18 @@ int wpath_einrect(W_PATH *wpath, int wx, int wy, WP_ENTRY *ob, RECT *rect) {
 		iblk = &wpath->wicon[n - 1].ciconblk.monoblk;
 
 		/* Text-Bereich */
-		irect.x = px + iblk->ib_xtext;
-		irect.y = py + iblk->ib_ytext;
-		irect.w = iblk->ib_wtext;
-		irect.h = iblk->ib_htext;
+		irect.g_x = px + iblk->ib_xtext;
+		irect.g_y = py + iblk->ib_ytext;
+		irect.g_w = iblk->ib_wtext;
+		irect.g_h = iblk->ib_htext;
 		if (rc_intersect(rect, &irect))
 			is_in = 1;
 
 		/* Image-Bereich */
-		irect.x = px + iblk->ib_xicon;
-		irect.y = py;
-		irect.w = iblk->ib_wicon;
-		irect.h = iblk->ib_hicon;
+		irect.g_x = px + iblk->ib_xicon;
+		irect.g_y = py;
+		irect.g_w = iblk->ib_wicon;
+		irect.g_h = iblk->ib_hicon;
 		if (rc_intersect(rect, &irect))
 			is_in = 1;
 	}
@@ -1969,15 +1969,15 @@ int wpath_einrect(W_PATH *wpath, int wx, int wy, WP_ENTRY *ob, RECT *rect) {
 /**
  *
  */
-void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
+void wpath_exsel(WININFO *win, short mx, short my, short mk, short ks) {
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	OBJECT *tree;
-	int lmx, lmy, lmk, lks;
-	int i, rd, dx, dy;
-	RECT sel, sel2, rsel, wrect, crect;
-	int rxy[4], cxy[4], dn;
-	int offx, offy, maxx, maxy;
+	short lmx, lmy, lmk, lks;
+	short i, rd, dx, dy;
+	GRECT sel, sel2, rsel, wrect, crect;
+	short rxy[4], cxy[4], dn;
+	short offx, offy, maxx, maxy;
 
 	wpath = (W_PATH *) win->user;
 	tree = wpath->tree;
@@ -1998,16 +1998,16 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 
 	/* Clipping-Rechteck fuer Gummiband */
 #if 0
-	crect.x=win->work.x;crect.y=win->work.y;
-	crect.w=win->work.w;crect.h=win->work.h;
+	crect.g_x=win->work.g_x;crect.g_y=win->work.g_y;
+	crect.g_w=win->work.g_w;crect.g_h=win->work.g_h;
 #else
 	crect = win->work;
 #endif
 	rc_intersect(&tb.desk, &crect);
-	cxy[0] = crect.x;
-	cxy[1] = crect.y;
-	cxy[2] = cxy[0] + crect.w - 1;
-	cxy[3] = cxy[1] + crect.h - 1;
+	cxy[0] = crect.g_x;
+	cxy[1] = crect.g_y;
+	cxy[2] = cxy[0] + crect.g_w - 1;
+	cxy[3] = cxy[1] + crect.g_h - 1;
 
 	/* Maximale Offsets berechnen */
 	if (wpath->e_total == 0 || (!wpath->index.text && !tree)) {
@@ -2015,11 +2015,11 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 		maxy = 0;
 	} else {
 		if (wpath->index.text) {
-			maxx = wpath->tlen * wpath->imx + 20 - wpath->clw * 2 - win->work.w;
-			maxy = wpath->imy * (wpath->clh + 1) + 3 - win->work.h;
+			maxx = wpath->tlen * wpath->imx + 20 - wpath->clw * 2 - win->work.g_w;
+			maxy = wpath->imy * (wpath->clh + 1) + 3 - win->work.g_h;
 		} else {
-			maxx = tree->ob_width - win->work.w;
-			maxy = tree->ob_height - win->work.h;
+			maxx = tree->ob_width - win->work.g_w;
+			maxy = tree->ob_height - win->work.g_h;
 		}
 	}
 
@@ -2030,9 +2030,9 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 	}
 
 	/* Startrechteck merken */
-	sel.x = sel2.x = lmx;
-	sel.y = sel2.y = lmy;
-	sel.w = sel.h = 0;
+	sel.g_x = sel2.g_x = lmx;
+	sel.g_y = sel2.g_y = lmy;
+	sel.g_w = sel.g_h = 0;
 
 	/* Auf gehts ... */
 	graf_mouse(POINT_HAND, 0L);
@@ -2043,36 +2043,36 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 		graf_mkstate(&lmx, &lmy, &lmk, &lks);
 
 		/* Neues Auswahlrechteck berechnen */
-		sel2.w = lmx - sel.x + 1;
-		sel2.h = lmy - sel.y + 1;
+		sel2.g_w = lmx - sel.g_x + 1;
+		sel2.g_h = lmy - sel.g_y + 1;
 
 		/* Begrenzung auf Fenster */
-		if (sel2.y + sel2.h - 1 < crect.y)
-			sel2.h = crect.y - sel2.y + 1;
-		if (sel2.y + sel2.h > crect.y + crect.h)
-			sel2.h = crect.y + crect.h - sel2.y;
-		if (sel2.x + sel2.w - 1 < crect.x)
-			sel2.w = crect.x - sel2.x + 1;
-		if (sel2.x + sel2.w > crect.x + crect.w)
-			sel2.w = crect.x + crect.w - sel2.x;
+		if (sel2.g_y + sel2.g_h - 1 < crect.g_y)
+			sel2.g_h = crect.g_y - sel2.g_y + 1;
+		if (sel2.g_y + sel2.g_h > crect.g_y + crect.g_h)
+			sel2.g_h = crect.g_y + crect.g_h - sel2.g_y;
+		if (sel2.g_x + sel2.g_w - 1 < crect.g_x)
+			sel2.g_w = crect.g_x - sel2.g_x + 1;
+		if (sel2.g_x + sel2.g_w > crect.g_x + crect.g_w)
+			sel2.g_w = crect.g_x + crect.g_w - sel2.g_x;
 
 		/* Bei Aenderung oder Scroll Auswahlrechteck neu zeichnen */
 		dn = 0;
 		/* ... Aenderung des Auswahlrechtecks */
-		if (sel.w != sel2.w || sel.h != sel2.h)
+		if (sel.g_w != sel2.g_w || sel.g_h != sel2.g_h)
 			dn = 1;
 		/* ... Scroll */
 		offx = wpath->offx;
 		offy = wpath->offy;
 		dx = dy = 0;
-		if (lmx < crect.x && offx > 0)
-			dx = crect.x - lmx;
-		if (lmy < crect.y && offy > 0)
-			dy = crect.y - lmy;
-		if (lmx > crect.x + crect.w - 1 && offx < maxx)
-			dx = (crect.x + crect.w - 1) - lmx;
-		if (lmy > crect.y + crect.h - 1 && offy < maxy)
-			dy = (crect.y + crect.h - 1) - lmy;
+		if (lmx < crect.g_x && offx > 0)
+			dx = crect.g_x - lmx;
+		if (lmy < crect.g_y && offy > 0)
+			dy = crect.g_y - lmy;
+		if (lmx > crect.g_x + crect.g_w - 1 && offx < maxx)
+			dx = (crect.g_x + crect.g_w - 1) - lmx;
+		if (lmy > crect.g_y + crect.g_h - 1 && offy < maxy)
+			dy = (crect.g_y + crect.g_h - 1) - lmy;
 		dx *= conf.scroll;
 		dy *= conf.scroll;
 		if (dx != 0 || dy != 0)
@@ -2082,21 +2082,21 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 			/* Loeschen und neue Masse verwenden */
 			vs_clip(tb.vdi_handle, 1, cxy);
 			rub_frame(&sel);
-			sel.w = sel2.w;
-			sel.h = sel2.h;
+			sel.g_w = sel2.g_w;
+			sel.g_h = sel2.g_h;
 
 			/* Fenster scrollen, wenn noetig */
 			if (dx != 0 || dy != 0) {
 				win_slide(win, S_PABS, dx, dy);
 				dx = offx - wpath->offx;
 				dy = offy - wpath->offy;
-				sel.x += dx;
-				sel.w -= dx;
-				sel.y += dy;
-				sel.h -= dy;
+				sel.g_x += dx;
+				sel.g_w -= dx;
+				sel.g_y += dy;
+				sel.g_h -= dy;
 #if 0
-				sel2.x=sel.x;sel2.y=sel.y;
-				sel2.w=sel.w;sel2.h=sel.h;
+				sel2.g_x=sel.g_x;sel2.g_y=sel.g_y;
+				sel2.g_w=sel.g_w;sel2.g_h=sel.g_h;
 #else
 				sel2 = sel;
 #endif
@@ -2105,10 +2105,10 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 			rub_frame(&sel);
 
 			/* Icons im Auswahlbereich selektieren */
-			rxy[0] = sel.x;
-			rxy[1] = sel.y;
-			rxy[2] = sel.x + sel.w - 1;
-			rxy[3] = sel.y + sel.h - 1;
+			rxy[0] = sel.g_x;
+			rxy[1] = sel.g_y;
+			rxy[2] = sel.g_x + sel.g_w - 1;
+			rxy[3] = sel.g_y + sel.g_h - 1;
 			if (rxy[2] < rxy[0]) {
 				i = rxy[2];
 				rxy[2] = rxy[0];
@@ -2119,17 +2119,17 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 				rxy[3] = rxy[1];
 				rxy[1] = i;
 			}
-			rsel.x = rxy[0];
-			rsel.y = rxy[1];
-			rsel.w = rxy[2] - rxy[0] + 1;
-			rsel.h = rxy[3] - rxy[1] + 1;
+			rsel.g_x = rxy[0];
+			rsel.g_y = rxy[1];
+			rsel.g_w = rxy[2] - rxy[0] + 1;
+			rsel.g_h = rxy[3] - rxy[1] + 1;
 
 			rd = 0;
 			for (i = 0; i < wpath->e_total; i++) {
-				int psel;
+				short psel;
 
 				item = wpath->lptr[i];
-				if (wpath_einrect(wpath, win->work.x, win->work.y, item, &rsel)) {
+				if (wpath_einrect(wpath, win->work.g_x, win->work.g_y, item, &rsel)) {
 					if (!item->sel && !item->prevsel)
 						wpath_esel1(win, item, 1, &wrect, &rd);
 					else if (item->sel && item->prevsel) {
@@ -2148,7 +2148,7 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
 			if (rd) {
 				vs_clip(tb.vdi_handle, 1, cxy);
 				rub_frame(&sel);
-				win_redraw(win, wrect.x, wrect.y, wrect.w, wrect.h);
+				win_redraw(win, wrect.g_x, wrect.g_y, wrect.g_w, wrect.g_h);
 				wpath_info(win);
 				vs_clip(tb.vdi_handle, 1, cxy);
 				rub_frame(&sel);
@@ -2180,8 +2180,8 @@ void wpath_exsel(WININFO *win, int mx, int my, int mk, int ks) {
  *        bearbeitet.
  * last: Nummer des letzten Eintrags
  */
-static void wpath_iconupdate(W_PATH *wpath, int first, int last) {
-	int i, ec, ic, inum;
+static void wpath_iconupdate(W_PATH *wpath, short first, short last) {
+	short i, ec, ic, inum;
 	WP_ENTRY *item;
 	ICONIMG *icon, *ticon;
 	char wename[MAX_FLEN], *s, *d;
@@ -2266,33 +2266,33 @@ static void wpath_iconupdate(W_PATH *wpath, int first, int last) {
 
  Drag&Drop von Objekten in Verzeichnisfenstern
  -------------------------------------------------------------------------*/
-void wpath_edrag(int mx, int my, int mk, int ks) {
-	int lmx, lmy, lmk, lks;
-	int *pxy, *obnum;
-	int i, j, n, pn, px, py;
-	int p, x, y, w, h, ix, iw, tx, ty, tw;
-	int tx1, ty1, tx2, ty2;
-	int otx, oty;
-	int obj, obj1, whandle, drag, drag1;
-	int moved = 0;
+void wpath_edrag(short mx, short my, short mk, short ks) {
+	short lmx, lmy, lmk, lks;
+	short *pxy, *obnum;
+	short i, j, n, pn, px, py;
+	short p, x, y, w, h, ix, iw, tx, ty, tw;
+	short tx1, ty1, tx2, ty2;
+	short otx, oty;
+	short obj, obj1, whandle, drag, drag1;
+	short moved = 0;
 	WININFO *win, *iwin, *iwin1;
 	ACWIN *accwin;
 	WP_ENTRY *item, *item1;
 	WG_ENTRY *gitem, *gitem1, *gprev;
-	int xg, yg, wx, wy;
+	short xg, yg, wx, wy;
 	W_PATH *wpath;
 	WP_ENTRY *litem;
-	RECT irect, wrect;
-	int wrd, first;
+	GRECT irect, wrect;
+	short wrd, first;
 	ICONBLK *iblk;
 	APPLINFO *aptr;
 	EVENT Event = { MU_BUTTON | MU_TIMER | MU_M1, 1, 3, 0, 1, 0, 0, 1, 1, 0, 0,
 			0, 0, 0, 1500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	int popfold = -1;
+	short popfold = -1;
 	W_PATH *wpath2;
 #ifdef TB_EXTENSIONS
 	WININFO *new_one = 0L;
-	int wret,loop = 0;
+	short wret,loop = 0;
 	char temp[MAX_PLEN + MAX_FLEN + 2];
 #endif
 
@@ -2301,8 +2301,8 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 	lmk = mk;
 	lks = ks;
 	wpath = (W_PATH *) desk.sel.win->user;
-	wx = desk.sel.win->work.x;
-	wy = desk.sel.win->work.y;
+	wx = desk.sel.win->work.g_x;
+	wy = desk.sel.win->work.g_y;
 
 	/* Falls Parentverzeichnis selektiert ist, dann erst deselektieren */
 	if (wpath->list->class == EC_PARENT) {
@@ -2323,22 +2323,22 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 
 	/* Polygone fuer die Darstellung am Bildschirm aufbauen */
 	if (wpath->index.text)
-		pxy = pmalloc(sizeof(int) * n * 10); /* Text: Je Eintrag 5 xy-Punkte */
+		pxy = pmalloc(sizeof(short) * n * 10); /* Text: Je Eintrag 5 xy-Punkte */
 	else
-		pxy = pmalloc(sizeof(int) * n * 18); /* Icons: Je Icon 9 xy-Punkte */
+		pxy = pmalloc(sizeof(short) * n * 18); /* Icons: Je Icon 9 xy-Punkte */
 	if (!pxy) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
-	obnum = pmalloc(sizeof(int) * n); /* Objektnummern */
+	obnum = pmalloc(sizeof(short) * n); /* Objektnummern */
 	if (!obnum) {
 		pfree(pxy);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
 
-	tx1 = tb.desk.x + tb.desk.w; /* t... Position/Masse des Gesamtrechtecks */
-	ty1 = tb.desk.y + tb.desk.h;
+	tx1 = tb.desk.g_x + tb.desk.g_w; /* t... Position/Masse des Gesamtrechtecks */
+	ty1 = tb.desk.g_y + tb.desk.g_h;
 	tx2 = ty2 = 0;
 
 	i = 0;
@@ -2363,15 +2363,15 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 				}
 
 				w = wpath->tlen - wpath->clw * 2;
-				if (w > tb.desk.w)
-					w = tb.desk.w;
+				if (w > tb.desk.g_w)
+					w = tb.desk.g_w;
 				h = wpath->clh;
-				if (h > tb.desk.h)
-					h = tb.desk.h;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				if (h > tb.desk.g_h)
+					h = tb.desk.g_h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 				/* Nur verwenden, wenn Icon sichtbar */
 				if (rc_intersect(&tb.desk, &irect) && rc_intersect(
 						&desk.sel.win->work, &irect)) {
@@ -2380,10 +2380,10 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 					wc_text(&pxy[p * 10], &x, &y, &w, &h);
 #else
 					/* Auf Desktop begrenzen */
-					if(x<tb.desk.x) x=tb.desk.x;
-					if(y<tb.desk.y) y=tb.desk.y;
-					if(x+w>tb.desk.x+tb.desk.w) x=tb.desk.x+tb.desk.w-w;
-					if(y+h>tb.desk.y+tb.desk.h) y=tb.desk.y+tb.desk.h-h;
+					if(x<tb.desk.g_x) x=tb.desk.g_x;
+					if(y<tb.desk.g_y) y=tb.desk.g_y;
+					if(x+w>tb.desk.g_x+tb.desk.g_w) x=tb.desk.g_x+tb.desk.g_w-w;
+					if(y+h>tb.desk.g_y+tb.desk.g_h) y=tb.desk.g_y+tb.desk.g_h-h;
 					/* Polygonzug berechnen */
 					pxy[p*10]=x; pxy[p*10+1]=y;
 					pxy[p*10+2]=x+w-1;pxy[p*10+3]=y;
@@ -2416,10 +2416,10 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 				tx = iblk->ib_xtext;
 				ty = iblk->ib_ytext;
 				tw = iblk->ib_wtext;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 
 				/* Nur verwenden, wenn Icon sichtbar */
 				if (rc_intersect(&tb.desk, &irect) && rc_intersect(
@@ -2482,20 +2482,20 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 		if (1) /*(x!=lmx || y!=lmy)*//* Mausposition veraendert ? */
 #endif
 		{
-			evnt_timer(10, 0);
+			evnt_timer(10L);
 			first = 0;
 			/* xy-Delta berechnen */
 			w = lmx - x;
 			h = lmy - y;
 			/* Verschiebung des Gesamtrechtecks auf Desktopbereich begrenzen */
-			if (tx1 + w < tb.desk.x)
-				w = tb.desk.x - tx1;
-			if (ty1 + h < tb.desk.y)
-				h = tb.desk.y - ty1;
-			if (tx2 + w > tb.desk.x + tb.desk.w)
-				w = (tb.desk.x + tb.desk.w) - tx2;
-			if (ty2 + h > tb.desk.y + tb.desk.h)
-				h = (tb.desk.y + tb.desk.h) - ty2;
+			if (tx1 + w < tb.desk.g_x)
+				w = tb.desk.g_x - tx1;
+			if (ty1 + h < tb.desk.g_y)
+				h = tb.desk.g_y - ty1;
+			if (tx2 + w > tb.desk.g_x + tb.desk.g_w)
+				w = (tb.desk.g_x + tb.desk.g_w) - tx2;
+			if (ty2 + h > tb.desk.g_y + tb.desk.g_h)
+				h = (tb.desk.g_y + tb.desk.g_h) - ty2;
 			/* Nur aktualisieren, wenn xy-Delta != 0 */
 #ifdef TB_EXTENSIONS
 			if(w!=0 || h!=0 || loop)
@@ -2579,7 +2579,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 									}
 									if (!item->sel)
 									break;
-									evnt_timer(10, 0);
+									evnt_timer(10L);
 									Event.ev_mm1x = lmx;
 									Event.ev_mm1y = lmy;
 									Event.ev_mtlocount = 1500;
@@ -2849,7 +2849,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 							drag = 0;
 					}
 				} else {
-					if (lmx < tb.desk.x || lmy < tb.desk.y)
+					if (lmx < tb.desk.g_x || lmy < tb.desk.g_y)
 						drag = 0;
 					else
 						drag = 1;
@@ -2904,7 +2904,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 
 	if (popfold >= 0) {
 		wind_update(END_UPDATE);
-		evnt_timer(250, 0);
+		evnt_timer(250L);
 		wind_update(BEG_UPDATE);
 	}
 
@@ -2954,7 +2954,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 		}
 		else /* kein Zielfenster - dann Icons auf den Desktop legen */
 		{
-			int jumps = 0;
+			short jumps = 0;
 
 			if (drag) /* Ablegen m”glich ? */
 			{
@@ -2964,10 +2964,10 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 				wrd = 0;
 
 				/* Fuer Textdarstellung, Position fuer Plazierung merken */
-				otx=lmx-tb.desk.x-40;
+				otx=lmx-tb.desk.g_x-40;
 				if(otx<0)
 					otx=0;
-				oty=lmy-tb.desk.y-20;
+				oty=lmy-tb.desk.g_y-20;
 				if(oty<0)
 					oty=0;
 				px=otx;
@@ -2975,8 +2975,8 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 				pn=0;
 
 				/* Position/Maže des Gesamtrechtecks fr Desktop-Redraw */
-				tx1=tb.desk.x+tb.desk.w;
-				ty1=tb.desk.y+tb.desk.h;
+				tx1=tb.desk.g_x+tb.desk.g_w;
+				ty1=tb.desk.g_y+tb.desk.g_h;
 				tx2=ty2=0;
 
 				/* Freies Desktop-Icon suchen */
@@ -3041,18 +3041,18 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 								desk.dicon[i].select=1;
 								desk.dicon[i].prevsel=0;
 								if(wpath->index.text) {
-									if(px+76>tb.desk.w)
-										px=tb.desk.w-76;
-									if(py+40>tb.desk.h)
-										py=tb.desk.h-40;
+									if(px+76>tb.desk.g_w)
+										px=tb.desk.g_w-76;
+									if(py+40>tb.desk.g_h)
+										py=tb.desk.g_h-40;
 									desk.dicon[i].x=px;
 									desk.dicon[i].y=py;
 									px+=80;pn++;
-									if(px+76>tb.desk.w || pn>=wpath->imx) {
+									if(px+76>tb.desk.g_w || pn>=wpath->imx) {
 										pn=0;
 										px=otx + jumps * 80;
 										py+=48;
-										if ((py + 48) > tb.desk.h) {
+										if ((py + 48) > tb.desk.g_h) {
 											py = oty;
 											px += 80 * wpath->imx;
 											jumps += wpath->imx;
@@ -3061,7 +3061,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 								} else {
 									iblk=&wpath->wicon[j].ciconblk.monoblk;
 									desk.dicon[i].x=pxy[p*18+0]+iblk->ib_wicon/2;
-									desk.dicon[i].y=pxy[p*18+1]-tb.desk.y;
+									desk.dicon[i].y=pxy[p*18+1]-tb.desk.g_y;
 								}
 								icon_update(i);
 								objc_offset(rs_trindex[DESKTOP],i,&x,&y);
@@ -3100,7 +3100,7 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
 					}
 				}
 				if(wrd)
-					win_redraw(desk.sel.win,wrect.x,wrect.y,wrect.w,wrect.h);
+					win_redraw(desk.sel.win,wrect.g_x,wrect.g_y,wrect.g_w,wrect.g_h);
 				wpath_info(desk.sel.win);
 				desk_draw(tx1,ty1,tx2-tx1+1,ty2-ty1+1);
 			}
@@ -3123,13 +3123,13 @@ void wpath_edrag(int mx, int my, int mk, int ks) {
  Scrollt den Fensterinhalt bei Bedarf, damit die selektierten Eintr„ge
  sichtbar sind. Wird z.B. vom Auto-Locator gebraucht.
  -------------------------------------------------------------------------*/
-void wpath_showsel(WININFO *win, int doscroll) {
-	int rd, n, sx, sy;
-	int x, y, w, h, xg, yg;
-	RECT wrect, irect;
+void wpath_showsel(WININFO *win, short doscroll) {
+	short rd, n, sx, sy;
+	short x, y, w, h, xg, yg;
+	GRECT wrect, irect;
 	W_PATH *wpath;
 	WP_ENTRY *item;
-	int dx, i, c;
+	short dx, i, c;
 
 	rd = 0;
 	wpath = (W_PATH *) win->user;
@@ -3155,12 +3155,12 @@ void wpath_showsel(WININFO *win, int doscroll) {
 			if (wpath->index.text) {
 				if (conf.vert) {
 					xg = (n - 1) / wpath->imy;
-					x = xg * wpath->tlen + win->work.x + 10 - wpath->offx;
-					y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+					x = xg * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+					y = (n - 1 - xg * wpath->imy) * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 				} else {
 					yg = (n - 1) / wpath->imx;
-					x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.x + 10 - wpath->offx;
-					y = yg * (wpath->clh + 1) + win->work.y + 2 - wpath->offy;
+					x = (n - 1 - yg * wpath->imx) * wpath->tlen + win->work.g_x + 10 - wpath->offx;
+					y = yg * (wpath->clh + 1) + win->work.g_y + 2 - wpath->offy;
 				}
 
 				w = wpath->tlen - wpath->clw * 2;
@@ -3173,49 +3173,49 @@ void wpath_showsel(WININFO *win, int doscroll) {
 			}
 			if (!rd) {
 				rd = 1;
-				irect.x = x;
-				irect.y = y;
-				irect.w = w;
-				irect.h = h;
+				irect.g_x = x;
+				irect.g_y = y;
+				irect.g_w = w;
+				irect.g_h = h;
 			} else {
-				if (x < irect.x) {
-					irect.w += (irect.x - x);
-					irect.x = x;
+				if (x < irect.g_x) {
+					irect.g_w += (irect.g_x - x);
+					irect.g_x = x;
 				}
-				if (x + w > irect.x + irect.w)
-					irect.w = x + w - irect.x;
-				if (y < irect.y) {
-					irect.h += (irect.y - y);
-					irect.y = y;
+				if (x + w > irect.g_x + irect.g_w)
+					irect.g_w = x + w - irect.g_x;
+				if (y < irect.g_y) {
+					irect.g_h += (irect.g_y - y);
+					irect.g_y = y;
 				}
-				if (y + h > irect.y + irect.h)
-					irect.h = y + h - irect.y;
+				if (y + h > irect.g_y + irect.g_h)
+					irect.g_h = y + h - irect.g_y;
 			}
 		}
 	}
 
 	/* Fensterarbeitsbereich */
-	memcpy(&wrect, &win->work, sizeof(RECT));
+	memcpy(&wrect, &win->work, sizeof(GRECT));
 
 	/* Scroll */
 	if (rd) {
-		wrect.x += dx;
-		wrect.w -= dx;
-		sx = wrect.x - irect.x;
-		sy = wrect.y - irect.y;
+		wrect.g_x += dx;
+		wrect.g_w -= dx;
+		sx = wrect.g_x - irect.g_x;
+		sy = wrect.g_y - irect.g_y;
 		if (sy <= 0) {
-			if (irect.h > wrect.h)
-				irect.h = wrect.h;
-			if (irect.y + irect.h > wrect.y + wrect.h)
-				sy = -(irect.y - wrect.y - wrect.h + irect.h);
+			if (irect.g_h > wrect.g_h)
+				irect.g_h = wrect.g_h;
+			if (irect.g_y + irect.g_h > wrect.g_y + wrect.g_h)
+				sy = -(irect.g_y - wrect.g_y - wrect.g_h + irect.g_h);
 			else
 				sy = 0;
 		}
 		if (sx <= 0) {
-			if (irect.w > wrect.w)
-				irect.w = wrect.w;
-			if (irect.x + irect.w > wrect.x + wrect.w)
-				sx = -(irect.x - wrect.x - wrect.w + irect.w);
+			if (irect.g_w > wrect.g_w)
+				irect.g_w = wrect.g_w;
+			if (irect.g_x + irect.g_w > wrect.g_x + wrect.g_w)
+				sx = -(irect.g_x - wrect.g_x - wrect.g_w + irect.g_w);
 			else
 				sx = 0;
 		}

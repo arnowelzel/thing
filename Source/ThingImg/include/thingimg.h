@@ -41,7 +41,7 @@
  * 24.08.1996: Neues Element confpath in THINGIMG-Struktur
  */
 
-#include <vdi.h>
+#include <gem.h>
 
 /* Konstanten */
 #define TI_MAGIC	0x27081969L
@@ -58,16 +58,16 @@
 typedef struct
 {
 /* Versionsnummer dieser Struktur, zur Zeit 0x102 */
-	int		version;		/* Immer gÅltig */
+	short		version;		/* Immer gÅltig */
 
 /* Zu benutzendes VDI-Handle */
-	int		vdi_handle;		/* GÅltig bei TI_TEST, TI_SIZE und TI_LOAD */
+	short		vdi_handle;		/* GÅltig bei TI_TEST, TI_SIZE und TI_LOAD */
 
 /* Voller Zugriffspfad fÅr das zu ladende/testende Bild */
 	char	*filename;		/* GÅltig bei TI_TEST, TI_SIZE und TI_LOAD */
 
 /* Palette des Bildes benutzen (1) oder nicht (0)? */
-	int		use_palette;	/* GÅltig bei TI_TEST, TI_SIZE und TI_LOAD */
+	short		use_palette;	/* GÅltig bei TI_TEST, TI_SIZE und TI_LOAD */
 
 /* Benîtigter Speicher fÅr das Bild als VDI-Raster (MFDB) */
 	long	pic_size;		/* GÅltig bei TI_SIZE und TI_LOAD */
@@ -76,14 +76,14 @@ typedef struct
 	MFDB	picture;		/* GÅltig bei TI_LOAD */
 
 /* Ist das Bild monochrom (1) oder nicht(0) ? */
-	int		is_mono;		/* GÅltig bei TI_LOAD */
+	short		is_mono;		/* GÅltig bei TI_LOAD */
 
 /* Wenn use_palette 1 ist, steht hier die alte Farbpalette */
-	int		old_palette[256 * 3];	/* GÅltig bei TI_LOAD */
+	short		old_palette[256 * 3];	/* GÅltig bei TI_LOAD */
 
 /* Erster und letzter benutzter Index in old_palette */
-	int		first;			/* GÅltig bei TI_LOAD */
-	int		last;			/* GÅltig bei TI_LOAD */
+	short		first;			/* GÅltig bei TI_LOAD */
+	short		last;			/* GÅltig bei TI_LOAD */
 
 /*
  * Pfad, in dem ThingImg liegt (nÅtzlich z.B. fÅr INF-Dateien),
@@ -96,8 +96,8 @@ typedef struct
  * Grîûe des Desktop-Arbeitsbereichs in Pixeln, erst seit Struktur-
  * version 1.02 (0x102) vorhanden!
  */
-	int		desk_w;			/* Immer gÅltig */
-	int		desk_h;			/* Immer gÅltig */
+	short		desk_w;			/* Immer gÅltig */
+	short		desk_h;			/* Immer gÅltig */
 
 /*
  * Pfad, in dem die Konfigurationsdateien von Thing liegen (hier

@@ -35,14 +35,16 @@
 #include <ctype.h>
 #include "..\include\jobid.h"
 #include <new_rsc.h>
+#include <basepage.h>
+#include <mt_gemx.h>
 #include "..\xhdi\xhdi.h"
 
 #ifdef __MINT__
-extern BASPAG *_base;
+extern BASEPAGE *_base;
 #define _BasPag	_base
 #endif
 
-static int viewprint(int mode, char *path, char *name, int *rex);
+static short viewprint(short mode, char *path, char *name, short *rex);
 static char *get_xxmaster(char *which);
 
 static DCONF *dconf;
@@ -71,7 +73,7 @@ void di_about(void) {
 }
 
 #pragma warn -par
-void de_about(int mode, int ret) {
+void de_about(short mode, short ret) {
 	if (!mode) {
 		switch (fi_about.exit_obj) {
 		case ABINFO:
@@ -91,8 +93,8 @@ void di_ainfo1(void) {
 	char *ios, *iview, *it2g, *p;
 	long dummy;
 	TOS2GEM_COOKIE *t2g;
-	SYSHDR *sys;
-	int naes;
+	OSHEADER *sys;
+	short naes;
 	OBJECT *objectTree;
 
 	objectTree = rs_trindex[AINFO1];
@@ -118,7 +120,7 @@ void di_ainfo1(void) {
 			sprintf(ios, "MagiC %x", (tb.magx->aesvars->version >> 8) & 0xff);
 
 		/* MagiC-Versionsnummer */
-		p = &ios[(int) strlen(ios)];
+		p = &ios[(short) strlen(ios)];
 		sprintf(p, rs_trindex[LANGUAGE][LANGMGXVER].ob_spec.free_string,
 				tb.magx->aesvars->version >> 8, tb.magx->aesvars->version & 0xff,
 				(tb.magx->aesvars->date & 0xff000000L) >> 24,
@@ -146,12 +148,12 @@ void di_ainfo1(void) {
 			}
 		} else {
 			strcpy(ios, "TOS");
-			p = &ios[(int) strlen(ios)];
+			p = &ios[(short) strlen(ios)];
 			sprintf(p, rs_trindex[LANGUAGE][LANGOSVER].ob_spec.free_string,
 					sys->os_version >> 8, sys->os_version & 0xff,
-					(sys->os_gendat & 0xff0000L) >> 16,
-					(sys->os_gendat & 0xff000000L) >> 24,
-					sys->os_gendat & 0xffffL);
+					(sys->os_date & 0xff0000L) >> 16,
+					(sys->os_date & 0xff000000L) >> 24,
+					sys->os_date & 0xffffL);
 			if (tb.sys & SY_MINT)
 				strcat(ios, " & MiNT");
 		}
@@ -178,8 +180,8 @@ void di_ainfo1(void) {
 /**
  *
  */
-void de_ainfo1(int mode, int ret) {
-	int done, exit_obj;
+void de_ainfo1(short mode, short ret) {
+	short done, exit_obj;
 	UNUSED(ret);
 
 	done = 0;
@@ -204,7 +206,7 @@ void de_ainfo1(int mode, int ret) {
 
  Neues Objekt
  -------------------------------------------------------------------------*/
-void dl_new_mode(int mode) {
+void dl_new_mode(short mode) {
 	OBJECT *objectTree;
 
 	objectTree = rs_trindex[NEWOBJ];
@@ -260,7 +262,7 @@ void dl_new_mode(int mode) {
 void di_new(void) {
 	W_PATH *wpath;
 	char *fmask;
-	int i;
+	short i;
 	OBJECT *objectTree;
 
 	objectTree = rs_trindex[NEWOBJ];
@@ -360,10 +362,10 @@ void di_new(void) {
 	frm_start(&fi_new, conf.wdial, conf.cdial, 0);
 }
 
-void de_new(int mode, int ret) {
-	int dmode, dmode1;
-	int done, ok, dret, exit_obj, i, fold, exist;
-	int n, x, y, w, h;
+void de_new(short mode, short ret) {
+	short dmode, dmode1;
+	short done, ok, dret, exit_obj, i, fold, exist;
+	short n, x, y, w, h;
 	long fret;
 	char fname[MAX_PLEN], folder[MAX_FLEN], name[MAX_PLEN];
 	FILESYS filesys;
@@ -590,10 +592,10 @@ void de_new(int mode, int ret) {
 						Fdelete(fname);
 						fret = Fcreate(fname, 0);
 						if (fret >= 0L) {
-							Fclose((int) fret);
+							Fclose((short) fret);
 							dret = 0;
 						} else
-							dret = (int) fret;
+							dret = (short) fret;
 					}
 				}
 
@@ -721,7 +723,7 @@ void de_new(int mode, int ret) {
 					fret = Fsymlink(objectTree[NSRDEST].ob_spec.tedinfo->te_ptext, fname);
 
 				/* Fehler ggf. melden */
-				if ((dret = (int) fret) != 0) {
+				if ((dret = (short) fret) != 0) {
 					if (fret < 0)
 						err_file(rs_frstr[ALLCREATE], fret, fname);
 				}
@@ -738,7 +740,7 @@ void de_new(int mode, int ret) {
 					if (glob.win[i].state & WSOPEN) {
 						if (!strcmp(((W_PATH *) glob.win[i].user)->path, path)) {
 							wpath_update(&glob.win[i]);
-							win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 							win_slide(&glob.win[i], S_INIT, 0, 0);
 						}
 					}
@@ -762,28 +764,28 @@ void de_new(int mode, int ret) {
  *
  * @param *parmblock
  */
-int cdecl dl_font_usr(PARMBLK *parmblock) {
+short cdecl dl_font_usr(PARMBLK *parmblock) {
 	GFONT *font;
-	int dummy,pxy[4],ah,av,cw,ch,tx,ty;
-	RECT orect,crect;
+	short dummy,pxy[4],ah,av,cw,ch,tx,ty;
+	GRECT orect,crect;
 	char *sample;
 
 	font = (GFONT *)parmblock->pb_parm;
 	sample = "Murphy's word is law!";
 
 	/* Clipping-Rechteck und Objekt-Rechteck holen */
-	crect.x = parmblock->pb_xc;
-	crect.y = parmblock->pb_yc;
-	crect.w = parmblock->pb_wc;
-	crect.h = parmblock->pb_hc;
+	crect.g_x = parmblock->pb_xc;
+	crect.g_y = parmblock->pb_yc;
+	crect.g_w = parmblock->pb_wc;
+	crect.g_h = parmblock->pb_hc;
 
-	orect.x = parmblock->pb_x;
-	orect.y = parmblock->pb_y;
-	orect.w = parmblock->pb_w;
-	orect.h = parmblock->pb_h;
+	orect.g_x = parmblock->pb_x;
+	orect.g_y = parmblock->pb_y;
+	orect.g_w = parmblock->pb_w;
+	orect.g_h = parmblock->pb_h;
 
 	/* Schnittflaeche bilden und nur ausgeben, wenn noetig */
-	if (rc_intersect(&crect, &orect)) {
+	if (rc_intersect((GRECT *)&crect, (GRECT *)&orect)) {
 		/* Attribute setzen */
 		vst_font(tb.vdi_handle,font->id);
 		if (font->size < 0)
@@ -809,10 +811,10 @@ int cdecl dl_font_usr(PARMBLK *parmblock) {
 		vsf_perimeter(tb.vdi_handle, 0);
 
 		/* Clipping aktivieren und Mauszeiger abschalten */
-		pxy[0] = orect.x;
-		pxy[1] = orect.y;
-		pxy[2] = pxy[0] + orect.w - 1;
-		pxy[3] = pxy[1] + orect.h - 1;
+		pxy[0] = orect.g_x;
+		pxy[1] = orect.g_y;
+		pxy[2] = pxy[0] + orect.g_w - 1;
+		pxy[3] = pxy[1] + orect.g_h - 1;
 		vs_clip(tb.vdi_handle, 1, pxy);
 
 		/* Hintergrund zeichnen */
@@ -861,8 +863,8 @@ int cdecl dl_font_usr(PARMBLK *parmblock) {
  * @param **list
  * @param size
  */
-void dl_font_size(int fid, char **list, int size) {
-	int i, fontsize, du;
+void dl_font_size(short fid, char **list, short size) {
+	short i, fontsize, du;
 
 	pl_size.sel = -1;
 	pl_size.num = 0;
@@ -892,19 +894,19 @@ void dl_font_size(int fid, char **list, int size) {
  * @param ret
  */
 #pragma warn -par
-void de_font(int mode, int ret) {
-	int done, dos, show;
+void de_font(short mode, short ret) {
+	short done, dos, show;
 	AVINFO *avinfo, *avnext;
 	WININFO *win;
 	W_GRP *wgrp = NULL;
-	RECT frec;
-	int mx, my, mb, ks, mx1, my1, dx, dy;
-	int tx1, ty1, tx2, ty2;
-	int w;
-	int whandle, owner, dummy;
+	GRECT frec;
+	short mx, my, mb, ks, mx1, my1, dx, dy;
+	short tx1, ty1, tx2, ty2;
+	short w, d;
+	short whandle, owner;
 	ACWIN *acwin;
 	OBJECT *objectTree;
-	int fret;
+	short fret;
 	char path[MAX_PLEN];
 	THINGIMG *timg = NULL;
 
@@ -934,23 +936,23 @@ void de_font(int mode, int ret) {
 			/* Font D&D */
 			if (!dfont->intern) {
 				/* Rechteck berechnen */
-				objc_offset(objectTree, FOSAMPLE, &frec.x, &frec.y);
-				frec.w = objectTree[FOSAMPLE].ob_width;
-				frec.h = objectTree[FOSAMPLE].ob_height;
-				if (frec.x < tb.desk.x)
-					frec.x = tb.desk.x;
-				if (frec.y < tb.desk.y)
-					frec.y = tb.desk.y;
-				if (frec.x + frec.w > tb.desk.x + tb.desk.w)
-					frec.x = tb.desk.x + tb.desk.w - frec.w;
-				if (frec.y + frec.h > tb.desk.y + tb.desk.h)
-					frec.y = tb.desk.y + tb.desk.h - frec.h;
+				objc_offset(objectTree, FOSAMPLE, &frec.g_x, &frec.g_y);
+				frec.g_w = objectTree[FOSAMPLE].ob_width;
+				frec.g_h = objectTree[FOSAMPLE].ob_height;
+				if (frec.g_x < tb.desk.g_x)
+					frec.g_x = tb.desk.g_x;
+				if (frec.g_y < tb.desk.g_y)
+					frec.g_y = tb.desk.g_y;
+				if (frec.g_x + frec.g_w > tb.desk.g_x + tb.desk.g_w)
+					frec.g_x = tb.desk.g_x + tb.desk.g_w - frec.g_w;
+				if (frec.g_y + frec.g_h > tb.desk.g_y + tb.desk.g_h)
+					frec.g_y = tb.desk.g_y + tb.desk.g_h - frec.g_h;
 
 				/* Ausgangskoordinaten sichern */
-				tx1 = frec.x;
-				ty1 = frec.y;
-				tx2 = tx1 + frec.w;
-				ty2 = ty1 + frec.h;
+				tx1 = frec.g_x;
+				ty1 = frec.g_y;
+				tx2 = tx1 + frec.g_w;
+				ty2 = ty1 + frec.g_h;
 
 				/* Auf gehts... */
 				wind_update(BEG_MCTRL);
@@ -965,14 +967,14 @@ void de_font(int mode, int ret) {
 						dx = mx - mx1;
 						dy = my - my1;
 						/* Delta auf Desktop begrenzen */
-						if (tx1 + dx < tb.desk.x)
-							dx = tb.desk.x - tx1;
-						if (ty1 + dy < tb.desk.y)
-							dy = tb.desk.y - ty1;
-						if (tx2 + dx > tb.desk.x + tb.desk.w)
-							dx = (tb.desk.x + tb.desk.w) - tx2;
-						if( ty2 + dy > tb.desk.y + tb.desk.h)
-							dy = (tb.desk.y + tb.desk.h) - ty2;
+						if (tx1 + dx < tb.desk.g_x)
+							dx = tb.desk.g_x - tx1;
+						if (ty1 + dy < tb.desk.g_y)
+							dy = tb.desk.g_y - ty1;
+						if (tx2 + dx > tb.desk.g_x + tb.desk.g_w)
+							dx = (tb.desk.g_x + tb.desk.g_w) - tx2;
+						if( ty2 + dy > tb.desk.g_y + tb.desk.g_h)
+							dy = (tb.desk.g_y + tb.desk.g_h) - ty2;
 
 						/* Nur aktualisieren, wenn Delta immer noch !=0 */
 						if (dx != 0 || dy != 0) {
@@ -981,8 +983,8 @@ void de_font(int mode, int ret) {
 							ty1 += dy;
 							tx2 += dx;
 							ty2 += dy;
-							frec.x = tx1;
-							frec.y = ty1;
+							frec.g_x = tx1;
+							frec.g_y = ty1;
 							rub_frame(&frec);
 						}
 
@@ -1001,7 +1003,7 @@ void de_font(int mode, int ret) {
 					/* Ja, dann Eigentuemer ermitteln */
 					owner = -1;
 					if (tb.sys & SY_OWNER) {
-						if (!new_wind_get(whandle, WF_OWNER, &owner, &dummy, &dummy, &dummy))
+						if (!wind_get(whandle, WF_OWNER, &owner, &d, &d, &d))
 						owner = -1;
 					} else {
 						acwin = acwin_find(whandle);
@@ -1176,7 +1178,7 @@ void de_font(int mode, int ret) {
 						wgrp->bpat16 = dfont->bpat;
 					}
 					wgrp_tree(dfont->fwin);
-					win_redraw(dfont->fwin, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(dfont->fwin, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					win_slide(dfont->fwin, S_INIT, 0, 0);
 					wgrp_change(dfont->fwin);
 					break;
@@ -1224,13 +1226,14 @@ void de_font(int mode, int ret) {
  *
  * @param *msg
  */
-void dl_font(int *msg) {
-	int i, j;
-	int minade, maxade, dist[5], mw, eff[3];
-	int w, wmin, wmax, dummy;
-	int dotest;
-	int hlp;
-	VDIPB vdipb;
+void dl_font(short *msg) {
+	short i, j;
+	short minade, maxade, dist[5], mw, eff[3];
+	short w, wmin, wmax, dummy;
+	short dotest;
+	short hlp;
+	char name[40];
+	short ret, font_format, flags;
 	OBJECT *objectTree;
 
 	objectTree = rs_trindex[FONT];
@@ -1275,29 +1278,18 @@ void dl_font(int *msg) {
 			dfont->intern = 2;
 			/* Bei Bedarf Liste der moeglichen Console-Fonts aufbauen */
 			if (!gdos.mnumfonts) {
-				vdipb.contrl = _VDIParBlk.contrl;
-				vdipb.intin = _VDIParBlk.intin;
-				vdipb.ptsin = _VDIParBlk.ptsin;
-				vdipb.intout = _VDIParBlk.intout;
-				vdipb.ptsout = _VDIParBlk.ptsout;
 				graf_mouse(BUSYBEE, 0L);
 				for (i = 0; i < gdos.numfonts; i++) {
 					dotest = 1;
 					/* Sicherheitshalber nur mit GDOS ;-) */
 					if (tb.gdos) {
-						_VDIParBlk.contrl[0] = 130;
-						_VDIParBlk.contrl[1] = 0;
-						_VDIParBlk.contrl[3] = 2;
-						_VDIParBlk.contrl[5] = 1;
-						_VDIParBlk.contrl[6] = tb.vdi_handle;
-						_VDIParBlk.intin[0] = gdos.fontid[i * 2L + 1];
-						_VDIParBlk.intin[1] = 0;
-						vdi(&vdipb);
+						ret = vqt_ext_name (tb.vdi_handle, gdos.fontid[i * 2L + 1], name, &font_format, &flags);
 
-						/* Font monospaced? */
-						if (_VDIParBlk.contrl[4] >= 35) {
+						/* Function present?, Font monospaced? */
+						if (ret)
+						{
 							dotest=0; /* Keine weiteren Tests noetig */
-							if ((_VDIParBlk.intout[34] & 0xff00) == 0x0100)
+							if ( flags & 0x01)
 								wmin = wmax = 0;
 							else {
 								wmin = 0;
@@ -1528,7 +1520,7 @@ void dl_font(int *msg) {
 
  Voreinstellung
  -------------------------------------------------------------------------*/
-void dl_config_mode(int mode) {
+void dl_config_mode(short mode) {
 	switch (mode) {
 	case 0:
 		setActiveCard(dconf->configCard, CODESK, FALSE);
@@ -1571,8 +1563,8 @@ void dl_config_mode(int mode) {
 /**
  *
  */
-int dl_config_loadpic(int redraw) {
-	int ret = 0;
+short dl_config_loadpic(short redraw) {
+	short ret = 0;
 	OBJECT *objectTree = rs_trindex[CONFIG];
 
 	conf.imguse = isObjectSelected(objectTree, COIMGUSE);
@@ -1593,7 +1585,7 @@ int dl_config_loadpic(int redraw) {
 		redraw = ret = 1;
 	}
 	if (redraw)
-		desk_draw(tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		desk_draw(tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 	return (ret);
 }
@@ -1602,9 +1594,9 @@ int dl_config_loadpic(int redraw) {
  *
  */
 void di_config(void) {
-	int i;
+	short i;
 	OBJECT *objectTree;
-	int hlp;
+	short hlp;
 
 	objectTree = rs_trindex[CONFIG];
 
@@ -1772,12 +1764,12 @@ void di_config(void) {
 }
 
 #pragma warn -par
-void de_config(int mode, int ret) {
-	int done, i, exit_obj, fid;
-	int redraw = 0;
+void de_config(short mode, short ret) {
+	short done, i, exit_obj, fid;
+	short redraw = 0;
 	char fname[MAX_PLEN];
 	char *pf, *pt;
-	int ob, mode1, fret;
+	short ob, mode1, fret;
 	WININFO *win;
 	OBJECT *objectTree;
 
@@ -2009,7 +2001,7 @@ void de_config(int mode, int ret) {
 						con.tos2gem->color = con.color;
 					else
 						con.tos2gem->color = 0;
-					win_redraw(&con.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(&con.win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 				}
 			}
 
@@ -2031,7 +2023,7 @@ void de_config(int mode, int ret) {
 					set3dLook(FALSE);
 				else {
 					set3dLook(TRUE);
-					setShortcutLineColor(RED);
+					setShortcutLineColor(G_RED);
 				}
 
 				adjust_text(tb.use3d, getBackgroundColor(), -1);
@@ -2039,9 +2031,9 @@ void de_config(int mode, int ret) {
 				while (win) {
 					if (win->class != WCCON && dconf->bsel != conf.bsel) {
 						if (conf.bsel)
-							wind_set(win->handle, WF_BEVENT, 1);
+							wind_set(win->handle, WF_BEVENT, 1, 0, 0, 0);
 						else
-							wind_set(win->handle, WF_BEVENT, 0);
+							wind_set(win->handle, WF_BEVENT, 0, 0, 0, 0);
 					}
 					switch (win->class) {
 					case WCDIAL:
@@ -2055,13 +2047,13 @@ void de_config(int mode, int ret) {
 							if (dconf->vert != conf.vert || dconf->tosmode != conf.tosmode)
 								wpath_tree(win);
 						}
-						win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 						break;
 					case WCGROUP:
 						if (dconf->altapp != conf.altapp || dconf->altcpx != conf.altcpx) {
 							wgrp_update(win);
 							wgrp_tree(win);
-							win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+							win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 						}
 						break;
 					}
@@ -2082,8 +2074,8 @@ void de_config(int mode, int ret) {
 
  Funktionstastenbelegung
  -------------------------------------------------------------------------*/
-void dl_cfunc(int tool) {
-	int i, j;
+void dl_cfunc(short tool) {
+	short i, j;
 	char *txt, *tmp, *val;
 	OBJECT *objectTree;
 
@@ -2153,8 +2145,8 @@ void dl_cfunc(int tool) {
 	frm_start(&fi_cfunc, conf.wdial, conf.cdial, 0);
 }
 
-void de_cfunc(int mode, int ret) {
-	int i, j, k, off1, fret, done, ob, exob;
+void de_cfunc(short mode, short ret) {
+	short i, j, k, off1, fret, done, ob, exob;
 	char *p, *pk, path[MAX_PLEN], file[MAX_FLEN];
 	char buf[MAX_PLEN], parm[61];
 	FILESYS filesys;
@@ -2387,7 +2379,7 @@ void de_cfunc(int mode, int ret) {
  Einstellungen sichern
  -------------------------------------------------------------------------*/
 void dl_saveconf(void) {
-	int ret;
+	short ret;
 	char savepath[MAX_PLEN];
 	char path[MAX_PLEN];
 	char file[MAX_FLEN];
@@ -2453,7 +2445,7 @@ void dl_saveconf(void) {
  Einstellungen laden
  -------------------------------------------------------------------------*/
 void dl_loadconf(void) {
-	int ret, i;
+	short ret, i;
 	ICONDESK *p = desk.dicon + OBUSER, *q;
 
 	if (frm_alert(1, rs_frstr[ALDOLOADCONF], altitle, conf.wdial, 0L) == 1) {
@@ -2507,7 +2499,7 @@ void dl_loadconf(void) {
 			set3dLook(FALSE);
 		else {
 			set3dLook(TRUE);
-			setShortcutLineColor(RED);
+			setShortcutLineColor(G_RED);
 		}
 		adjust_text(tb.use3d, getBackgroundColor(), -1);
 
@@ -2527,7 +2519,7 @@ void dl_loadconf(void) {
 		if (ret)
 			wind_restore(1);
 		else
-			desk_draw(tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			desk_draw(tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 
 		graf_mouse(ARROW, 0L);
 	}
@@ -2538,11 +2530,11 @@ void dl_loadconf(void) {
  
  Laufwerke anmelden
  -------------------------------------------------------------------------*/
-int dl_drives(int draw, int _auto, int showall) {
-	int i, d;
+short dl_drives(short draw, short _auto, short showall) {
+	short i, d;
 	ICONDESK *p;
-	int redraw = 0;
-	int x, y, w, h;
+	short redraw = 0;
+	short x, y, w, h;
 	char label[MAX_FLEN];
 	OBJECT *objectTree;
 
@@ -2606,7 +2598,7 @@ int dl_drives(int draw, int _auto, int showall) {
 	/* Icons auf dem Desktop aktualisieren */
 	if (redraw && draw) {
 		icon_select(-1, 0, 0);
-		desk_draw(tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		desk_draw(tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 	}
 
 	return 1;
@@ -2627,8 +2619,8 @@ void di_rez(void) {
 	frm_start(&fi_rez, conf.wdial, conf.cdial, 0);
 }
 
-void de_rez(int mode, int ret) {
-	int done, newrez;
+void de_rez(short mode, short ret) {
+	short done, newrez;
 
 	UNUSED(ret);
 
@@ -2665,7 +2657,7 @@ void de_rez(int mode, int ret) {
 
  Darstellung in Fenstern als Text/Icons
  -------------------------------------------------------------------------*/
-void dl_itext(int text) {
+void dl_itext(short text) {
 	W_GRP *wgrp;
 	W_PATH *wpath;
 
@@ -2677,7 +2669,7 @@ void dl_itext(int text) {
 			if (wgrp->text != text) {
 				wgrp->text = text;
 				wgrp_tree(tb.topwin);
-				win_redraw(tb.topwin, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+				win_redraw(tb.topwin, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 				win_slide(tb.topwin, S_INIT, 0, 0);
 				wgrp_change(tb.topwin);
 			}
@@ -2702,10 +2694,10 @@ void dl_itext(int text) {
 
  Sortierung in Fenstern aendern
  -------------------------------------------------------------------------*/
-void dl_isort(int sort) {
-	int newsort;
-	int pwin;
-	int *sortby;
+void dl_isort(short sort) {
+	short newsort;
+	short pwin;
+	short *sortby;
 
 	sortby = &conf.index.sortby;
 	pwin = 0;
@@ -2730,7 +2722,7 @@ void dl_isort(int sort) {
 		if (pwin) {
 			wpath_tree(tb.topwin);
 			win_slide(tb.topwin, S_INIT, 0, 0);
-			win_redraw(tb.topwin, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+			win_redraw(tb.topwin, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		}
 		graf_mouse(ARROW, 0L);
 	}
@@ -2741,7 +2733,7 @@ void dl_isort(int sort) {
 
  Anzeige von Groesse, Datum etc. in Fenstern aendern
  -------------------------------------------------------------------------*/
-void dl_ishow(int show) {
+void dl_ishow(short show) {
 	if (conf.index.show & show)
 		conf.index.show &= ~show;
 	else
@@ -2759,9 +2751,9 @@ void dl_ishow(int show) {
  Maske fuer Fensterinhalt setzen
  -------------------------------------------------------------------------*/
 /* qsort fuer di_mask() */
-void wl_qsort(char **list, int left, int right) {
-	int i, last;
-	void wl_swap(char **list, int i, int j);
+void wl_qsort(char **list, short left, short right) {
+	short i, last;
+	void wl_swap(char **list, short i, short j);
 
 	if (left >= right)
 		return;
@@ -2777,7 +2769,7 @@ void wl_qsort(char **list, int left, int right) {
 	wl_qsort(list, last + 1, right);
 }
 
-void wl_swap(char **list, int i, int j) {
+void wl_swap(char **list, short i, short j) {
 	char *temp;
 
 	temp = list[i];
@@ -2786,7 +2778,7 @@ void wl_swap(char **list, int i, int j) {
 }
 
 void di_mask(void) {
-	int i, j, l, n, new;
+	short i, j, l, n, new;
 	char *fmask, nmask[34], *p;
 	WP_ENTRY *item;
 
@@ -2870,7 +2862,7 @@ void di_mask(void) {
 	li_mask.num = n;
 	li_mask.offset = 0;
 	li_mask.sel = -1;
-	l = (int) strlen(dmask->wildcard);
+	l = (short) strlen(dmask->wildcard);
 	j = -1;
 	for (i = 0; i < n && j == -1; i++)
 		if (!strnicmp(dmask->wildcard, dmask->wtext[i], (long) l))
@@ -2881,11 +2873,11 @@ void di_mask(void) {
 	frm_start(&fi_mask, conf.wdial, conf.cdial, 0);
 }
 
-void de_mask(int mode, int ret) {
-	int done, i, l, n, sel, off, exit_obj;
-	int ks, d;
-	int dclick;
-	int new_len;
+void de_mask(short mode, short ret) {
+	short done, i, l, n, sel, off, exit_obj;
+	short ks, d;
+	short dclick;
+	short new_len;
 	char *w;
 
 	UNUSED(ret);
@@ -2916,7 +2908,7 @@ void de_mask(int mode, int ret) {
 			case MAMASK:
 				off = li_mask.offset;
 				sel = -1;
-				l = (int) strlen(w);
+				l = (short) strlen(w);
 				for (i = 0; i < n && sel == -1; i++)
 					if (!strnicmp(w, dmask->wtext[i], (long) l))
 						sel = i;
@@ -2950,7 +2942,7 @@ void de_mask(int mode, int ret) {
 				strcpy(w, dmask->wtext[li_mask.sel]);
 			else /* Mit Shift */
 			{
-				new_len = (int) (strlen(w) + strlen(dmask->wtext[li_mask.sel]));
+				new_len = (short) (strlen(w) + strlen(dmask->wtext[li_mask.sel]));
 				if (*w)
 					new_len++;
 				if (new_len <= 32) {
@@ -3009,9 +3001,9 @@ void de_mask(int mode, int ret) {
  Oeffnen eines Objekts nach Doppelklick oder beim Anwaehlen des
  Menuepunkts "Oeffnen"
  -------------------------------------------------------------------------*/
-int dl_openit(char *full, char *aname, char *apath, int isap, int *rex, int ks,
+short dl_openit(char *full, char *aname, char *apath, short isap, short *rex, short ks,
 		char *parm) {
-	int intern, aok, ret;
+	short intern, aok, ret;
 	APPLINFO *appl, app;
 
 	/* Handelt es sich hier evtl. um eine Datei von Thing? */
@@ -3066,8 +3058,8 @@ int dl_openit(char *full, char *aname, char *apath, int isap, int *rex, int ks,
 	return (ret);
 }
 
-int dl_open_p(char *path, char *rname, int rel, char *mask, int ks) {
-	int ok, ret;
+short dl_open_p(char *path, char *rname, short rel, char *mask, short ks) {
+	short ok, ret;
 	W_PATH *wpath;
 
 	ok = 0;
@@ -3105,15 +3097,15 @@ int dl_open_p(char *path, char *rname, int rel, char *mask, int ks) {
 	return (ret);
 }
 
-int dl_open_chk(char *name, ICONDESK *icon) {
+short dl_open_chk(char *name, ICONDESK *icon) {
 	XATTR xattr;
-	int ret, l, abut;
+	short ret, l, abut;
 	long fret;
 	char file[MAX_FLEN], path[MAX_PLEN], *p;
-	int x, y, w, h;
+	short x, y, w, h;
 
 	/* Bei Ordner vor dem Test abschliessendes '\' loeschen */
-	l = (int) strlen(name);
+	l = (short) strlen(name);
 	if (icon->class == IDFOLDER && l > 1)
 		name[l - 1] = 0;
 
@@ -3157,9 +3149,9 @@ int dl_open_chk(char *name, ICONDESK *icon) {
 	return (ret);
 }
 
-void dl_open(int new) {
-	int i,isap,rex;
-	int fret;
+void dl_open(short new) {
+	short i,isap,rex;
+	short fret;
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	W_GRP *wgrp;
@@ -3169,7 +3161,7 @@ void dl_open(int new) {
 	char mask[MAX_PLEN];
 	char *p;
 	WININFO *win;
-	int lshift, rshift, alt;
+	short lshift, rshift, alt;
 
 	lshift = rshift = alt = 0;
 	if (new & K_LSHIFT)
@@ -3315,7 +3307,7 @@ void dl_open(int new) {
 						wpath_parent(win, new, 0);
 					} else {
 						/* Sicherheitscheck: Pfadlaenge fuer Thing noch zulaessig? */
-						if ((int)strlen(name) + (int)strlen(item->name) >= MAX_PLEN) {
+						if ((short)strlen(name) + (short)strlen(item->name) >= MAX_PLEN) {
 							/* Nein - dann abbrechen */
 							frm_alert(1, rs_frstr[ALRECURS], altitle, conf.wdial, 0L);
 						} else {
@@ -3417,12 +3409,12 @@ void dl_open(int new) {
  Anzeigen/Drucken der aktuell selektierten Datei (Menuepunkt "Anzeigen",
  bzw. Menuepunkt "Drucken")
  -------------------------------------------------------------------------*/
-int dl_show(int mode, char *buf) {
+short dl_show(short mode, char *buf) {
 	char full[MAX_CLEN + MAX_PLEN];
 	char path[MAX_PLEN];
 	char name[MAX_FLEN];
 	W_PATH *wpath;
-	int rex, ret;
+	short rex, ret;
 	WININFO *win;
 
 	/* Nur einzelne Dateien koennen angezeigt werden */
@@ -3486,10 +3478,10 @@ int dl_show(int mode, char *buf) {
  * 2: Keine zustaendige Applikation gestartet, aber vorhanden
  * 3: Keine zustaendige Applikation vorhanden (Meldung erfolgt hier)
  */
-static int viewprint(int mode, char *path, char *name, int *rex) {
+static short viewprint(short mode, char *path, char *name, short *rex) {
 	char full[MAX_CLEN + MAX_PLEN];
 	APPLINFO *appl;
-	int am_ok;
+	short am_ok;
 
 	strcpy(full, path);
 	strcat(full, name);
@@ -3522,18 +3514,18 @@ static int viewprint(int mode, char *path, char *name, int *rex) {
  Info ueber die selektieren Objekte oder das aktuelle Fenster anzeigen
  -------------------------------------------------------------------------*/
 void dl_info(void) {
-	int i, cont, donext, num, doit;
-	int ok, l, doup, done;
+	short i, cont, donext, num, doit;
+	short ok, l, doup, done;
 	W_PATH *wpath, *uwpath;
 	WP_ENTRY *item, iobj;
 	WG_ENTRY *gitem;
 	char ipath[MAX_PLEN];
-	int nfiles, nfolders, nlinks;
+	short nfiles, nfolders, nlinks;
 	unsigned long size;
 	WININFO *win;
 	ICONDESK *p;
-	int d, ks;
-	int msg[8];
+	short d, ks;
+	short msg[8];
 
 	graf_mkstate(&d, &d, &d, &ks);
 
@@ -3631,7 +3623,7 @@ void dl_info(void) {
 
 						baum2 = rs_trindex[SELINFO];
 
-						l = (int)strlen(wpath->path);
+						l = (short)strlen(wpath->path);
 						strShortener(baum2[SIPATH].ob_spec.free_string, wpath->path, 30);
 						prlong11(size, baum2[SISIZE].ob_spec.free_string);
 						sprintf(baum2[SIFILES].ob_spec.free_string, "%-6d", nfiles);
@@ -3746,7 +3738,7 @@ void dl_info(void) {
 								uwpath = (W_PATH *)glob.win[i].user;
 								if ((win == &glob.win[i]) || ((win!=&glob.win[i]) && !strcmp(wpath->path,uwpath->path))) {
 									wpath_update(&glob.win[i]);
-									win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+									win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 									win_slide(&glob.win[i], S_INIT, 0, 0);
 								}
 							}
@@ -3777,7 +3769,7 @@ void dl_info(void) {
 							if (cont == 2) {
 								wgrp_update(win);
 								wgrp_tree(win);
-								win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+								win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 								win_slide(win, S_INIT, 0, 0);
 								wgrp_change(win);
 							}
@@ -3794,7 +3786,7 @@ void dl_info(void) {
 				case WCPATH:
 					/* Rootverzeichnis ? */
 					wpath=(W_PATH *)tb.topwin->user;
-					if ((int)strlen(wpath->path) == 3) {
+					if ((short)strlen(wpath->path) == 3) {
 						/* Jo ... */
 						i = wpath->path[0] - 64;
 						if (dl_ddriveinfo(desk.dicon + i,0) == 2)
@@ -3828,10 +3820,10 @@ void dl_info(void) {
 								if (glob.win[i].state & WSOPEN) {
 									if (tb.topwin != &glob.win[i]) {
 										uwpath = (W_PATH *)glob.win[i].user;
-										l = (int)strlen(uwpath->path);
+										l = (short)strlen(uwpath->path);
 										if (!strncmp(wpath->path, uwpath->path, (long)l)) {
 											wpath_update(&glob.win[i]);
-											win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+											win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 											win_slide(&glob.win[i], S_INIT, 0, 0);
 										}
 									}
@@ -3854,7 +3846,7 @@ void dl_info(void) {
 
  Alle Objekte im aktiven Fenster auswaehlen
  -------------------------------------------------------------------------*/
-void dl_selall(int sel) {
+void dl_selall(short sel) {
 	WININFO *win;
 
 	if (tb.topwin) {
@@ -3890,15 +3882,15 @@ void dl_selall(int sel) {
  Optional kann auch ein String mit Objektnamen angegeben werden,
  der dann statt der aktuellen Auswahl in Thing verwendet wird.
  -------------------------------------------------------------------------*/
-static int dstop;
+static short dstop;
 
 /* Unterfunktion: Datei loeschen */
 
-int dl_del_file(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
-	int fret;
+short dl_del_file(char *name, short *nfiles, short *nfolders, short total, char *dlst) {
+	short fret;
 	long s;
-	int mx, my, mb, ks;
-	int stop, alret, i;
+	short mx, my, mb, ks;
+	short stop, alret, i;
 	char *p;
 	OBJECT *objectTree;
 	FILESYS fs;
@@ -3924,7 +3916,7 @@ int dl_del_file(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
 	/* Dateinamen im Dialog aktualisieren */
 	p = objectTree[WCSRC].ob_spec.tedinfo->te_ptext;
 	strShortener(p, name, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
@@ -3948,14 +3940,14 @@ int dl_del_file(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
 	/* Status-Box aktualisieren */
 	p = objectTree[WCFILES].ob_spec.tedinfo->te_ptext;
 	itoa(*nfiles, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
 	}
 	p = objectTree[WCFOLDERS].ob_spec.tedinfo->te_ptext;
 	itoa(*nfolders, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
@@ -3966,7 +3958,7 @@ int dl_del_file(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
 		s = 1L;
 	if (s > (long) objectTree[WCBOX].ob_width)
 		s = (long) objectTree[WCBOX].ob_width;
-	objectTree[WCSLIDE].ob_width = (int) s;
+	objectTree[WCSLIDE].ob_width = (short) s;
 
 	frm_redraw(&fi_waitcopy, WCFILES);
 	frm_redraw(&fi_waitcopy, WCFOLDERS);
@@ -3977,19 +3969,19 @@ int dl_del_file(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
 
 /* Unterfunktion: Rekursives Loeschen eines Ordners */
 
-int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst) {
+short dl_del_folder(char *name, short *nfiles, short *nfolders, short total, char *dlst) {
 	FILESYS filesys;
-	DTA dta, *odta;
-	int usemint;
+	_DTA dta, *odta;
+	short usemint;
 	long fret, dhandle;
 	XATTR xattr;
 	char dbuf[MAX_FLEN + 4];
 	char path[MAX_PLEN];
-	int done;
+	short done;
 	long s;
-	int mx, my, mb, ks;
-	int stop, alret;
-	int i, l;
+	short mx, my, mb, ks;
+	short stop, alret;
+	short i, l;
 	W_PATH *wpath;
 	char *p;
 	OBJECT *objectTree;
@@ -4011,11 +4003,11 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 		strcpy(path, name);
 		strcat(path, "\\*.*");
 		fret = (long) Fsfirst(path, FA_SUBDIR | FA_HIDDEN | FA_SYSTEM);
-		while (!fret && (dta.d_attrib == 0xf)) /* VFAT unter TOS ausfiltern */
+		while (!fret && (dta.dta_attribute == 0xf)) /* VFAT unter TOS ausfiltern */
 			fret = (long) Fsnext();
 		if (fret == 0L) {
-			xattr.attr = dta.d_attrib;
-			strcpy(&dbuf[4], dta.d_fname);
+			xattr.attr = dta.dta_attribute;
+			strcpy(&dbuf[4], dta.dta_name);
 		}
 	} else {
 		usemint = 1;
@@ -4081,10 +4073,10 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 			if (!usemint) {
 				do {
 					fret = (long) Fsnext();
-				} while (!fret && (dta.d_attrib == 0xf)); /* VFAT unter TOS ausfiltern */
+				} while (!fret && (dta.dta_attribute == 0xf)); /* VFAT unter TOS ausfiltern */
 				if (fret == 0L) {
-					xattr.attr = dta.d_attrib;
-					strcpy(&dbuf[4], dta.d_fname);
+					xattr.attr = dta.dta_attribute;
+					strcpy(&dbuf[4], dta.dta_name);
 				}
 			} else {
 				fret = Dreaddir(MAX_FLEN + 4, dhandle, dbuf);
@@ -4112,7 +4104,7 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 	/* Dateinamen im Dialog aktualisieren */
 	p = objectTree[WCSRC].ob_spec.tedinfo->te_ptext;
 	strShortener(p, name, 45);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 45) {
 		p[i] = ' ';
 		i++;
@@ -4136,14 +4128,14 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 	/* Status-Box aktualisieren */
 	p = objectTree[WCFILES].ob_spec.tedinfo->te_ptext;
 	itoa(*nfiles, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
 	}
 	p = objectTree[WCFOLDERS].ob_spec.tedinfo->te_ptext;
 	itoa(*nfolders, p, 10);
-	i = (int) strlen(p);
+	i = (short) strlen(p);
 	while (i < 7) {
 		p[i] = ' ';
 		i++;
@@ -4154,14 +4146,14 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 		s = 1L;
 	if (s > (long) objectTree[WCBOX].ob_width)
 		s = (long) objectTree[WCBOX].ob_width;
-	objectTree[WCSLIDE].ob_width = (int) s;
+	objectTree[WCSLIDE].ob_width = (short) s;
 
 	frm_redraw(&fi_waitcopy, WCFILES);
 	frm_redraw(&fi_waitcopy, WCFOLDERS);
 	frm_redraw(&fi_waitcopy, WCBOX);
 
 	/* Ggf. betroffene Verzeichnisfenster zum Schliežen vormerken */
-	l = (int) strlen(path);
+	l = (short) strlen(path);
 	for (i = 0; i < MAX_PWIN; i++) {
 		if (glob.win[i].state & WSOPEN) {
 			wpath = (W_PATH *) glob.win[i].user;
@@ -4170,25 +4162,25 @@ int dl_del_folder(char *name, int *nfiles, int *nfolders, int total, char *dlst)
 		}
 	}
 
-	return (int) fret;
+	return (short) fret;
 }
 
-int dl_delete(char *buf) {
-	int i, j, x, y, w, h, n, done;
-	int tx1, ty1, tx2, ty2, rd;
+short dl_delete(char *buf) {
+	short i, j, x, y, w, h, n, done;
+	short tx1, ty1, tx2, ty2, rd;
 	char ipath[MAX_PLEN], iname[MAX_FLEN];
-	int ok, go;
+	short ok, go;
 	char kcmd[20], kstr[MAX_CLEN];
-	int kdrv, kdrv1, kuse;
-	int whandle;
+	short kdrv, kdrv1, kuse;
+	short whandle;
 	W_PATH *wpath;
 	W_GRP *wgrp;
 	WG_ENTRY *gitem, *gitem1;
 	OBJECT *objectTree;
 	XATTR xattr;
-	int (*delfunc)(char *, int *, int *, int, char *);
+	short (*delfunc)(char *, short *, short *, short, char *);
 	char *readbuf;
-	int nlinks;
+	short nlinks;
 
 	objectTree = rs_trindex[WAITCOPY];
 
@@ -4319,7 +4311,7 @@ int dl_delete(char *buf) {
 				i = 0;
 				readbuf = buf;
 				while (get_buf_entry(readbuf, ipath, &readbuf)) {
-					j = (int) strlen(ipath);
+					j = (short) strlen(ipath);
 					if (ipath[j - 1] == '\\')
 						j--;
 					ipath[j] = 0;
@@ -4372,7 +4364,7 @@ int dl_delete(char *buf) {
 			i = 0;
 			readbuf = buf;
 			while (get_buf_entry(readbuf, ipath, &readbuf) && ok) {
-				j = (int) strlen(ipath);
+				j = (short) strlen(ipath);
 
 				delfunc = dl_del_file;
 				if (ipath[j - 1] == '\\') {
@@ -4382,7 +4374,7 @@ int dl_delete(char *buf) {
 						delfunc = dl_del_file;
 					}
 				}
-				if (delfunc(ipath, &dcopy->nfiles, &dcopy->nfolders, (int) dcopy->total, dcopy->dlst) != 0)
+				if (delfunc(ipath, &dcopy->nfiles, &dcopy->nfolders, (short) dcopy->total, dcopy->dlst) != 0)
 					ok = 0;
 			}
 
@@ -4407,7 +4399,7 @@ int dl_delete(char *buf) {
 						if (j >= 0 && j <= 31) {
 							if (dcopy->dlst[j]) {
 								wpath_update(&glob.win[i]);
-								win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+								win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 								win_slide(&glob.win[i], S_INIT, 0, 0);
 							}
 						}
@@ -4432,8 +4424,8 @@ int dl_delete(char *buf) {
 		ICONDESK *p = desk.dicon + 1;
 
 		/* Position/Maže des Gesamtrechtecks fuer Desktop-Redraw */
-		tx1 = tb.desk.x + tb.desk.w;
-		ty1 = tb.desk.y + tb.desk.h;
+		tx1 = tb.desk.g_x + tb.desk.g_w;
+		ty1 = tb.desk.g_y + tb.desk.g_h;
 		tx2 = ty2 = 0;
 		rd = 0;
 
@@ -4511,7 +4503,7 @@ int dl_delete(char *buf) {
 				ok = 0;
 				lbuf = pmalloc(MAX_KBDLEN);
 				if (lbuf) {
-					ok = sel2buf(lbuf, iname, ipath, (int)MAX_KBDLEN);
+					ok = sel2buf(lbuf, iname, ipath, (short)MAX_KBDLEN);
 					if (ok)
 						ok = dl_delete(lbuf);
 					pfree(lbuf);
@@ -4554,7 +4546,7 @@ int dl_delete(char *buf) {
 						}
 						/* Gruppe aktualisieren */
 						wgrp_tree(desk.sel.win);
-						win_redraw(desk.sel.win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+						win_redraw(desk.sel.win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 						win_slide(desk.sel.win, S_INIT, 0, 0);
 						wgrp_change(desk.sel.win);
 						ok = 1;
@@ -4593,8 +4585,8 @@ void dl_find(void) {
 void dl_eject(void) {
 	char help[4], *ejectdir, *errtype;
 	W_PATH *wpath;
-	int i, ejected = 0, drv;
-	unsigned int maj, min;
+	short i, ejected = 0, drv;
+	unsigned short maj, min;
 	long err;
 	ICONDESK *p;
 
@@ -4638,7 +4630,7 @@ void dl_eject(void) {
 	}
 	graf_mouse(ARROW, 0L);
 	if (!ejected) {
-		sprintf(almsg, rs_frstr[ALNOEJECT], drv + 'A', errtype, (int) err);
+		sprintf(almsg, rs_frstr[ALNOEJECT], drv + 'A', errtype, (short) err);
 		frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		return;
 	}
@@ -4663,8 +4655,8 @@ void dl_eject(void) {
 
 void job_format(void) {
 	long s, fh;
-	int state, side, cont, dret, i;
-	DISKINFO diskinfo;
+	short state, side, cont, dret, i;
+	_DISKINFO diskinfo;
 
 	if (glob.sm_format > 1)
 		return;
@@ -4676,7 +4668,7 @@ void job_format(void) {
 		s = (long) rs_trindex[WAIT][WFBOX].ob_width * (long) (79 - dformat->track) / 79L;
 		if (s == 0L)
 			s = 1L;
-		rs_trindex[WAIT][WFSLIDE].ob_width = (int) s;
+		rs_trindex[WAIT][WFSLIDE].ob_width = (short) s;
 
 		frm_redraw(&fi_wait, WTEXT2);
 		frm_redraw(&fi_wait, WFSLIDE);
@@ -4773,7 +4765,7 @@ void job_format(void) {
 		if (dformat->label[3] != 0) {
 			fh = Fcreate(dformat->label, FA_VOLUME);
 			if (fh >= 0L) {
-				Fclose((int) fh);
+				Fclose((short) fh);
 			} else {
 				glob.sm_format = 2;
 				frm_alert(1, rs_frstr[ALFORMERR], altitle, conf.wdial, 0L);
@@ -4790,7 +4782,7 @@ void job_format(void) {
 			frm_alert(1, rs_frstr[ALFORMERR], altitle, conf.wdial, 0L);
 		} else {
 			s = (long) (diskinfo.b_free * diskinfo.b_secsiz * diskinfo.b_clsiz);
-			sprintf(almsg, rs_frstr[ALSERIAL], s, (int) dformat->buf[8], (int) dformat->buf[9], (int) dformat->buf[10]);
+			sprintf(almsg, rs_frstr[ALSERIAL], s, (short) dformat->buf[8], (short) dformat->buf[9], (short) dformat->buf[10]);
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		}
 		cont = 0;
@@ -4809,7 +4801,7 @@ void job_format(void) {
 			if (glob.win[i].state & WSOPEN) {
 				if (((W_PATH *) glob.win[i].user)->path[0] == 'A' + dformat->drive) {
 					wpath_update(&glob.win[i]);
-					win_redraw(&glob.win[i], tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(&glob.win[i], tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					win_slide(&glob.win[i], S_INIT, 0, 0);
 				}
 			}
@@ -4852,12 +4844,12 @@ void di_format(void) {
 	/* Falls Applikation fuer Formatieren eingetragen ist, dann
 	 diese verwenden */
 	if (conf.format[0]) {
-		int ok = 0;
+		short ok = 0;
 
 		strcpy(glob.cmd, conf.format);
 		quote(glob.cmd);
 		if ((desk.sel.numobs == 1) && (desk.sel.drives == 1)) {
-			int i;
+			short i;
 			char drv[2];
 
 			a = desk.dicon + 1;
@@ -4904,8 +4896,8 @@ void di_format(void) {
 
 /* Dialog-Exit */
 
-void de_format(int mode, int ret) {
-	int exit_obj, done;
+void de_format(short mode, short ret) {
+	short exit_obj, done;
 	UNUSED(ret);
 
 	done = 0;
@@ -4998,8 +4990,8 @@ void de_format(int mode, int ret) {
 
 /* Status-Dialog-Exit */
 
-void de_wait(int mode, int ret) {
-	int exit_obj;
+void de_wait(short mode, short ret) {
+	short exit_obj;
 	UNUSED(ret);
 
 	if (glob.sm_format)
@@ -5053,7 +5045,7 @@ void de_wait(int mode, int ret) {
 void dl_nextwin(void) {
 	WININFO *win;
 	ACWIN *acc;
-	int handle;
+	short handle;
 
 	aesmsg[0] = WM_TOPPED;
 	aesmsg[1] = tb.app_id;
@@ -5135,7 +5127,7 @@ void dl_nextwin(void) {
  Aktuelles Fenster schliessen
  -------------------------------------------------------------------------*/
 void dl_closewin(void) {
-	int whandle;
+	short whandle;
 	ACWIN *awin;
 	W_GRP *wgrp;
 	WININFO *win;
@@ -5247,12 +5239,12 @@ void dl_closeallwin(void) {
 
 void dl_copywin(void) {
 	char tmp[514], outname[MAX_PLEN];
-	int i, j, l, l1, l2;
+	short i, j, l, l1, l2;
 	char *cbuf;
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	long fh, fh2;
-	int files = 0, first = 1;
+	short files = 0, first = 1;
 	ICONDESK *p;
 
 	if (!desk.sel.numobs && !tb.topwin) {
@@ -5273,9 +5265,9 @@ void dl_copywin(void) {
 		graf_mouse(ARROW, 0L);
 		err_file(rs_frstr[ALFLCREATE], fh, outname);
 		if (fh >= 0)
-			Fclose((int) fh);
+			Fclose((short) fh);
 		if (fh2 >= 0)
-			Fclose((int) fh2);
+			Fclose((short) fh2);
 		scrap_clear();
 		clip_update();
 		return;
@@ -5288,10 +5280,10 @@ void dl_copywin(void) {
 			case WCPATH:
 				files = 1;
 				strcpy(tmp, "TNGC");
-				Fwrite((int)fh2, strlen(tmp), tmp);
+				Fwrite((short)fh2, strlen(tmp), tmp);
 				wpath = (W_PATH *)desk.sel.win->user;
 				sprintf(tmp,"%s\r\n\r\n" ,wpath->path);
-				Fwrite((int)fh, strlen(tmp), tmp);
+				Fwrite((short)fh, strlen(tmp), tmp);
 				for (i = 0; i < wpath->e_total; i++) {
 					item = wpath->lptr[i];
 					if (item->sel) {
@@ -5301,20 +5293,20 @@ void dl_copywin(void) {
 						if (item->class == EC_FOLDER)
 							strcat(tmp, "\\");
 						strcat(tmp, "\r\n");
-						Fwrite((int)fh, strlen(tmp), tmp);
+						Fwrite((short)fh, strlen(tmp), tmp);
 						if (first)
 							first = 0;
 						else
-							Fwrite((int)fh2, 1L, " ");
+							Fwrite((short)fh2, 1L, " ");
 						strcpy(tmp, wpath->path);
 						strcat(tmp, item->name);
 						if (item->class == EC_FOLDER)
 							strcat(tmp, "\\");
 						quote(tmp);
-						Fwrite((int)fh2, strlen(tmp), tmp);
+						Fwrite((short)fh2, strlen(tmp), tmp);
 					}
 				}
-				Fwrite((int)fh2, 1L, "");
+				Fwrite((short)fh2, 1L, "");
 				break;
 			}
 		}
@@ -5360,7 +5352,7 @@ void dl_copywin(void) {
 					tmp[i] = 13;
 					tmp[i + 1] = 10;
 					tmp[i + 2] = 0;
-					Fwrite((int)fh, i + 2, tmp);
+					Fwrite((short)fh, i + 2, tmp);
 					/* Naechste Zeile */
 					cbuf += (long)(con.col + 1);
 				}
@@ -5369,7 +5361,7 @@ void dl_copywin(void) {
 				files = 1;
 				wpath = (W_PATH *)tb.topwin->user;
 				sprintf(tmp, "%s\r\n\r\n", wpath->path);
-				Fwrite((int)fh, strlen(tmp), tmp);
+				Fwrite((short)fh, strlen(tmp), tmp);
 				for (i = 0; i < wpath->e_total; i++) {
 					item = wpath->lptr[i];
 					strcpy(tmp,"  ");
@@ -5377,14 +5369,14 @@ void dl_copywin(void) {
 					if (item->class == EC_FOLDER)
 						strcat(tmp, "\\");
 					strcat(tmp, "\r\n");
-					Fwrite((int)fh, strlen(tmp), tmp);
+					Fwrite((short)fh, strlen(tmp), tmp);
 				}
 				break;
 			}
 		}
 	}
-	Fclose((int)fh);
-	Fclose((int)fh2);
+	Fclose((short)fh);
+	Fclose((short)fh2);
 	switch (files) {
 	case 0:
 		mybeep();
@@ -5405,11 +5397,11 @@ void dl_copywin(void) {
  -------------------------------------------------------------------------*/
 void dl_cutwin(void) {
 	char tmp[514], outname[MAX_PLEN];
-	int i;
+	short i;
 	W_PATH *wpath;
 	WP_ENTRY *item;
 	long fh, fh2;
-	int files = 0, first = 1;
+	short files = 0, first = 1;
 	ICONDESK *p;
 
 	if (!desk.sel.numobs) {
@@ -5430,9 +5422,9 @@ void dl_cutwin(void) {
 		graf_mouse(ARROW, 0L);
 		err_file(rs_frstr[ALFLCREATE], fh, outname);
 		if (fh >= 0)
-			Fclose((int) fh);
+			Fclose((short) fh);
 		if (fh2 >= 0)
-			Fclose((int) fh2);
+			Fclose((short) fh2);
 		scrap_clear();
 		clip_update();
 		return;
@@ -5444,10 +5436,10 @@ void dl_cutwin(void) {
 			switch (desk.sel.win->class) {
 				case WCPATH:
 				strcpy(tmp, "TNGX");
-				Fwrite((int)fh2, strlen(tmp), tmp);
+				Fwrite((short)fh2, strlen(tmp), tmp);
 				wpath=(W_PATH *)desk.sel.win->user;
 				sprintf(tmp,"%s\r\n\r\n",wpath->path);
-				Fwrite((int)fh,strlen(tmp),tmp);
+				Fwrite((short)fh,strlen(tmp),tmp);
 				for (i = 0; i < wpath->e_total; i++) {
 					item = wpath->lptr[i];
 					if (item->sel) {
@@ -5456,26 +5448,26 @@ void dl_cutwin(void) {
 						if (item->class == EC_FOLDER)
 							strcat(tmp, "\\");
 						strcat(tmp, "\r\n");
-						Fwrite((int)fh, strlen(tmp), tmp);
+						Fwrite((short)fh, strlen(tmp), tmp);
 						if (first)
 							first = 0;
 						else
-							Fwrite((int)fh2, 1L, " ");
+							Fwrite((short)fh2, 1L, " ");
 						strcpy(tmp, wpath->path);
 						strcat(tmp, item->name);
 						if (item->class == EC_FOLDER)
 							strcat(tmp, "\\");
 						quote(tmp);
-						Fwrite((int)fh2, strlen(tmp), tmp);
+						Fwrite((short)fh2, strlen(tmp), tmp);
 					}
 				}
-				Fwrite((int)fh2, 1L, "");
+				Fwrite((short)fh2, 1L, "");
 				break;
 			}
 		}
 	}
-	Fclose((int)fh);
-	Fclose((int)fh2);
+	Fclose((short)fh);
+	Fclose((short)fh2);
 	if (!files) {
 		mybeep();
 		scrap_clear();
@@ -5518,10 +5510,10 @@ void dl_pastewin(void) {
 	}
 
 	magic = 0L;
-	Fread((int) fh, 4L, &magic);
+	Fread((short) fh, 4L, &magic);
 	if ((magic != 'TNGC') && (magic != 'TNGX')) {
 		mybeep();
-		dlp_exit: Fclose((int) fh);
+		dlp_exit: Fclose((short) fh);
 		graf_mouse(ARROW, 0L);
 		return;
 	}
@@ -5532,8 +5524,8 @@ void dl_pastewin(void) {
 		goto dlp_exit;
 	}
 
-	Fread((int) fh, MAX_AVLEN, copybuf);
-	Fclose((int) fh);
+	Fread((short) fh, MAX_AVLEN, copybuf);
+	Fclose((short) fh);
 	graf_mouse(ARROW, 0L);
 
 	dl_copy(wpath->path, (magic == 'TNGX') ? K_CTRL : 0, copybuf);
@@ -5562,8 +5554,8 @@ void dl_dupwin(void) {
 
  Auswahlliste fuer Dialog 'Applikationen' erzeugen
  -------------------------------------------------------------------------*/
-int dl_appl_list(void) {
-	int i, j;
+short dl_appl_list(void) {
+	short i, j;
 	char scut[4];
 	char *filelist, dummy[12];
 
@@ -5590,7 +5582,7 @@ int dl_appl_list(void) {
 	}
 	for (i = 0; i < aplist.num; i++) {
 		aplist.list[i] = &aplist.ltext[i * 49];
-		if ((int) strlen(aplist.appllist[i]->title) < 13) {
+		if ((short) strlen(aplist.appllist[i]->title) < 13) {
 			sprintf(aplist.list[i], "%-12s ", aplist.appllist[i]->title);
 		} else {
 			strncpy(aplist.list[i], aplist.appllist[i]->title, 12L);
@@ -5627,8 +5619,8 @@ int dl_appl_list(void) {
 
  Auswahlliste im Dialog 'Applikationen' aktualisieren
  -------------------------------------------------------------------------*/
-int dl_appl_update(int cont, APPLINFO *appl) {
-	int i;
+short dl_appl_update(short cont, APPLINFO *appl) {
+	short i;
 
 	if (aplist.ltext)
 		pfree(aplist.ltext);
@@ -5695,14 +5687,14 @@ void di_appl(void) {
 	frm_start(&fi_defappl, conf.wdial, conf.cdial, 0);
 }
 
-void de_appl(int mode, int ret) {
-	int done, exit_obj;
-	int dclick;
-	int sel, csel, off, i, j;
+void de_appl(short mode, short ret) {
+	short done, exit_obj;
+	short dclick;
+	short sel, csel, off, i, j;
 	long l;
 	char *loc, m1[MAX_FLEN], m2[MAX_FLEN];
 	APPLINFO *appl;
-	int dadelete, daedit;
+	short dadelete, daedit;
 	OBJECT *objectTree;
 
 	objectTree = rs_trindex[DEFAPPL];
@@ -5766,7 +5758,7 @@ void de_appl(int mode, int ret) {
 			case DALOCATE:
 				off = li_defappl.offset;
 				csel = -1;
-				l = (int) strlen(loc);
+				l = (short) strlen(loc);
 				for (i = 0; i < l; i++)
 					m1[i] = nkc_toupper(loc[i]);
 				m1[i] = 0;
@@ -5878,7 +5870,7 @@ void de_appl(int mode, int ret) {
  -------------------------------------------------------------------------*/
 void dl_appl(void) {
 	APPLINFO *appl;
-	int i, n, doup, sel;
+	short i, n, doup, sel;
 	char *ptitle;
 	W_PATH *wpath;
 	WP_ENTRY *item;
@@ -6019,7 +6011,7 @@ void dl_appl(void) {
  Icons bearbeiten (Iconeditor starten)
  -------------------------------------------------------------------------*/
 void dl_iconedit(void) {
-	int rex;
+	short rex;
 	APPLINFO app, *aptr;
 	FILESYS fs;
 	char parm[126];
@@ -6097,20 +6089,20 @@ void dl_iconload(void) {
 		conf_iload();
 		/* Alles klar ... dann Update des Desktops und aller Fenster */
 		icon_update(0);
-		desk_draw(tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+		desk_draw(tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 		graf_mouse(ARROW, 0L);
 		win = tb.win;
 		while (win) {
 			switch (win->class) {
 				case WCPATH:
 					wpath_update(win);
-					win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					win_slide(win, S_INIT, 0, 0);
 					break;
 				case WCGROUP:
 					wgrp_update(win);
 					wgrp_tree(win);
-					win_redraw(win, tb.desk.x, tb.desk.y, tb.desk.w, tb.desk.h);
+					win_redraw(win, tb.desk.g_x, tb.desk.g_y, tb.desk.g_w, tb.desk.g_h);
 					win_slide(win, S_INIT, 0, 0);
 					break;
 			}
@@ -6126,7 +6118,7 @@ void dl_iconload(void) {
  Start von Thing
  -------------------------------------------------------------------------*/
 void dl_conwin(void) {
-	int cret;
+	short cret;
 
 	cret = cwin_open();
 	switch (cret) {
@@ -6149,7 +6141,7 @@ void dl_savegrp(void) {
 	W_GRP *wgrp;
 	WG_ENTRY *gitem;
 	FILE *fh;
-	int x, y, w, h;
+	short x, y, w, h;
 	double lx, ly, lw, lh;
 	char temp[MAX_PLEN];
 
@@ -6167,23 +6159,23 @@ void dl_savegrp(void) {
 		file_header(fh, "Thing object group", wgrp->name);
 
 		if (win->state & WSICON) {
-			x = win->save.x;
-			y = win->save.y;
-			w = win->save.w;
-			h = win->save.h;
+			x = win->save.g_x;
+			y = win->save.g_y;
+			w = win->save.g_w;
+			h = win->save.g_h;
 		} else {
-			x = win->curr.x;
-			y = win->curr.y;
-			w = win->curr.w;
-			h = win->curr.h;
+			x = win->curr.g_x;
+			y = win->curr.g_y;
+			w = win->curr.g_w;
+			h = win->curr.g_h;
 		}
-		lx = (double) (x - tb.desk.x) * 10000L / (double) tb.desk.w;
-		ly = (double) (y - tb.desk.y) * 10000L / (double) tb.desk.h;
-		lw = (double) w * 10000L / (double) tb.desk.w;
-		lh = (double) h * 10000L / (double) tb.desk.h;
+		lx = (double) (x - tb.desk.g_x) * 10000L / (double) tb.desk.g_w;
+		ly = (double) (y - tb.desk.g_y) * 10000L / (double) tb.desk.g_h;
+		lw = (double) w * 10000L / (double) tb.desk.g_w;
+		lh = (double) h * 10000L / (double) tb.desk.g_h;
 		fprintf(fh, "INFO ");
 		put_text(fh, wgrp->title);
-		fprintf(fh, " %d %d %d %d %d %d\n", (int) lx, (int) ly, (int) lw, (int) lh, wgrp->text, wgrp->autosave);
+		fprintf(fh, " %d %d %d %d %d %d\n", (short) lx, (short) ly, (short) lw, (short) lh, wgrp->text, wgrp->autosave);
 		fprintf(fh, "IGTA %d\n", wgrp->getattr);
 		fprintf(fh, "IACL %d\n", wgrp->autoclose);
 		if (*wgrp->parent)
@@ -6246,7 +6238,7 @@ void dl_savegrp(void) {
  */
 static char *get_xxmaster(char *which) {
 	char *p, *d;
-	int ok = 0;
+	short ok = 0;
 
 	clr_drv();
 	p = getenv(which);
@@ -6300,7 +6292,7 @@ void dl_changeres(void) {
 void dl_changeres_nomagic(void) {
 	char *p, *args, sname[MAX_PLEN];
 	XATTR xattr;
-	int atype, is_gr;
+	short atype, is_gr;
 
 	if (((p = get_xxmaster("RSMASTER")) != 0L) && !file_exists(p, 1, &xattr)) {
 		if ((args = getenv("RSMASTER_ARGS")) == NULL)
@@ -6417,10 +6409,10 @@ void dl_saveindex(void) {
  * 0: Fehler (kein Speicher), wurde gemeldet
  * sonst: Alles klar
  */
-static int dl_hotkeys_list(int init) {
+static short dl_hotkeys_list(short init) {
 	HOTKEY *hk;
 	char *p, hlp[46];
-	int num, i;
+	short num, i;
 
 	if (li_hotkeys.text != NULL)
 		pfree(li_hotkeys.text);
@@ -6483,8 +6475,8 @@ void di_hotkeys(void) {
  * mode: 0 - Benutzeraktion im Dialog, 1 - Dialog schliežen
  * ret: Returncode von frm_do (nur bei mode == 0)
  */
-void de_hotkeys(int mode, int ret) {
-	int exit_obj, done = 0, key, sel, off, rd, i, d;
+void de_hotkeys(short mode, short ret) {
+	short exit_obj, done = 0, key, sel, off, rd, i, d;
 	OBJECT *tree = fi_hotkeys.tree;
 	char *loc;
 	HOTKEY *hk, *p;
@@ -6638,11 +6630,11 @@ void de_hotkeys(int mode, int ret) {
  * sonst: ASCII-Wert des gelesenen Hotkeys (ggf. wurde schon wegen
  *        bisheriger Belegung nachgefragt, aber noch nicht geloescht)
  */
-int get_new_hotkey(HOTKEY *hotkey) {
+short get_new_hotkey(HOTKEY *hotkey) {
 	OBJECT *tree;
 	HOTKEY *hk;
 	char obj[46];
-	int key;
+	short key;
 
 	tree = rs_trindex[CHOOSEHOTKEY];
 	tree_win(tree, 0);

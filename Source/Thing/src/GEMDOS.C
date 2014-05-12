@@ -36,9 +36,9 @@
 
  PrÅfen, ob es sich bei einer Datei um ein Programm handelt
  -------------------------------------------------------------------------*/
-int is_app(char *name, unsigned int mode) {
+short is_app(char *name, unsigned short mode) {
 	char *p, *ext;
-	int i, l, _ext[3];
+	short i, l, _ext[3];
 	long *match;
 
 	ext = (char *) _ext;
@@ -100,7 +100,7 @@ int is_app(char *name, unsigned int mode) {
  *
  * Wie is_app, ermittelt mode aber selbst und liefert fuer leere Namen 'keine Applikation'.
  */
-int is_appl(char *path) {
+short is_appl(char *path) {
 	FILESYS fs;
 	XATTR xattr;
 
@@ -126,9 +126,9 @@ int is_appl(char *path) {
  * 0: Verzeichnis gesetzt
  * sonst: (GEMDOS)-Fehlermeldung
  */
-int setdir(char *full) {
+short setdir(char *full) {
 	char path[MAX_PLEN], name[MAX_FLEN], *p;
-	int drv;
+	short drv;
 
 DEBUGLOG((0, "set_dir(%s)\n", full));
 	full2comp(full, path, name);
@@ -156,7 +156,7 @@ DEBUGLOG((0, "set_dir: Setting path to %s\n", path));
 
 #if 0
 #ifdef DEBUG
-int setdir_debug(char *file, int line, char *full) {
+short setdir_debug(char *file, short line, char *full) {
 DEBUGLOG((0, "set_dir() called in file %s, line %d\n", file, line));
 	return(setdir(full));
 }
@@ -177,24 +177,24 @@ DEBUGLOG((0, "set_dir() called in file %s, line %d\n", file, line));
  * 0: Alles OK, Label u.U. leer
  * sonst: GEMDOS-Fehlercode
  */
-long get_label(int drive, char *buf, int len) {
+long get_label(short drive, char *buf, short len) {
 	char help[7];
-	DTA dta, *odta;
+	_DTA dta, *odta;
 	long err;
 
 	sprintf(help, "%c:\\", drive + 'A');
 	*buf = 0;
-	if ((err = Dreadlabel(help, buf, len)) == -32L) {
+	if ((err = Dreadlabel(help, buf, (short) len)) == -32L) {
 		odta = Fgetdta();
 		Fsetdta(&dta);
 		sprintf(help, "%c:\\*.*", drive + 'A');
 		if ((err = Fsfirst(help, FA_VOLUME)) == 0) {
-			while (dta.d_attrib != FA_VOLUME) {
+			while (dta.dta_attribute != FA_VOLUME) {
 				if ((err = Fsnext()) != 0)
 					break;
 			}
 			if (!err)
-				strcpy(buf, dta.d_fname);
+				strcpy(buf, dta.dta_name);
 		}
 		Fsetdta(odta);
 	}

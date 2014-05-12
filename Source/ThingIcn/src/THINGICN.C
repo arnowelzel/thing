@@ -21,9 +21,8 @@
  * @license    LGPL
  */
 
-#include <aes.h>
-#include <vdi.h>
-#include <tos.h>
+#include <gem.h>
+#include <mintbind.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +51,7 @@
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
 char *aesapname, *altitle = "ThingIcn", almsg[256], *edas, **edlist;
-int aesmsg[8], edobj;
+short aesmsg[8], edobj;
 EVENT mevent;
 ICONINFO *edicon;
 GLOB glob;
@@ -81,7 +80,7 @@ extern BYTE *aesBuffer;
  * bei OK an glob.change weitergegeben, so dass dann die Menuepunkte
  * zum Sichern, Neuladen freigeschaltet werden koennen.
  */
-static int changed = FALSE;
+static short changed = FALSE;
 
 /*
  * Iconnamen fuer "PARENTDIR" und "CLIPBOARD", duerfen ggf. naemlich
@@ -92,7 +91,7 @@ static char *parentdir, *clipboard;
 
 /* Struktur fuer den Suchen-Dialog */
 typedef struct {
-	int icon; /* Was wird gesucht: Icon (1) oder Zuordnung (0) */
+	short icon; /* Was wird gesucht: Icon (1) oder Zuordnung (0) */
 	char *list, /* Zeiger auf den Puffer mit den Listenelementen */
 	**listp; /* Liste mit Zeigern auf die Listenelemente */
 } FIND_STRUCT;
@@ -116,7 +115,7 @@ static FIND_STRUCT fstruct;
  * 0: Kein Speicher mehr frei, Fehlermeldung bereits erfolgt
  * 1: sonst
  */
-int add_comment(char *line) {
+short add_comment(char *line) {
 	COMMENT *new,
 	*p;
 
@@ -139,7 +138,7 @@ int add_comment(char *line) {
 
  Disablen eines Menueeintrags
  -------------------------------------------------------------------------*/
-void mn_istate(int item, int enable) {
+void mn_istate(short item, short enable) {
 	if (enable)
 		unsetObjectDisabled(rinfo.rs_trindex[MAINMENU], item);
 	else
@@ -195,7 +194,7 @@ void di_about(void) {
 		avcWindowOpen(glob.avid, fi_about.win.handle);
 }
 
-void de_about(int mode, int ret) {
+void de_about(short mode, short ret) {
 	UNUSED(ret);
 
 	if (!mode) {
@@ -219,8 +218,8 @@ void de_about(int mode, int ret) {
 
  Iconzuweisungen speichern
  -------------------------------------------------------------------------*/
-int save(void) {
-	int i,
+short save(void) {
+	short i,
 	j,
 	max,
 	new,
@@ -302,7 +301,7 @@ int save(void) {
 				break;
 			}
 			put_text(handle, icon->name);
-			for (j = 12 - (int) strlen(icon->name); j > 0; j--)
+			for (j = 12 - (short) strlen(icon->name); j > 0; j--)
 				fprintf(handle, " ");
 			fprintf(handle, " ");
 		}
@@ -344,7 +343,7 @@ save_exit:
  Aenderungen verwerfen und Icons neu einlesen
  -------------------------------------------------------------------------*/
 void revert(void) {
-	int i;
+	short i;
 	ICONINFO *icon;
 	COMMENT *p, *q;
 
@@ -408,7 +407,7 @@ void dl_nextwin(void) {
  Ende
  -------------------------------------------------------------------------*/
 void dl_quit(void) {
-	int ok, exit;
+	short ok, exit;
 
 	ok = 1;
 	if (glob.change) {
@@ -433,7 +432,7 @@ void dl_quit(void) {
  */
 void dl_edit(void) {
 	char *p;
-	int extent[8];
+	short extent[8];
 	OBJECT *tree;
 
 	if (fi_asedit.open) {
@@ -510,8 +509,8 @@ void dl_freeas(ASINFO *as) {
 	}
 }
 
-int dl_editlist(ICONINFO *icon) {
-	int num, i;
+short dl_editlist(ICONINFO *icon) {
+	short num, i;
 	ASINFO *as;
 
 	edas = 0L;
@@ -571,10 +570,10 @@ int dl_editlist(ICONINFO *icon) {
 	return (1);
 }
 
-void dl_selinit(int i) {
+void dl_selinit(short i) {
 	OBJECT *tree;
 	char txt = 0, *wild = "";
-	int tcol = -1;
+	short tcol = -1;
 
 	tree = rinfo.rs_trindex[ASEDIT];
 
@@ -611,13 +610,13 @@ void dl_selinit(int i) {
 	}
 }
 
-void de_edit(int mode, int ret) {
-	int done, exob;
-	int d;
-	int sel;
-	int class;
-	int ok;
-	int i, onum;
+void de_edit(short mode, short ret) {
+	short done, exob;
+	short d;
+	short sel;
+	short class;
+	short ok;
+	short i, onum;
 	char txt, *wild;
 	ASINFO *p,
 	*as,
@@ -791,8 +790,8 @@ void de_edit(int mode, int ret) {
  * Eingabe:
  * icon: Icon suchen (1) oder Zuordnung (0)
  */
-void dl_find(int icon) {
-	int nitems, i, j, max;
+void dl_find(short icon) {
+	short nitems, i, j, max;
 	char *q;
 	ASINFO *p = NULL;
 
@@ -870,9 +869,9 @@ void dl_find(int icon) {
  * ret: Rueckgabewert von frm_do(), zu bearbeitendes Objekt (wie bei
  *      form_do())
  */
-void de_find(int mode, int ret) {
+void de_find(short mode, short ret) {
 	OBJECT *tree;
-	int done,
+	short done,
 		dclick,
 		exob, sel, i;
 	char *p, tmp[33];
@@ -982,8 +981,8 @@ void de_find(int mode, int ret) {
  Drag&Drop eines Icons - wird von handle_button() aufgerufen
  -------------------------------------------------------------------------*/
 #ifdef DRAGDROP
-void drag(int obj, int mx, int my) {
-	int x, y, w, h,
+void drag(short obj, short mx, short my) {
+	short x, y, w, h,
 	tx, ty,
 	dx, dy;
 
@@ -1029,8 +1028,8 @@ void drag(int obj, int mx, int my) {
  * buf: Liste der erhaltenen Filenamen, durch Leerzeichen getrennt
  *      und ggf. gequotet
  */
-void drag_on_window(int handle, int mx, int my, char *buf) {
-	int i,
+void drag_on_window(short handle, short mx, short my, char *buf) {
+	short i,
 	assigns = 0,
 	class,
 	d,
@@ -1180,7 +1179,7 @@ void drag_on_window(int handle, int mx, int my, char *buf) {
  -------------------------------------------------------------------------*/
 void key_clr(void) {
 	EVENT event;
-	int done;
+	short done;
 
 	event.ev_mflags = MU_TIMER | MU_KEYBD;
 	event.ev_mtlocount = 10;
@@ -1199,7 +1198,7 @@ void key_clr(void) {
  Verarbeiten einer Menueauswahl
  Wird auch von handle_key() bei Shortcuts aufgerufen
  -------------------------------------------------------------------------*/
-void handle_menu(int title, int item, int ks) {
+void handle_menu(short title, short item, short ks) {
 	BOOLEAN stguide;
 	OBJECT *objectTree;
 
@@ -1282,11 +1281,12 @@ void handle_menu(int title, int item, int ks) {
 
  Verarbeiten von Fensterereignissen
  -------------------------------------------------------------------------*/
-void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
+void handle_win(short handle, short msg, short f1, short f2, short f3, short f4, short ks) {
 	WININFO *win;
 	FORMINFO *fi;
-	int top;
-	int owner;
+	short top;
+	short owner;
+	short d;
 
 	UNUSED(ks);
 
@@ -1327,7 +1327,7 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 
 			/* Workaround fuer MagiC */
 			if (tb.sys & SY_MAGX && !tb.topwin) {
-				if (wind_get(top, WF_OWNER, &owner))
+				if (wind_get(top, WF_OWNER, &owner, &d, &d, &d))
 					magx_switch(owner, 0);
 			}
 		}
@@ -1425,10 +1425,10 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 		break;
 
 	case WM_SIZED:
-		if (f3 > win->full.w)
-			f3 = win->full.w;
-		if (f4 > win->full.h)
-			f4 = win->full.h;
+		if (f3 > win->full.g_w)
+			f3 = win->full.g_w;
+		if (f4 > win->full.g_h)
+			f4 = win->full.g_h;
 		win_size(win, f1, f2, f3, f4);
 		break;
 
@@ -1443,10 +1443,10 @@ void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks) {
 
  Verarbeiten von Mausklicks
  -------------------------------------------------------------------------*/
-void handle_button(int mx, int my, int but, int ks, int br) {
+void handle_button(short mx, short my, short but, short ks, short br) {
 	WININFO *win;
-	int obj, focus;
-	int x, y, lmx, lmy, lmk, lks, dx, dy;
+	short obj, focus;
+	short x, y, lmx, lmy, lmk, lks, dx, dy;
 
 	UNUSED(ks);
 
@@ -1455,13 +1455,13 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 	if (win != glob.rwin)
 		return;
 
-	if (mx < win->work.x || my < win->work.y || mx >= win->work.x + win->work.w || my >= win->work.y + win->work.h) {
+	if (mx < win->work.g_x || my < win->work.g_y || mx >= win->work.g_x + win->work.g_w || my >= win->work.g_y + win->work.g_h) {
 		return;
 	}
 
 	/* Maustaste immer noch gedrueckt? */
 	wind_update (BEG_MCTRL);
-	evnt_timer(100, 0);
+	evnt_timer(100L);
 	graf_mkstate(&lmx, &lmy, &lmk, &lks);
 	wind_update (END_MCTRL);
 
@@ -1538,9 +1538,9 @@ void handle_button(int mx, int my, int but, int ks, int br) {
 
  Verarbeiten von Tastatureingaben
  -------------------------------------------------------------------------*/
-void handle_key(int ks, int kr) {
-	unsigned int key;
-	int title, item, skey;
+void handle_key(short ks, short kr) {
+	unsigned short key;
+	short title, item, skey;
 
 	key = normkey(ks, kr);
 	key &= ~(NKF_CAPS | NKF_RESVD); /* Nicht ben”tigte Flags *
@@ -1746,43 +1746,43 @@ void handle_fmsg(EVENT * mevent, FORMINFO * fi) {
  -------------------------------------------------------------------------*/
 void w_draw(WININFO * win) {
 	if (win->state & WSOPEN) {
-		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.x, win->work.y, win->work.w, win->work.h);
+		appl_send(tb.app_id, WM_REDRAW, 0, win->handle, win->work.g_x, win->work.g_y, win->work.g_w, win->work.g_h);
 	}
 }
 
 void w_showsel(void) {
-	int sx, sy;
-	RECT wrect, irect;
+	short sx, sy;
+	GRECT wrect, irect;
 
 	if (!glob.focus)
 		return;
 
-	objc_offset(glob.rtree, glob.focus, &irect.x, &irect.y);
-	irect.w = glob.rtree[glob.focus].ob_width;
-	irect.h = glob.rtree[glob.focus].ob_height;
+	objc_offset(glob.rtree, glob.focus, &irect.g_x, &irect.g_y);
+	irect.g_w = glob.rtree[glob.focus].ob_width;
+	irect.g_h = glob.rtree[glob.focus].ob_height;
 
 	/* Fensterarbeitsbereich */
-	wrect.x = glob.rwin->work.x;
-	wrect.y = glob.rwin->work.y;
-	wrect.w = glob.rwin->work.w;
-	wrect.h = glob.rwin->work.h;
+	wrect.g_x = glob.rwin->work.g_x;
+	wrect.g_y = glob.rwin->work.g_y;
+	wrect.g_w = glob.rwin->work.g_w;
+	wrect.g_h = glob.rwin->work.g_h;
 
 	/* Scroll */
-	sx = wrect.x - irect.x;
-	sy = wrect.y - irect.y;
+	sx = wrect.g_x - irect.g_x;
+	sy = wrect.g_y - irect.g_y;
 	if (sy <= 0) {
-		if (irect.h > wrect.h)
-			irect.h = wrect.h;
-		if (irect.y + irect.h > wrect.y + wrect.h)
-			sy = -(irect.y - wrect.y - wrect.h + irect.h);
+		if (irect.g_h > wrect.g_h)
+			irect.g_h = wrect.g_h;
+		if (irect.g_y + irect.g_h > wrect.g_y + wrect.g_h)
+			sy = -(irect.g_y - wrect.g_y - wrect.g_h + irect.g_h);
 		else
 			sy = 0;
 	}
 	if (sx <= 0) {
-		if (irect.w > wrect.w)
-			irect.w = wrect.w;
-		if (irect.x + irect.w > wrect.x + wrect.w)
-			sx = -(irect.x - wrect.x - wrect.w + irect.w);
+		if (irect.g_w > wrect.g_w)
+			irect.g_w = wrect.g_w;
+		if (irect.g_x + irect.g_w > wrect.g_x + wrect.g_w)
+			sx = -(irect.g_x - wrect.g_x - wrect.g_w + irect.g_w);
 		else
 			sx = 0;
 	}
@@ -1791,12 +1791,12 @@ void w_showsel(void) {
 }
 
 void w_update(struct wininfo *win) {
-	int mx, my, w, h;
+	short mx, my, w, h;
 
-	mx = (glob.rwin->work.w - 4) / glob.iw;
+	mx = (glob.rwin->work.g_w - 4) / glob.iw;
 	if (mx < 1)
 		mx = 1;
-	my = (glob.rwin->work.h - 4) / glob.ih;
+	my = (glob.rwin->work.g_h - 4) / glob.ih;
 	if (my < 1)
 		my = 1;
 	if (mx != glob.mx) {
@@ -1807,14 +1807,14 @@ void w_update(struct wininfo *win) {
 	}
 	glob.my = my;
 
-	glob.rtree->ob_x = win->work.x - glob.offx;
-	glob.rtree->ob_y = win->work.y - glob.offy;
+	glob.rtree->ob_x = win->work.g_x - glob.offx;
+	glob.rtree->ob_y = win->work.g_y - glob.offy;
 	w = glob.mx * glob.iw + 4;
-	if (w < glob.rwin->work.w)
-		w = glob.rwin->work.w;
+	if (w < glob.rwin->work.g_w)
+		w = glob.rwin->work.g_w;
 	h = glob.ny * glob.ih + 4;
-	if (h < glob.rwin->work.h)
-		h = glob.rwin->work.h;
+	if (h < glob.rwin->work.g_h)
+		h = glob.rwin->work.g_h;
 	glob.rtree->ob_width = w;
 	glob.rtree->ob_height = h;
 }
@@ -1823,31 +1823,31 @@ void w_prepare(struct wininfo *win) {
 	UNUSED(win);
 }
 
-void w_redraw(struct wininfo *win, RECT * area) {
+void w_redraw(struct wininfo *win, GRECT * area) {
 	UNUSED(win);
 
-	objc_draw(glob.rtree, ROOT, MAX_DEPTH, area->x, area->y, area->w, area->h);
+	objc_draw(glob.rtree, ROOT, MAX_DEPTH, area->g_x, area->g_y, area->g_w, area->g_h);
 }
 
-void w_slide(struct wininfo *win, int mode, int h, int v) {
+void w_slide(struct wininfo *win, short mode, short h, short v) {
 	long hsize, vsize, hpos, vpos;
-	int dx, dy, lv, lh, offx, offy;
+	short dx, dy, lv, lh, offx, offy;
 
 	switch (mode) {
 	case S_INIT:
 		/* Gr”sse der Slider */
-		hsize = (long) win->work.w * 1000L / (long) glob.rtree->ob_width;
-		vsize = (long) win->work.h * 1000L / (long) glob.rtree->ob_height;
+		hsize = (long) win->work.g_w * 1000L / (long) glob.rtree->ob_width;
+		vsize = (long) win->work.g_h * 1000L / (long) glob.rtree->ob_height;
 		/* Offset anpassen */
 		offx = glob.offx;
 		offy = glob.offy;
-		if (glob.rtree->ob_width - offx < win->work.w) {
-			offx = glob.rtree->ob_width - win->work.w;
+		if (glob.rtree->ob_width - offx < win->work.g_w) {
+			offx = glob.rtree->ob_width - win->work.g_w;
 			if (offx < 0)
 				offx = 0;
 		}
-		if (glob.rtree->ob_height - offy < win->work.h) {
-			offy = glob.rtree->ob_height - win->work.h;
+		if (glob.rtree->ob_height - offy < win->work.g_h) {
+			offy = glob.rtree->ob_height - win->work.g_h;
 			if (offy < 0)
 				offy = 0;
 		}
@@ -1859,34 +1859,34 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 			w_draw(win);
 		}
 		/* Slider-Positionen berechnen */
-		if (glob.rtree->ob_width > win->work.w)
-			hpos = (long) glob.offx * 1000L / (long) (glob.rtree->ob_width - win->work.w);
+		if (glob.rtree->ob_width > win->work.g_w)
+			hpos = (long) glob.offx * 1000L / (long) (glob.rtree->ob_width - win->work.g_w);
 		else
 			hpos = 0;
-		if (glob.rtree->ob_height > win->work.h)
-			vpos = (long) glob.offy * 1000L / (long) (glob.rtree->ob_height - win->work.h);
+		if (glob.rtree->ob_height > win->work.g_h)
+			vpos = (long) glob.offy * 1000L / (long) (glob.rtree->ob_height - win->work.g_h);
 		else
 			vpos = 0;
 		/* Slider setzen */
 		if (win->flags & HSLIDE) {
-			wind_set(win->handle, WF_HSLIDE, (int) hpos);
-			wind_set(win->handle, WF_HSLSIZE, (int) hsize);
+			wind_set(win->handle, WF_HSLIDE, (short) hpos, 0 , 0, 0);
+			wind_set(win->handle, WF_HSLSIZE, (short) hsize, 0 , 0, 0);
 		}
-		wind_set(win->handle, WF_VSLIDE, (int) vpos);
-		wind_set(win->handle, WF_VSLSIZE, (int) vsize);
+		wind_set(win->handle, WF_VSLIDE, (short) vpos, 0 , 0, 0);
+		wind_set(win->handle, WF_VSLSIZE, (short) vsize, 0 , 0, 0);
 		break;
 	case S_ABS:
 		/* Offset umrechnen */
 		if (h != -1) {
-			if (glob.rtree->ob_width > win->work.w)
-				offx = (int) ((long) (glob.rtree->ob_width - win->work.w) * (long) h / 1000L);
+			if (glob.rtree->ob_width > win->work.g_w)
+				offx = (short) ((long) (glob.rtree->ob_width - win->work.g_w) * (long) h / 1000L);
 			else
 				offx = 0;
 		} else
 			offx = glob.offx;
 		if (v != -1) {
-			if (glob.rtree->ob_height > win->work.h)
-				offy = (int) ((long) (glob.rtree->ob_height - win->work.h) * (long) v / 1000L);
+			if (glob.rtree->ob_height > win->work.g_h)
+				offy = (short) ((long) (glob.rtree->ob_height - win->work.g_h) * (long) v / 1000L);
 			else
 				offy = 0;
 		} else
@@ -1908,13 +1908,13 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 			lh = 16;
 			break;
 		case -2:
-			lh = win->work.w;
+			lh = win->work.g_w;
 			break;
 		case 1:
 			lh = -16;
 			break;
 		case 2:
-			lh = -win->work.w;
+			lh = -win->work.g_w;
 			break;
 		}
 		switch (v) {
@@ -1922,13 +1922,13 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 			lv = 16;
 			break;
 		case -2:
-			lv = win->work.h;
+			lv = win->work.g_h;
 			break;
 		case 1:
 			lv = -16;
 			break;
 		case 2:
-			lv = -win->work.h;
+			lv = -win->work.g_h;
 			break;
 		}
 	case S_PABS:
@@ -1938,17 +1938,17 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
 		}
 		offx = glob.offx;
 		offy = glob.offy;
-		if (glob.rtree->ob_width > win->work.w) {
+		if (glob.rtree->ob_width > win->work.g_w) {
 			offx -= lh;
-			if (offx > glob.rtree->ob_width - win->work.w)
-				offx = glob.rtree->ob_width - win->work.w;
+			if (offx > glob.rtree->ob_width - win->work.g_w)
+				offx = glob.rtree->ob_width - win->work.g_w;
 			if (offx < 0)
 				offx = 0;
 		}
-		if (glob.rtree->ob_height > win->work.h) {
+		if (glob.rtree->ob_height > win->work.g_h) {
 			offy -= lv;
-			if (offy > glob.rtree->ob_height - win->work.h)
-				offy = glob.rtree->ob_height - win->work.h;
+			if (offy > glob.rtree->ob_height - win->work.g_h)
+				offy = glob.rtree->ob_height - win->work.g_h;
 			if (offy < 0)
 				offy = 0;
 		}
@@ -1974,7 +1974,7 @@ void w_slide(struct wininfo *win, int mode, int h, int v) {
  * fensters und bei Groessenaenderungen aufgerufen.
  */
 void ic_tree(void) {
-	int x, y, nx, ny, i;
+	short x, y, nx, ny, i;
 	OBJECT *tree;
 
 	x = y = 4;
@@ -2002,9 +2002,9 @@ void ic_tree(void) {
  * Zeichnet den Focus um ein Icon.
  */
 void ic_fdraw(void) {
-	int x, y, w, h, pxy[10], cxy[4];
-	RECT area, box;
-	int whandle;
+	short x, y, w, h, pxy[10], cxy[4];
+	GRECT area, box;
+	short whandle;
 
 	if (glob.rwin->state & WSICON)
 		return;
@@ -2030,27 +2030,27 @@ void ic_fdraw(void) {
 	wind_update (BEG_UPDATE);
 	graf_mouse(M_OFF, 0L);
 
-	area.x = tb.desk.x;
-	area.y = tb.desk.y;
-	area.w = tb.desk.w;
-	area.h = tb.desk.h;
+	area.g_x = tb.desk.g_x;
+	area.g_y = tb.desk.g_y;
+	area.g_w = tb.desk.g_w;
+	area.g_h = tb.desk.g_h;
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	wind_get(whandle, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(whandle, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		/* Nur durchfuehren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
 		if (rc_intersect(&area, &box)) {
-			cxy[0] = box.x;
-			cxy[1] = box.y;
-			cxy[2] = cxy[0] + box.w - 1;
-			cxy[3] = cxy[1] + box.h - 1;
+			cxy[0] = box.g_x;
+			cxy[1] = box.g_y;
+			cxy[2] = cxy[0] + box.g_w - 1;
+			cxy[3] = cxy[1] + box.g_h - 1;
 			vs_clip(tb.vdi_handle, 1, cxy);
 			v_pline(tb.vdi_handle, 5, pxy);
 		}
 		/* Naechstes Rechteck holen */
-		wind_get(whandle, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(whandle, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 	vs_clip(tb.vdi_handle, 0, cxy);
 	vswr_mode(tb.vdi_handle, MD_REPLACE);
@@ -2063,8 +2063,8 @@ void ic_fdraw(void) {
  * Deselektiert bisheriges, selektiert aktuelles Icon und zeichnet
  * diese neu.
  */
-void ic_sel(int obj) {
-	int x, y, w, h;
+void ic_sel(short obj) {
+	short x, y, w, h;
 
 	if (obj != glob.focus) {
 		/* Anderes, als bisher? */
@@ -2097,8 +2097,8 @@ void ic_sel(int obj) {
 	mn_update();
 }
 
-void ic_move(int dir) {
-	int obj;
+void ic_move(short dir) {
+	short obj;
 
 	obj = glob.focus;
 
@@ -2186,7 +2186,7 @@ void as_remove(ICONINFO *icon, ASINFO *as) {
 
 ICONINFO *as_findic(char *name) {
 	ICONINFO *icon;
-	int i;
+	short i;
 
 	i = 0;
 	icon = 0L;
@@ -2214,10 +2214,10 @@ ICONINFO *as_findic(char *name) {
  * 0L: Kein passendes Icon gefunden
  * sonst: Zeiger auf ICONINFO-Struktur des gefundenen Icons
  */
-ICONINFO *as_findas(char *wildcard, int class) {
+ICONINFO *as_findas(char *wildcard, short class) {
 	ICONINFO *icon;
 	ASINFO *as;
-	int i;
+	short i;
 
 	for (icon = 0L, i = 0; i < glob.numicon; i++) {
 		for (as = glob.icon[i].as; as != 0L; as = as->next) {
@@ -2244,7 +2244,7 @@ void mw_info(void) {
 		win_updtinfo(glob.rwin);
 }
 
-void mw_change(int changed) {
+void mw_change(short changed) {
 	if (glob.rwin) {
 		strcpy(glob.rwin->name, rinfo.rs_frstr[changed ? WTITLEC : WTITLE]);
 		win_updtinfo(glob.rwin);
@@ -2253,8 +2253,8 @@ void mw_change(int changed) {
 }
 
 /* Strukturen initialisieren, Fenster ”ffnen */
-int mw_init(void) {
-	int ret, w, h, i;
+short mw_init(void) {
+	short ret, w, h, i;
 	OBJECT *obj;
 
 	/* Platz fuer Zuweisungen reservieren */
@@ -2311,18 +2311,18 @@ int mw_init(void) {
 	ret = win_open(glob.rwin, 0);
 	if (ret) {
 		glob.rwin->state &= ~WSFULL;
-		w = h = (int) sqrt((double) glob.numicon);
+		w = h = (short) sqrt((double) glob.numicon);
 		if ((w * h) < glob.numicon) {
 			w++;
 			if ((w * h) < glob.numicon)
 				h++;
 		}
-		if ((4 + w * glob.iw) > glob.rwin->work.w) {
-			w = (glob.rwin->work.w - 4) / glob.iw;
+		if ((4 + w * glob.iw) > glob.rwin->work.g_w) {
+			w = (glob.rwin->work.g_w - 4) / glob.iw;
 			h = (glob.numicon + w - 1) / w;
 		}
-		if ((4 + h * glob.ih) > glob.rwin->work.h)
-			h = (glob.rwin->work.h - 4) / glob.ih;
+		if ((4 + h * glob.ih) > glob.rwin->work.g_h)
+			h = (glob.rwin->work.g_h - 4) / glob.ih;
 		w *= glob.iw;
 		w += 4;
 		h *= glob.ih;
@@ -2331,11 +2331,11 @@ int mw_init(void) {
 			w = 64;
 		if (h < 64)
 			h = 64;
-		glob.rwin->work.w = w;
-		glob.rwin->work.h = h;
-		wind_calc(WC_BORDER, glob.rwin->flags, glob.rwin->work.x,
-				glob.rwin->work.y, w, h, &glob.rwin->curr.x, &glob.rwin->curr.y,
-				&glob.rwin->curr.w, &glob.rwin->curr.h);
+		glob.rwin->work.g_w = w;
+		glob.rwin->work.g_h = h;
+		wind_calc(WC_BORDER, glob.rwin->flags, glob.rwin->work.g_x,
+				glob.rwin->work.g_y, w, h, &glob.rwin->curr.g_x, &glob.rwin->curr.g_y,
+				&glob.rwin->curr.g_w, &glob.rwin->curr.g_h);
 		strcpy(glob.rwin->name, rinfo.rs_frstr[glob.change ? WTITLEC : WTITLE]);
 		mw_info();
 		win_updtinfo(glob.rwin);
@@ -2356,8 +2356,8 @@ int mw_init(void) {
 	}
 }
 
-int loadAssignments(void) {
-	int i, j, l,
+short loadAssignments(void) {
+	short i, j, l,
 	class, tcol;
 	FILE *fh;
 	char inbuf[1024];
@@ -2413,7 +2413,7 @@ int loadAssignments(void) {
 						t[-1] = 0;
 					t = strrchr(inbuf, ' ');
 					if ((t != NULL) && (t > p) && t[1]) {
-						l = (int) (t - inbuf) + 1;
+						l = (short) (t - inbuf) + 1;
 						i = l - 1;
 						while (inbuf[i] == ' ')
 							i--;
@@ -2503,7 +2503,7 @@ int loadAssignments(void) {
 }
 
 void mw_exit(void) {
-	int i;
+	short i;
 	ICONINFO *icon;
 
 	if (glob.rwin) {
@@ -2531,9 +2531,9 @@ void mw_exit(void) {
  zweiten Anfuehrungszeichen (einschliesslich einer Leerstelle
  Zwischenraum) geliefert.
  -------------------------------------------------------------------------*/
-char *get_text(char *str, char *buf, int maxlen) {
-	int i, j, p, done;
-	int val;
+char *get_text(char *str, char *buf, short maxlen) {
+	short i, j, p, done;
+	short val;
 	char vbuf[4];
 
 	i = 0;
@@ -2598,7 +2598,7 @@ char *get_text(char *str, char *buf, int maxlen) {
  Konvertiert einen String und schreibt diesen in die angegebene Datei
  -------------------------------------------------------------------------*/
 void put_text(FILE *fh, char *str) {
-	int i, j;
+	short i, j;
 	unsigned char *p;
 	char outbuf[1024];
 
@@ -2607,7 +2607,7 @@ void put_text(FILE *fh, char *str) {
 	j = 0;
 	while (p[i]) {
 		if (p[i] < 32) {
-			sprintf(&outbuf[j], "@%02d", (int) p[i]);
+			sprintf(&outbuf[j], "@%02d", (short) p[i]);
 			j += 3;
 		} else {
 			switch (p[i]) {
@@ -2658,10 +2658,10 @@ void put_text(FILE *fh, char *str) {
  *    z.B. ungueltig, wenn er falsch gequotet wurde)
  * 1: name enthaelt den naechsten Filenamen
  */
-int get_buf_entry(char *buf, char *name, char **newpos) {
+short get_buf_entry(char *buf, char *name, char **newpos) {
 	static char *bufpos;
 	char *pos;
-	int closed;
+	short closed;
 
 	if (buf != 0L)
 		pos = buf;
@@ -2743,7 +2743,7 @@ int get_buf_entry(char *buf, char *name, char **newpos) {
  * 0: Icon ist keines der genannten Standardicons
  * sonst: Icon ist "APPL", "DEVICE", "FILE" oder "GROUP"
  */
-int isDefaultIcon(ICONINFO *icon) {
+short isDefaultIcon(ICONINFO *icon) {
 	if (strcmp(icon->name, "APPL")
 			&& strcmp(icon->name, "DEVICE")
 			&& strcmp(icon->name, "FILE")
@@ -2758,9 +2758,9 @@ int isDefaultIcon(ICONINFO *icon) {
 
  Programminitialisierung
  -------------------------------------------------------------------------*/
-int main_init(void) {
-	int i, l, x, y, w, h;
-	int illtype, type;
+short main_init(void) {
+	short i, l, x, y, w, h;
+	short illtype, type;
 	char *p, aname[9], rsrcName[13];
 	OBJECT *tree;
 
@@ -2781,7 +2781,7 @@ int main_init(void) {
 		Dgetpath(&glob.rname[2], 0);
 	} else
 		strcpy(glob.rname, p);
-	l = (int) strlen(glob.rname);
+	l = (short) strlen(glob.rname);
 	if (glob.rname[l - 1] != '\\')
 		strcat(glob.rname, "\\");
 	strcpy(glob.iname, glob.rname);
@@ -2811,16 +2811,16 @@ int main_init(void) {
 		set3dLook (FALSE);
 
 	/* Alice austricksen ;-) */
-	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.x, tb.desk.y, 10, 10);
+	i = wind_create(NAME | MOVER | CLOSER | FULLER | ICONIFIER, tb.desk.g_x, tb.desk.g_y, 10, 10);
 	if (i >= 0)
 		wind_delete(i);
 
 	tb.msg_handler = handle_fmsg;
 
 	/* Resource laden */
-	sprintf(rsrcName, "%s%s\\THINGICN\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
+	sprintf(rsrcName, "%s%s\\thgicn\\%s.rsc", tb.homepath, PNAME_RSC, tb.sysLanguageCodeLong);
 	if (!rsc_load(rsrcName, &rinfo)) {
-		sprintf(rsrcName, "%s%s\\THINGICN\\english.rsc", tb.homepath, PNAME_RSC);
+		sprintf(rsrcName, "%s%s\\thgicn\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo)) {
 			frm_alert(1, "[3][THINGICN.RSC nicht gefunden!|THINGICN.RSC not found!][ OK ]", altitle, 1, 0L);
 			return (FALSE);
@@ -2831,7 +2831,7 @@ int main_init(void) {
 			rs_fix(rinfo.rs_trindex[i], 0, 0);
 		else
 			rs_fix(rinfo.rs_trindex[i], 8, 16);
-		rs_textadjust(rinfo.rs_trindex[i], (glob.use3d && (tb.colors >= 16)) ? getBackgroundColor() : WHITE);
+		rs_textadjust(rinfo.rs_trindex[i], (glob.use3d && (tb.colors >= 16)) ? getBackgroundColor() : G_WHITE);
 	}
 	tb.ictree = rinfo.rs_trindex[ICONWIN];
 	tb.ictreed = rinfo.rs_trindex[ICONDIAL];
@@ -3014,7 +3014,7 @@ int main_init(void) {
  Hauptschleife des Programms
  -------------------------------------------------------------------------*/
 void main_loop(void) {
-	int top, *msg, evdone, ret;
+	short top, *msg, evdone, ret;
 
 	glob.done = 0;
 	graf_mkstate(&mevent.ev_mm1x, &mevent.ev_mm1y, &mevent.ev_mmokstate, &mevent.ev_mbreturn);
@@ -3217,10 +3217,10 @@ void main_exit(void) {
 /*------------------------------------------------------------------*/
 /*  main routine                                                    */
 /*------------------------------------------------------------------*/
-main(int argc, char *argv[]) {
+main(short argc, char *argv[]) {
 	char *p,
 	vstr[10];
-	int i,
+	short i,
 	j;
 
 	glob.use3d = 0;

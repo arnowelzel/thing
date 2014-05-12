@@ -69,7 +69,7 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 	pxy[5] = pxy[3];
 	pxy[6] = pxy[4];
 	pxy[7] = pxy[1];
-	vsl_color(userdef->vdi_handle, BLACK);
+	vsl_color(userdef->vdi_handle, G_BLACK);
 	v_pline(userdef->vdi_handle, 4, pxy);
 
 	if (get3dLook() == FALSE) {
@@ -92,7 +92,7 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 		pxy[0] += 1;
 		pxy[2] = pxy[0];
 		pxy[3] = pxy[1] + parmblock->pb_h - 3;
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 2, pxy);
 
 		/* dunkelgrauer Schatteneffekt */
@@ -102,7 +102,7 @@ WORD cdecl cardbox(PARMBLK *parmblock) {
 		pxy[3] = pxy[1];
 		pxy[4] = pxy[2];
 		pxy[5] = parmblock->pb_y;
-		vsl_color(userdef->vdi_handle, LBLACK);
+		vsl_color(userdef->vdi_handle, G_LBLACK);
 		v_pline(userdef->vdi_handle, 3, pxy);
 	}
 
@@ -137,7 +137,7 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 	vswr_mode(userdef->vdi_handle, MD_REPLACE);
 	vst_alignment(userdef->vdi_handle, TA_LEFT, TA_TOP, &du, &du);
 	vsf_interior(userdef->vdi_handle, FIS_SOLID);
-	vsl_color(userdef->vdi_handle, BLACK);
+	vsl_color(userdef->vdi_handle, G_BLACK);
 
 	/* Textposition bestimmen. */
 	vqt_extent(userdef->vdi_handle, ubparm->text, extent);
@@ -154,13 +154,13 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 		pxy[6] = pxy[4];
 		pxy[7] = pxy[1];
 
-		if (parmblock->pb_currstate & SELECTED) {
+		if (parmblock->pb_currstate & OS_SELECTED) {
 			pxy[8] = pxy[0] + parmblock->pb_w - 1;
 			pxy[9] = pxy[1];
 			v_pline(userdef->vdi_handle, 5, pxy);
 
 			/* Schatten */
-			vsf_color(userdef->vdi_handle, BLACK);
+			vsf_color(userdef->vdi_handle, G_BLACK);
 			pxy[0] = parmblock->pb_x + parmblock->pb_w - 3;
 			pxy[1] = parmblock->pb_y + 2;
 			pxy[2] = pxy[0] + 1;
@@ -191,7 +191,7 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 		pxy[8] = pxy[0] + parmblock->pb_w - 1;
 
 		/* Positions-Korrektur, wenn nicht SELECTED */
-		if ((parmblock->pb_currstate & SELECTED) == FALSE) {
+		if ((parmblock->pb_currstate & OS_SELECTED) == FALSE) {
 			pxy[0] += 2;
 			pxy[1]--;
 			pxy[3] += 3;
@@ -206,7 +206,7 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 		pxy[9] = pxy[3];
 		pxy[10] = pxy[8];
 		pxy[11] = pxy[1];
-		vsl_color(userdef->vdi_handle, BLACK);
+		vsl_color(userdef->vdi_handle, G_BLACK);
 		v_pline(userdef->vdi_handle, 6, pxy);
 
 		/* weisser Lichteffekt */
@@ -215,7 +215,7 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 		pxy[5]++;
 		pxy[6]--;
 		pxy[7]++;
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 4, pxy);
 
 		/* dunkelgrauer Schatteneffekt */
@@ -225,10 +225,10 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 		pxy[3] = pxy[9];
 		pxy[4] = pxy[10] - 1;
 		pxy[5] = pxy[11];
-		vsl_color(userdef->vdi_handle, LBLACK);
+		vsl_color(userdef->vdi_handle, G_LBLACK);
 		v_pline(userdef->vdi_handle, 3, pxy);
 
-		if ((parmblock->pb_currstate & SELECTED) == FALSE) {
+		if ((parmblock->pb_currstate & OS_SELECTED) == FALSE) {
 			/* Abschlusslinie am Boden */
 			pxy[0] = parmblock->pb_x;
 			pxy[1] = parmblock->pb_y + parmblock->pb_h - 2;
@@ -236,26 +236,26 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
 			pxy[3] = pxy[1];
 			pxy[4] = pxy[2];
 			pxy[5] = pxy[3] + 1;
-			vsl_color(userdef->vdi_handle, BLACK);
+			vsl_color(userdef->vdi_handle, G_BLACK);
 			v_pline(userdef->vdi_handle, 2, pxy);
 
 			pxy[1] = parmblock->pb_y + parmblock->pb_h - 1;
 			pxy[3] = pxy[1];
-			vsl_color(userdef->vdi_handle, WHITE);
+			vsl_color(userdef->vdi_handle, G_WHITE);
 			v_pline(userdef->vdi_handle, 2, pxy);
 		}
 	}
 
 	/* Textposition anpassen */
-	if (parmblock->pb_currstate & SELECTED) {
+	if (parmblock->pb_currstate & OS_SELECTED) {
 /*		xpos--;*/
 	} else {
 		xpos++;
 		ypos += 2;
 	}
 	vswr_mode(userdef->vdi_handle, MD_TRANS);
-	vst_color(userdef->vdi_handle, BLACK);
-	if (parmblock->pb_currstate & DISABLED)
+	vst_color(userdef->vdi_handle, G_BLACK);
+	if (parmblock->pb_currstate & OS_DISABLED)
 		text_effects = TF_LIGHTENED;
 	else
 		text_effects = TF_NORMAL;
@@ -280,12 +280,12 @@ WORD cdecl cardtitle(PARMBLK *parmblock) {
  * @return liefert dem AES welche ob_state-Flags es noch bearbeiten muss (0 keine)
  */
 WORD cdecl cardline(PARMBLK *parmblock) {
-	int pxy[4];
+	short pxy[4];
 
 	clipping(parmblock, TRUE);
 
 	vswr_mode(userdef->vdi_handle, MD_REPLACE);
-	vsl_color(userdef->vdi_handle, BLACK);
+	vsl_color(userdef->vdi_handle, G_BLACK);
 
 	pxy[0] = parmblock->pb_x;
 	pxy[1] = parmblock->pb_y + parmblock->pb_h -1;
@@ -302,7 +302,7 @@ WORD cdecl cardline(PARMBLK *parmblock) {
 		pxy[1]++;
 		pxy[2] -= 2;
 		pxy[3]++;
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 2, pxy);
 	}
 

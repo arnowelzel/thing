@@ -33,7 +33,7 @@
  *
  * @param handle
  */
-void avcWindowOpen(int avId, int handle) {
+void avcWindowOpen(short avId, short handle) {
 	if (avId < 0)
 		return;
 
@@ -45,7 +45,7 @@ void avcWindowOpen(int avId, int handle) {
  *
  * @param handle
  */
-void avcWindowClose(int avId, int handle) {
+void avcWindowClose(short avId, short handle) {
 	if (avId < 0)
 		return;
 

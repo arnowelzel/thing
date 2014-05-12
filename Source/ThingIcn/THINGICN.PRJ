@@ -40,4 +40,6 @@ mintflt.lib
 
 ; PureC Lib
 pcstdlib.lib
-pcgemlib.lib
+
+;GEMLib
+gem.lib

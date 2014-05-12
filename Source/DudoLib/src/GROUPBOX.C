@@ -100,7 +100,7 @@ WORD cdecl groupbox(PARMBLK *parmblock) {
 		pxy[9]++; /* = pxy[1];*/
 		pxy[11]++;
 
-		vsl_color(userdef->vdi_handle, WHITE);
+		vsl_color(userdef->vdi_handle, G_WHITE);
 		v_pline(userdef->vdi_handle, 6, pxy);
 
 		pxy[0] = pxy[2] = parmblock->pb_x + 1;
@@ -112,7 +112,7 @@ WORD cdecl groupbox(PARMBLK *parmblock) {
 		v_pline(userdef->vdi_handle, 2, pxy);
 	}
 
-	vst_color(userdef->vdi_handle, WHITE);
+	vst_color(userdef->vdi_handle, G_WHITE);
 	v_gtext(userdef->vdi_handle, x_pos + 1, parmblock->pb_y + 1, ubparm->text);
 
 	vst_color(userdef->vdi_handle, ubparm->te_textcol);

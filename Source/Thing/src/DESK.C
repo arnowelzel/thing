@@ -33,6 +33,7 @@
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
 #include <ctype.h>
+#include <basepage.h>
 
 /*-------------------------------------------------------------------------
  desk_init()
@@ -41,16 +42,16 @@
  -------------------------------------------------------------------------*/
 void desk_init(void) {
 	ICONBLK *iblk;
-	int i;
+	short i;
 	OBJECT *tree;
 	ICONDESK *p;
 
 	tree = rs_trindex[DESKTOP];
 	/* Grîûe und Position anpassen */
-	tree->ob_x = tb.desk.x;
-	tree->ob_y = tb.desk.y;
-	tree->ob_width = tb.desk.w;
-	tree->ob_height = tb.desk.h;
+	tree->ob_x = tb.desk.g_x;
+	tree->ob_y = tb.desk.g_y;
+	tree->ob_width = tb.desk.g_w;
+	tree->ob_height = tb.desk.g_h;
 
 	/* Desktop-Bild */
 	desk.iuser.ub_code = desk_usr;
@@ -99,20 +100,11 @@ void desk_init(void) {
  Farbe und Muster des Desktop-Hintergrundes setzen
  -------------------------------------------------------------------------*/
 void desk_pat(void) {
-	bfobspec *spec;
+	BFOBSPEC *spec;
 
-#ifdef _DEBUG
-	debugMain("DESK: Start desk_pat --->");
-#endif
-
-	spec = (bfobspec *) &desk.iuser.ub_parm;
+	spec = (BFOBSPEC *) &desk.iuser.ub_parm;
 	spec->fillpattern = conf.dpattern;
 	spec->interiorcol = conf.dcolor;
-
-#ifdef _DEBUG
-	debugMain("DESK: <---");
-#endif
-
 }
 
 /*-------------------------------------------------------------------------
@@ -121,30 +113,30 @@ void desk_pat(void) {
  Desktop neuzeichnen - besser als einfach per form_dial() einen
  globalen Redraw auszulîsen.
  -------------------------------------------------------------------------*/
-void desk_draw(int x, int y, int w, int h) {
-	RECT area, box;
+void desk_draw(short x, short y, short w, short h) {
+	GRECT area, box;
 
 	/* AES sperren und Maus abschalten */
 	wind_update(BEG_UPDATE);
 	graf_mouse(M_OFF, 0L);
 
 	/* Vorbereitungen */
-	area.x = x;
-	area.y = y;
-	area.w = w;
-	area.h = h;
+	area.g_x = x;
+	area.g_y = y;
+	area.g_w = w;
+	area.g_h = h;
 
 	/* Ersten Eintrag in der Rechteckliste holen */
-	new_wind_get(0, WF_FIRSTXYWH, &box.x, &box.y, &box.w, &box.h);
+	wind_get(0, WF_FIRSTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 
 	/* Rechteckliste abarbeiten */
-	while (box.w && box.h) {
+	while (box.g_w && box.g_h) {
 		/* Nur durchfÅhren, wenn Rechteck innerhalb des zu zeichnenden Bereichs liegt */
 		if (rc_intersect(&area, &box))
-			objc_draw(rs_trindex[DESKTOP], ROOT, MAX_DEPTH, box.x, box.y, box.w, box.h);
+			objc_draw(rs_trindex[DESKTOP], ROOT, MAX_DEPTH, box.g_x, box.g_y, box.g_w, box.g_h);
 
 		/* NÑchstes Rechteck holen */
-		new_wind_get(0, WF_NEXTXYWH, &box.x, &box.y, &box.w, &box.h);
+		wind_get(0, WF_NEXTXYWH, &box.g_x, &box.g_y, &box.g_w, &box.g_h);
 	}
 
 	/* Maus einschalten und AES freigeben */
@@ -158,8 +150,8 @@ void desk_draw(int x, int y, int w, int h) {
  
  Icon-Umrisse auf dem Desktop zeichnen
  -------------------------------------------------------------------------*/
-void rub_icon(int n, int *pxy) {
-	int i;
+void rub_icon(short n, short *pxy) {
+	short i;
 
 	graf_mouse(M_OFF, 0L);
 	for (i = 0; i < n; i++) {
@@ -168,8 +160,8 @@ void rub_icon(int n, int *pxy) {
 	graf_mouse(M_ON, 0L);
 }
 
-void rub_ticon(int n, int *pxy) {
-	int i;
+void rub_ticon(short n, short *pxy) {
+	short i;
 
 	graf_mouse(M_OFF, 0L);
 	for (i = 0; i < n; i++) {
@@ -183,20 +175,20 @@ void rub_ticon(int n, int *pxy) {
  *
  * @param *sel
  */
-void rub_frame(RECT *sel) {
-	int pxy[10];
+void rub_frame(GRECT *sel) {
+	short pxy[10];
 
 	graf_mouse(M_OFF, 0L);
-	pxy[0] = sel->x;
-	pxy[1] = sel->y;
-	pxy[2] = sel->x + sel->w - 1;
-	pxy[3] = sel->y;
-	pxy[4] = sel->x + sel->w - 1;
-	pxy[5] = sel->y + sel->h - 1;
-	pxy[6] = sel->x;
-	pxy[7] = sel->y + sel->h - 1;
-	pxy[8] = sel->x;
-	pxy[9] = sel->y;
+	pxy[0] = sel->g_x;
+	pxy[1] = sel->g_y;
+	pxy[2] = sel->g_x + sel->g_w - 1;
+	pxy[3] = sel->g_y;
+	pxy[4] = sel->g_x + sel->g_w - 1;
+	pxy[5] = sel->g_y + sel->g_h - 1;
+	pxy[6] = sel->g_x;
+	pxy[7] = sel->g_y + sel->g_h - 1;
+	pxy[8] = sel->g_x;
+	pxy[9] = sel->g_y;
 	grf_ghostbox(pxy, 5);
 	graf_mouse(M_ON, 0L);
 }
@@ -206,7 +198,7 @@ void rub_frame(RECT *sel) {
  *
  * @param n
  */
-void icon_free(int n) {
+void icon_free(short n) {
 	ICONDESK *p = desk.dicon + n;
 
 	p->class=IDFREE;
@@ -230,9 +222,9 @@ void icon_free(int n) {
  * RÅckgabe:
  * Zeiger auf gefundenes Icon, ggf. Default-Icon
  */
-ICONIMG *icon_match(char *mask, char drive, int class, ICONIMG *def) {
+ICONIMG *icon_match(char *mask, char drive, short class, ICONIMG *def) {
 	ICONIMG *p;
-	int i;
+	short i;
 
 	p = desk.icon;
 	for (i = 0; i < desk.maxicon; i++, p++) {
@@ -257,9 +249,9 @@ ICONIMG *icon_match(char *mask, char drive, int class, ICONIMG *def) {
  * Eingabe:
  * n: Index des Icons
  */
-void icon_redraw(int n) {
+void icon_redraw(short n) {
 	OBJECT *tree;
-	int x, y, w, h, x2, y2, snap;
+	short x, y, w, h, x2, y2, snap;
 
 	tree = rs_trindex[DESKTOP];
 
@@ -288,10 +280,10 @@ void icon_redraw(int n) {
 
  Setzt die Position und Beschriftung der Icons auf dem Desktop
  -------------------------------------------------------------------------*/
-void icon_update(int n) {
-	int i, j, k, s, e;
-	int tw, iw, ih, ow, rd = 0;
-	int x, y, w, h;
+void icon_update(short n) {
+	short i, j, k, s, e;
+	short tw, iw, ih, ow, rd = 0;
+	short x, y, w, h;
 	char c;
 	char *title, *p;
 	char name[MAX_FLEN], wename[MAX_FLEN];
@@ -374,7 +366,7 @@ void icon_update(int n) {
 				break;
 			case IDFOLDER: /* Ordner */
 				p = q->spec.folder->path;
-				j = (int)strlen(p) - 2;
+				j = (short)strlen(p) - 2;
 				while (p[j] != '\\')
 					j--;
 				j++;
@@ -399,7 +391,7 @@ void icon_update(int n) {
 
 			/* Beschriftung und Laufwerksbuchstaben einsetzen */
 			iblk = &desk.wicon[i].ciconblk.monoblk;
-			iblk->ib_char = 0x1000 | (int) c;
+			iblk->ib_char = 0x1000 | (short) c;
 			if (iblk->ib_ptext != title)
 				strcpy(iblk->ib_ptext, title);
 			tw = calc_small_text_width(title);
@@ -442,9 +434,9 @@ void icon_update(int n) {
 				if (q->x != x || q->y != y) {
 					x = q->x;
 					y = q->y;
-					if (x + w / 2 > tb.desk.w)
+					if (x + w / 2 > tb.desk.g_w)
 						x -= 16;
-					if (y + h > tb.desk.h)
+					if (y + h > tb.desk.g_h)
 						y -= 16;
 					q->x = x;
 					q->y = y;
@@ -458,20 +450,20 @@ void icon_update(int n) {
 			 Desktoprand hinausragt */
 			objc_offset(tree, i, &x, &y);
 
-			if (x < tb.desk.x) {
+			if (x < tb.desk.g_x) {
 				x = tree[i].ob_x = 0;
 				rd = 1;
 			}
-			if (x + w > tb.desk.x + tb.desk.w) {
-				x = tree[i].ob_x = tb.desk.w - w;
+			if (x + w > tb.desk.g_x + tb.desk.g_w) {
+				x = tree[i].ob_x = tb.desk.g_w - w;
 				rd = 1;
 			}
-			if (y < tb.desk.y) {
+			if (y < tb.desk.g_y) {
 				y = tree[i].ob_y = 0;
 				rd = 1;
 			}
-			if (y + h > tb.desk.y + tb.desk.h) {
-				y = tree[i].ob_y = tb.desk.h - h;
+			if (y + h > tb.desk.g_y + tb.desk.g_h) {
+				y = tree[i].ob_y = tb.desk.g_h - h;
 				rd = 1;
 			}
 
@@ -502,8 +494,8 @@ void icon_update(int n) {
 
  Icon nach Mausklick selektieren/deselektieren
  -------------------------------------------------------------------------*/
-void icon_select1(int obj, int sel, RECT *drect, int *rd) {
-	int x, y, w, h, osel;
+void icon_select1(short obj, short sel, GRECT *drect, short *rd) {
+	short x, y, w, h, osel;
 	OBJECT *tree;
 	ICONDESK *p = desk.dicon + obj;
 
@@ -521,8 +513,8 @@ void icon_select1(int obj, int sel, RECT *drect, int *rd) {
 				tree[obj].ob_state |= SELECTED;
 			else
 				tree[obj].ob_state &= ~SELECTED;
-			x = tree[obj].ob_x + tb.desk.x;
-			y = tree[obj].ob_y + tb.desk.y;
+			x = tree[obj].ob_x + tb.desk.g_x;
+			y = tree[obj].ob_y + tb.desk.g_y;
 			w = tree[obj].ob_width;
 			h = tree[obj].ob_height;
 
@@ -530,32 +522,32 @@ void icon_select1(int obj, int sel, RECT *drect, int *rd) {
 			if (*rd == 0) /* Koordinaten fÅr Redraw anpassen */
 			{
 				*rd = 1;
-				drect->x = x;
-				drect->y = y;
-				drect->w = w;
-				drect->h = h;
+				drect->g_x = x;
+				drect->g_y = y;
+				drect->g_w = w;
+				drect->g_h = h;
 			} else {
-				if (x < drect->x) {
-					drect->w += (drect->x - x);
-					drect->x = x;
+				if (x < drect->g_x) {
+					drect->g_w += (drect->g_x - x);
+					drect->g_x = x;
 				}
-				if (x + w > drect->x + drect->w)
-					drect->w = x + w - drect->x;
-				if (y < drect->y) {
-					drect->h += (drect->y - y);
-					drect->y = y;
+				if (x + w > drect->g_x + drect->g_w)
+					drect->g_w = x + w - drect->g_x;
+				if (y < drect->g_y) {
+					drect->g_h += (drect->g_y - y);
+					drect->g_y = y;
 				}
-				if (y + h > drect->y + drect->h)
-					drect->h = y + h - drect->y;
+				if (y + h > drect->g_y + drect->g_h)
+					drect->g_h = y + h - drect->g_y;
 			}
 		}
 	}
 }
 
-void icon_select(int obj, int add, int sel) {
-	int i;
-	RECT drect;
-	int rd;
+void icon_select(short obj, short add, short sel) {
+	short i;
+	GRECT drect;
+	short rd;
 
 	if (obj == -1) {
 		/* Alle Objekte bearbeiten */
@@ -563,7 +555,7 @@ void icon_select(int obj, int add, int sel) {
 		for (i = 1; i <= MAXICON; i++)
 			icon_select1(i, sel, &drect, &rd);
 		if (rd) {
-			desk_draw(drect.x, drect.y, drect.w, drect.h);
+			desk_draw(drect.g_x, drect.g_y, drect.g_w, drect.g_h);
 		}
 	} else {
 		/* Ein Objekt bearbeiten */
@@ -574,14 +566,14 @@ void icon_select(int obj, int add, int sel) {
 				if (i != obj)
 					icon_select1(i, 0, &drect, &rd);
 			if (rd) {
-				desk_draw(drect.x, drect.y, drect.w, drect.h);
+				desk_draw(drect.g_x, drect.g_y, drect.g_w, drect.g_h);
 			}
 		}
 		/* Status Ñndern */
 		rd = 0;
 		icon_select1(obj, sel, &drect, &rd);
 		if (rd)
-			desk_draw(drect.x, drect.y, drect.w, drect.h);
+			desk_draw(drect.g_x, drect.g_y, drect.g_w, drect.g_h);
 	}
 }
 
@@ -590,15 +582,15 @@ void icon_select(int obj, int add, int sel) {
 
  Alle selektierten Objekte via "Drag & Drop" verschieben
  -------------------------------------------------------------------------*/
-void icon_drag(int mx, int my, int mk, int ks) {
-	int lmx, lmy, lmk, lks;
-	int *pxy, *obnum;
-	int i, n;
-	int p, x, y, w, h, h2, ix, iw, ih, tx, tw;
-	int tx1, ty1, tx2, ty2;
-	int otx, oty;
-	int obj, obj1, whandle, drag, drag1;
-	int moved = 0;
+void icon_drag(short mx, short my, short mk, short ks) {
+	short lmx, lmy, lmk, lks;
+	short *pxy, *obnum;
+	short i, n;
+	short p, x, y, w, h, h2, ix, iw, ih, tx, tw;
+	short tx1, ty1, tx2, ty2;
+	short otx, oty;
+	short obj, obj1, whandle, drag, drag1;
+	short moved = 0;
 	WININFO *win, *iwin, *iwin1;
 	ACWIN *accwin;
 	WP_ENTRY *item, *item1;
@@ -623,20 +615,20 @@ void icon_drag(int mx, int my, int mk, int ks) {
 	}
 
 	/* Polygone fÅr die Darstellung am Bildschirm aufbauen */
-	pxy = pmalloc(sizeof(int) * n * 18); /* Je Icon 9 xy-Punkte */
+	pxy = pmalloc(sizeof(short) * n * 18); /* Je Icon 9 xy-Punkte */
 	if (!pxy) {
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
-	obnum = pmalloc(sizeof(int) * n); /* Objektnummern der Icons */
+	obnum = pmalloc(sizeof(short) * n); /* Objektnummern der Icons */
 	if (!obnum) {
 		pfree(pxy);
 		frm_alert(1, rs_frstr[ALNOMEM], altitle, conf.wdial, 0L);
 		return;
 	}
 	p = 0;
-	tx1 = tb.desk.x + tb.desk.w; /* t... Position/Maûe des Gesamtrechtecks */
-	ty1 = tb.desk.y + tb.desk.h;
+	tx1 = tb.desk.g_x + tb.desk.g_w; /* t... Position/Maûe des Gesamtrechtecks */
+	ty1 = tb.desk.g_y + tb.desk.g_h;
 	tx2 = ty2 = 0;
 	for (i = 1; i <= MAXICON; i++) {
 		if (desk.dicon[i].select && desk.dicon[i].class != IDFREE) {
@@ -690,19 +682,19 @@ void icon_drag(int mx, int my, int mk, int ks) {
 	while (lmk & 1) {
 		if (1) /*if(x!=lmx || y!=lmy)*//* Mausposition verÑndert ? */
 		{
-			evnt_timer(10, 0);
+			evnt_timer(10L);
 			/* xy-Delta berechnen */
 			w = lmx - x;
 			h = lmy - y;
 			/* Verschiebung des Gesamtrechtecks auf Desktopbereich begrenzen */
-			if (tx1 + w < tb.desk.x)
-				w = tb.desk.x - tx1;
-			if (ty1 + h < tb.desk.y)
-				h = tb.desk.y - ty1;
-			if (tx2 + w > tb.desk.x + tb.desk.w)
-				w = (tb.desk.x + tb.desk.w) - tx2;
-			if (ty2 + h > tb.desk.y + tb.desk.h)
-				h = (tb.desk.y + tb.desk.h) - ty2;
+			if (tx1 + w < tb.desk.g_x)
+				w = tb.desk.g_x - tx1;
+			if (ty1 + h < tb.desk.g_y)
+				h = tb.desk.g_y - ty1;
+			if (tx2 + w > tb.desk.g_x + tb.desk.g_w)
+				w = (tb.desk.g_x + tb.desk.g_w) - tx2;
+			if (ty2 + h > tb.desk.g_y + tb.desk.g_h)
+				h = (tb.desk.g_y + tb.desk.g_h) - ty2;
 
 			/* Nur aktualisieren, wenn xy-Delta != 0 */
 			if (w != 0 || h != 0) {
@@ -907,7 +899,7 @@ void icon_drag(int mx, int my, int mk, int ks) {
 							drag = 0;
 					}
 				} else {
-					if (lmx < tb.desk.x || lmy < tb.desk.y)
+					if (lmx < tb.desk.g_x || lmy < tb.desk.g_y)
 						drag = 0;
 					else
 						drag = 1;
@@ -990,8 +982,8 @@ void icon_drag(int mx, int my, int mk, int ks) {
 					/* Nur wenn nîtig */
 
 					/* Position/Maûe des Gesamtrechtecks fÅr Desktop-Redraw */
-					tx1 = tb.desk.x + tb.desk.w;
-					ty1 = tb.desk.y + tb.desk.h;
+					tx1 = tb.desk.g_x + tb.desk.g_w;
+					ty1 = tb.desk.g_y + tb.desk.g_h;
 					tx2 = ty2 = 0;
 					/* An alter Positionen lîschen */
 					for (i = 0; i < n; i++) {
@@ -1015,8 +1007,8 @@ void icon_drag(int mx, int my, int mk, int ks) {
 					desk_draw(tx1, ty1, tx2 - tx1 + 1, ty2 - ty1 + 1);
 
 					/* Position/Maûe des Gesamtrechtecks fÅr Desktop-Redraw */
-					tx1 = tb.desk.x + tb.desk.w;
-					ty1 = tb.desk.y + tb.desk.h;
+					tx1 = tb.desk.g_x + tb.desk.g_w;
+					ty1 = tb.desk.g_y + tb.desk.g_h;
 					tx2 = ty2 = 0;
 					/* Neu positionieren */
 					for (i = 0; i < n; i++) {
@@ -1055,13 +1047,13 @@ void icon_drag(int mx, int my, int mk, int ks) {
 
  Objekte auf dem Desktop mit "Gummiband" auswÑhlen
  -------------------------------------------------------------------------*/
-void icon_xsel(int mx, int my, int mk, int ks) {
-	int lmx, lmy, lmk, lks;
-	int i;
-	RECT sel, sel2, rsel;
-	int rxy[4];
-	int rd;
-	RECT wrd;
+void icon_xsel(short mx, short my, short mk, short ks) {
+	short lmx, lmy, lmk, lks;
+	short i;
+	GRECT sel, sel2, rsel;
+	short rxy[4];
+	short rd;
+	GRECT wrd;
 	ICONDESK *p;
 
 	lmx = mx;
@@ -1073,9 +1065,9 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 	for (i = 1; i <= MAXICON; i++, p++)
 		p->prevsel = p->select;
 	/* Startrechteck merken */
-	sel.x = sel2.x = lmx;
-	sel.y = sel2.y = lmy;
-	sel.w = sel.h = 0;
+	sel.g_x = sel2.g_x = lmx;
+	sel.g_y = sel2.g_y = lmy;
+	sel.g_w = sel.g_h = 0;
 
 	/* Auf gehts ... */
 	graf_mouse(POINT_HAND, 0L);
@@ -1085,31 +1077,31 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 		graf_mkstate(&lmx, &lmy, &lmk, &lks);
 
 		/* Neues Auswahlrechteck berechnen */
-		sel2.w = lmx - sel.x + 1;
-		sel2.h = lmy - sel.y + 1;
+		sel2.g_w = lmx - sel.g_x + 1;
+		sel2.g_h = lmy - sel.g_y + 1;
 		/* Begrenzung auf Desktop */
-		if (sel2.y + sel2.h - 1 < tb.desk.y)
-			sel2.h = tb.desk.y - sel2.y + 1;
-		if (sel2.y + sel2.h > tb.desk.y + tb.desk.h)
-			sel2.h = tb.desk.y + tb.desk.h - sel2.y;
-		if (sel2.x + sel2.w - 1 < tb.desk.x)
-			sel2.w = tb.desk.x - sel2.x + 1;
-		if (sel2.x + sel2.w > tb.desk.x + tb.desk.w)
-			sel2.w = tb.desk.x + tb.desk.w - sel2.x;
+		if (sel2.g_y + sel2.g_h - 1 < tb.desk.g_y)
+			sel2.g_h = tb.desk.g_y - sel2.g_y + 1;
+		if (sel2.g_y + sel2.g_h > tb.desk.g_y + tb.desk.g_h)
+			sel2.g_h = tb.desk.g_y + tb.desk.g_h - sel2.g_y;
+		if (sel2.g_x + sel2.g_w - 1 < tb.desk.g_x)
+			sel2.g_w = tb.desk.g_x - sel2.g_x + 1;
+		if (sel2.g_x + sel2.g_w > tb.desk.g_x + tb.desk.g_w)
+			sel2.g_w = tb.desk.g_x + tb.desk.g_w - sel2.g_x;
 
 		/* Bei énderung Auswahlrechteck neu zeichnen */
-		if (sel.w != sel2.w || sel.h != sel2.h) {
+		if (sel.g_w != sel2.g_w || sel.g_h != sel2.g_h) {
 			/* Lîschen und neue Maûe verwenden */
 			rub_frame(&sel);
-			sel.w = sel2.w;
-			sel.h = sel2.h;
+			sel.g_w = sel2.g_w;
+			sel.g_h = sel2.g_h;
 			rub_frame(&sel);
 
 			/* Icons im Auswahlbereich selektieren */
-			rxy[0] = sel.x;
-			rxy[1] = sel.y;
-			rxy[2] = sel.x + sel.w - 1;
-			rxy[3] = sel.y + sel.h - 1;
+			rxy[0] = sel.g_x;
+			rxy[1] = sel.g_y;
+			rxy[2] = sel.g_x + sel.g_w - 1;
+			rxy[3] = sel.g_y + sel.g_h - 1;
 			if (rxy[2] < rxy[0]) {
 				i = rxy[2];
 				rxy[2] = rxy[0];
@@ -1120,15 +1112,15 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 				rxy[3] = rxy[1];
 				rxy[1] = i;
 			}
-			rsel.x = rxy[0];
-			rsel.y = rxy[1];
-			rsel.w = rxy[2] - rxy[0] + 1;
-			rsel.h = rxy[3] - rxy[1] + 1;
+			rsel.g_x = rxy[0];
+			rsel.g_y = rxy[1];
+			rsel.g_w = rxy[2] - rxy[0] + 1;
+			rsel.g_h = rxy[3] - rxy[1] + 1;
 
 			rd = 0;
 			p = desk.dicon + 1;
 			for (i = 1; i <= MAXICON; i++, p++) {
-				int psel;
+				short psel;
 
 				if (p->class != IDFREE) {
 					if (icon_inrect(i, &rsel)) {
@@ -1149,7 +1141,7 @@ void icon_xsel(int mx, int my, int mk, int ks) {
 			}
 			if (rd) {
 				rub_frame(&sel);
-				desk_draw(wrd.x, wrd.y, wrd.w, wrd.h);
+				desk_draw(wrd.g_x, wrd.g_y, wrd.g_w, wrd.g_h);
 				rub_frame(&sel);
 			}
 		}
@@ -1169,21 +1161,21 @@ void icon_xsel(int mx, int my, int mk, int ks) {
  PrÅfen, ob an der angegebenen Position ein Icon liegt
  (Wesentlich schneller als objc_find())
  -------------------------------------------------------------------------*/
-int icon_find(int mx, int my) {
-	int ix, iw, ih;
-	int tx, ty, tw, th;
-	int i;
-	int px, py;
+short icon_find(short mx, short my) {
+	short ix, iw, ih;
+	short tx, ty, tw, th;
+	short i;
+	short px, py;
 	ICONBLK *iblk;
-	int obj;
+	short obj;
 	ICONDESK *p;
 
 	obj = -1;
 	p = desk.dicon + 1;
 	for (i = 1; i <= MAXICON; i++, p++) {
 		if (p->class != IDFREE) {
-			px = tb.desk.x + rs_trindex[DESKTOP][i].ob_x;
-			py = tb.desk.y + rs_trindex[DESKTOP][i].ob_y;
+			px = tb.desk.g_x + rs_trindex[DESKTOP][i].ob_x;
+			py = tb.desk.g_y + rs_trindex[DESKTOP][i].ob_y;
 			iblk = &desk.wicon[i].ciconblk.monoblk;
 			ix = iblk->ib_xicon;
 			iw = iblk->ib_wicon;
@@ -1209,30 +1201,30 @@ int icon_find(int mx, int my) {
 
  PrÅft, ob das angegebene Icon vom angegebenen Rechteck berÅhrt wird
  -------------------------------------------------------------------------*/
-int icon_inrect(int n, RECT *rect) {
+short icon_inrect(short n, GRECT *rect) {
 	ICONBLK *iblk;
-	int px, py;
-	int is_in;
-	RECT orect;
+	short px, py;
+	short is_in;
+	GRECT orect;
 
-	px = tb.desk.x + rs_trindex[DESKTOP][n].ob_x;
-	py = tb.desk.y + rs_trindex[DESKTOP][n].ob_y;
+	px = tb.desk.g_x + rs_trindex[DESKTOP][n].ob_x;
+	py = tb.desk.g_y + rs_trindex[DESKTOP][n].ob_y;
 	iblk = &desk.wicon[n].ciconblk.monoblk;
 	is_in = 0;
 
 	/* Text-Bereich */
-	orect.x = px + iblk->ib_xtext;
-	orect.y = py + iblk->ib_ytext;
-	orect.w = iblk->ib_wtext;
-	orect.h = iblk->ib_htext;
+	orect.g_x = px + iblk->ib_xtext;
+	orect.g_y = py + iblk->ib_ytext;
+	orect.g_w = iblk->ib_wtext;
+	orect.g_h = iblk->ib_htext;
 	if (rc_intersect(rect, &orect))
 		is_in = 1;
 
 	/* Image-Bereich */
-	orect.x = px + iblk->ib_xicon;
-	orect.y = py;
-	orect.w = iblk->ib_wicon;
-	orect.h = (iblk->ib_hicon + 1) & ~1;
+	orect.g_x = px + iblk->ib_xicon;
+	orect.g_y = py;
+	orect.g_w = iblk->ib_wicon;
+	orect.g_h = (iblk->ib_hicon + 1) & ~1;
 	if (rc_intersect(rect, &orect))
 		is_in = 1;
 
@@ -1250,7 +1242,7 @@ void icon_checksel(void) {
 	W_GRP *wgrp;
 	WP_ENTRY *item;
 	WG_ENTRY *gitem;
-	int i, j;
+	short i, j;
 	ICONDESK *p;
 
 	/* Aktuelle Angaben lîschen */
@@ -1363,7 +1355,7 @@ void icn_rsrc(char *name, ICONIMG *img) {
 	_CICONBLK *cblk;
 	DRAW_CICON *dblk;
 	char *iname;
-	int i;
+	short i;
 	void *ucode;
 
 	/* Erst normales Icon suchen */
@@ -1509,24 +1501,24 @@ void icn_setimg(WICON *wicon, OBJECT *obj, ICONIMG *img, char *txt) {
  Ermittelt einen freien Platz auf dem Desktop fÅr das Ablegen eines
  Icons (80*40 Pixel).
  -------------------------------------------------------------------------*/
-void desk_freepos(int n, int *x, int *y, int start) {
-	RECT test;
-	int done, i, free, sx, sy, mx, my;
+void desk_freepos(short n, short *x, short *y, short start) {
+	GRECT test;
+	short done, i, free, sx, sy, mx, my;
 	ICONDESK *p;
 
-	test.w = 76;
-	test.h = 40;
-	sx = tb.desk.x;
+	test.g_w = 76;
+	test.g_h = 40;
+	sx = tb.desk.g_x;
 	mx = 40;
 	my = 24;
 
 	if (start == 0)
-		sy = tb.desk.y;
+		sy = tb.desk.g_y;
 	else
-		sy = tb.desk.y + tb.desk.h - test.h;
+		sy = tb.desk.g_y + tb.desk.g_h - test.g_h;
 
-	test.x = sx;
-	test.y = sy;
+	test.g_x = sx;
+	test.g_y = sy;
 
 	done = 0;
 	while (!done) {
@@ -1544,19 +1536,19 @@ void desk_freepos(int n, int *x, int *y, int start) {
 		/* Nein - Dann nÑchste Position und abbrechen, falls letzte mîgliche
 		 Position bereits erreicht wurde */
 		if (!free) {
-			test.x += mx;
-			if (test.x + test.w >= tb.desk.x + tb.desk.w) {
-				test.x = sx;
+			test.g_x += mx;
+			if (test.g_x + test.g_w >= tb.desk.g_x + tb.desk.g_w) {
+				test.g_x = sx;
 				if (start == 0) {
-					test.y += my;
-					if (test.y + test.h >= tb.desk.y + tb.desk.h) {
-						test.y = sy;
+					test.g_y += my;
+					if (test.g_y + test.g_h >= tb.desk.g_y + tb.desk.g_h) {
+						test.g_y = sy;
 						done = 1;
 					}
 				} else {
-					test.y -= my;
-					if (test.y < tb.desk.y) {
-						test.y = sy;
+					test.g_y -= my;
+					if (test.g_y < tb.desk.g_y) {
+						test.g_y = sy;
 						done = 1;
 					}
 				}
@@ -1565,8 +1557,8 @@ void desk_freepos(int n, int *x, int *y, int start) {
 			done = 1;
 	}
 
-	*x = (test.x - tb.desk.x + 76 / 2);
-	*y = (test.y - tb.desk.y);
+	*x = (test.g_x - tb.desk.g_x + 76 / 2);
+	*y = (test.g_y - tb.desk.g_y);
 }
 
 /*
@@ -1578,10 +1570,10 @@ void desk_freepos(int n, int *x, int *y, int start) {
  * 0L: Fehler beim Laden, Meldung bereits erfolgt
  * sonst: Zeiger auf timg-Basepage
  */
-static BASPAG *desk_timgload(void) {
+static BASEPAGE *desk_timgload(void) {
 	char fname[MAX_PLEN];
 	long err, plen;
-	BASPAG *timg;
+	BASEPAGE *timg;
 
 	strcpy(fname, tb.homepath);
 	strcat(fname, FNAME_IMG);
@@ -1590,9 +1582,9 @@ static BASPAG *desk_timgload(void) {
 		frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		return (0L);
 	}
-	timg = (BASPAG *) err;
-	plen = sizeof(BASPAG) + 1024L + timg->p_tlen + timg->p_dlen + timg->p_blen;
-	Mshrink(0, timg->p_lowtpa, plen);
+	timg = (BASEPAGE *) err;
+	plen = sizeof(BASEPAGE) + 1024L + timg->p_tlen + timg->p_dlen + timg->p_blen;
+	Mshrink(timg->p_lowtpa, plen);
 	timg->p_hitpa = (void *) ((long) timg->p_lowtpa + plen);
 	call_thingimg = timg->p_tbase;
 	vsl_type(tb.vdi_handle, SOLID);
@@ -1605,9 +1597,9 @@ static BASPAG *desk_timgload(void) {
 
  Desktop-Bild auf Format prÅfen
  -------------------------------------------------------------------------*/
-int desk_icheck(THINGIMG *check, char *name, int usepal) {
-	int ok;
-	BASPAG *timg;
+short desk_icheck(THINGIMG *check, char *name, short usepal) {
+	short ok;
+	BASEPAGE *timg;
 	THINGIMG info;
 
 	info = *check;
@@ -1630,8 +1622,8 @@ int desk_icheck(THINGIMG *check, char *name, int usepal) {
 
  Desktop-Bild laden
  -------------------------------------------------------------------------*/
-int desk_iload(THINGIMG *dest, char *name, int usepal, int alert) {
-	BASPAG *timg;
+short desk_iload(THINGIMG *dest, char *name, short usepal, short alert) {
+	BASEPAGE *timg;
 	long err;
 
 	dest->vdi_handle = tb.vdi_handle;
@@ -1678,7 +1670,7 @@ dil_exit_error:
  Desktop-Bild freigeben
  -------------------------------------------------------------------------*/
 void desk_ifree(THINGIMG *timg) {
-	int i;
+	short i;
 
 	if (timg->picture.fd_addr) {
 		pfree(timg->picture.fd_addr);
@@ -1695,14 +1687,13 @@ void desk_ifree(THINGIMG *timg) {
 
  Darstellung des Hintergrund-Bildes
  -------------------------------------------------------------------------*/
-int cdecl desk_usr(PARMBLK *parmblock) {
-	int xc, yc, wc, hc, pxy[8];
-	int w,h;
-	bfobspec *spec;
+short cdecl desk_usr(PARMBLK *parmblock) {
+	short xc, yc, wc, hc, pxy[8];
+	short w,h;
+	BFOBSPEC *spec;
 	MFDB scr,*img;
-	RECT clip,
-	draw;
-	int col[2];
+	GRECT clip, draw;
+	short col[2];
 
 	/* Clipping setzen */
 	xc=parmblock->pb_xc;
@@ -1715,19 +1706,19 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 		pxy[2] = xc + wc - 1;
 		pxy[3] = yc + hc - 1;
 	} else {
-		pxy[0] = tb.desk.x;
-		pxy[1] = tb.desk.y;
-		pxy[2] = pxy[0] + tb.desk.w - 1;
-		pxy[3] = pxy[1] + tb.desk.h - 1;
+		pxy[0] = tb.desk.g_x;
+		pxy[1] = tb.desk.g_y;
+		pxy[2] = pxy[0] + tb.desk.g_w - 1;
+		pxy[3] = pxy[1] + tb.desk.g_h - 1;
 	}
-	clip.x = pxy[0];
-	clip.y = pxy[1];
-	clip.w = pxy[2] - pxy[0] + 1;
-	clip.h = pxy[3] - pxy[1] + 1;
+	clip.g_x = pxy[0];
+	clip.g_y = pxy[1];
+	clip.g_w = pxy[2] - pxy[0] + 1;
+	clip.g_h = pxy[3] - pxy[1] + 1;
 	vs_clip(tb.vdi_handle, 1, pxy);
 
 	/* Weitere Vorbereitungen */
-	spec = (bfobspec *)&desk.iuser.ub_parm;
+	spec = (BFOBSPEC *)&desk.iuser.ub_parm;
 	col[0] = spec->interiorcol;col[1] = 0;
 	scr.fd_addr = 0L;
 	img = &glob.img_info.picture;
@@ -1739,11 +1730,11 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 	 * - Bild transparent
 	 * - Bild kleiner als Desktop und nicht gekachelt
 	 */
-	if (!conf.imguse || !glob.img_ok || glob.img_ok && (conf.imgtrans || (conf.imgcenter && ((img->fd_w < tb.desk.w) || (img->fd_h < tb.desk.h))))) {
-		pxy[0] = tb.desk.x;
-		pxy[1] = tb.desk.y;
-		pxy[2] = pxy[0] + tb.desk.w - 1;
-		pxy[3] = pxy[1] + tb.desk.h - 1;
+	if (!conf.imguse || !glob.img_ok || glob.img_ok && (conf.imgtrans || (conf.imgcenter && ((img->fd_w < tb.desk.g_w) || (img->fd_h < tb.desk.g_h))))) {
+		pxy[0] = tb.desk.g_x;
+		pxy[1] = tb.desk.g_y;
+		pxy[2] = pxy[0] + tb.desk.g_w - 1;
+		pxy[3] = pxy[1] + tb.desk.g_h - 1;
 		vsf_color(tb.vdi_handle, spec->interiorcol);
 		if (spec->fillpattern > 0) {
 			if (spec->fillpattern < 7) {
@@ -1762,7 +1753,7 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 
 	/* Bild ausgeben, falls vorhanden */
 	if (glob.img_ok && conf.imguse) {
-		int mode;
+		short mode;
 
 		if (conf.imgtrans) {
 			if (glob.img_info.is_mono)
@@ -1781,27 +1772,27 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 			/* zentriert */
 
 			/* Horizontal */
-			if (img->fd_w > tb.desk.w) {
-				pxy[0] = (img->fd_w - tb.desk.w) / 2;
-				pxy[2] = pxy[0] + tb.desk.w - 1;
-				pxy[4] = tb.desk.x;
-				pxy[6] = tb.desk.x + tb.desk.w - 1;
+			if (img->fd_w > tb.desk.g_w) {
+				pxy[0] = (img->fd_w - tb.desk.g_w) / 2;
+				pxy[2] = pxy[0] + tb.desk.g_w - 1;
+				pxy[4] = tb.desk.g_x;
+				pxy[6] = tb.desk.g_x + tb.desk.g_w - 1;
 			} else {
 				pxy[0] = 0;
 				pxy[2] = img->fd_w - 1;
-				pxy[4] =  tb.desk.x + (tb.desk.w - img->fd_w) / 2;
+				pxy[4] =  tb.desk.g_x + (tb.desk.g_w - img->fd_w) / 2;
 				pxy[6] = pxy[4] + img->fd_w - 1;
 			}
 			/* Vertikal */
-			if (img->fd_h > tb.desk.h) {
-				pxy[1] = (img->fd_h - tb.desk.h) / 2;
-				pxy[3] = pxy[1] + tb.desk.h - 1;
-				pxy[5] = tb.desk.y;
-				pxy[7] = tb.desk.y + tb.desk.h - 1;
+			if (img->fd_h > tb.desk.g_h) {
+				pxy[1] = (img->fd_h - tb.desk.g_h) / 2;
+				pxy[3] = pxy[1] + tb.desk.g_h - 1;
+				pxy[5] = tb.desk.g_y;
+				pxy[7] = tb.desk.g_y + tb.desk.g_h - 1;
 			} else {
 				pxy[1] = 0;
 				pxy[3] = img->fd_h - 1;
-				pxy[5] = tb.desk.y + (tb.desk.h - img->fd_h) / 2;
+				pxy[5] = tb.desk.g_y + (tb.desk.g_h - img->fd_h) / 2;
 				pxy[7] = pxy[5] + img->fd_h - 1;
 			}
 			if (glob.img_info.is_mono)
@@ -1810,31 +1801,31 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 				vro_cpyfm(tb.vdi_handle, mode, pxy, img, &scr);
 		} else {
 			/* gekachelt */
-			int maxx, maxy;
+			short maxx, maxy;
 
 			pxy[0] = pxy[1] = 0;
-			if (img->fd_w > tb.desk.w)
-				w = tb.desk.w;
+			if (img->fd_w > tb.desk.g_w)
+				w = tb.desk.g_w;
 			else
 				w = img->fd_w;
-			if (img->fd_h > tb.desk.h)
-				h = tb.desk.h;
+			if (img->fd_h > tb.desk.g_h)
+				h = tb.desk.g_h;
 			else
 				h = img->fd_h;
 			pxy[2] = w - 1;
 			pxy[3] = h - 1;
 
-			maxx = tb.desk.x + tb.desk.w - 1;
-			maxy = tb.desk.y + tb.desk.h - 1;
+			maxx = tb.desk.g_x + tb.desk.g_w - 1;
+			maxy = tb.desk.g_y + tb.desk.g_h - 1;
 
-			for(pxy[4] = tb.desk.x; pxy[4] <= maxx; pxy[4] += w) {
-				for(pxy[5] = tb.desk.y; pxy[5] <= maxy; pxy[5] += h) {
+			for(pxy[4] = tb.desk.g_x; pxy[4] <= maxx; pxy[4] += w) {
+				for(pxy[5] = tb.desk.g_y; pxy[5] <= maxy; pxy[5] += h) {
 					pxy[6] = pxy[4] + w - 1;
 					pxy[7] = pxy[5] + h - 1;
-					draw.x = pxy[4];
-					draw.y = pxy[5];
-					draw.w = w;
-					draw.h = h;
+					draw.g_x = pxy[4];
+					draw.g_y = pxy[5];
+					draw.g_w = w;
+					draw.g_h = h;
 					/* Aktuelle Kachel Åberhaupt im zu zeichnenden Bereich? */
 					if (rc_intersect(&clip, &draw)) {
 						if(glob.img_info.is_mono)
@@ -1859,8 +1850,8 @@ int cdecl desk_usr(PARMBLK *parmblock) {
 
  Aktuelle Auswahl als String bereitstellen
  -------------------------------------------------------------------------*/
-int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
-	int i, cont, n, m, pn;
+short sel2buf(char *buf, char *aname, char *apath, short maxlen) {
+	short i, cont, n, m, pn;
 	char name[MAX_PLEN];
 	W_PATH *wpath;
 	WP_ENTRY *wpitem;
@@ -1899,8 +1890,8 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 				}
 				if (buf) {
 					quote(name);
-					m = (int) strlen(buf);
-					n = (int) strlen(name);
+					m = (short) strlen(buf);
+					n = (short) strlen(name);
 					if (pn)
 						n++;
 					if (n + m < maxlen) {
@@ -1932,8 +1923,8 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 						}
 						if (buf) {
 							quote(name);
-							m = (int)strlen(buf);
-							n = (int)strlen(name);
+							m = (short)strlen(buf);
+							n = (short)strlen(name);
 							if (pn)
 								n++;
 							if (n + m < maxlen) {
@@ -1963,8 +1954,8 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 						}
 						if (buf) {
 							quote(name);
-							m = (int)strlen(buf);
-							n = (int)strlen(name);
+							m = (short)strlen(buf);
+							n = (short)strlen(name);
 							if (pn)
 								n++;
 							if (n + m < maxlen) {
@@ -1987,9 +1978,9 @@ int sel2buf(char *buf, char *aname, char *apath, int maxlen) {
 	return (cont);
 }
 
-int drag_scroll(int my, int w, int h, int moved, WININFO *win, int n, int *pxy,
-		void (*rubbox)(int, int *)) {
-	int dy = 0, old_offy, *offy;
+short drag_scroll(short my, short w, short h, short moved, WININFO *win, short n, short *pxy,
+		void (*rubbox)(short, short *)) {
+	short dy = 0, old_offy, *offy;
 	W_PATH *wpath;
 	W_GRP *wgrp;
 
@@ -2010,16 +2001,16 @@ int drag_scroll(int my, int w, int h, int moved, WININFO *win, int n, int *pxy,
 			return(0);
 		}
 		old_offy = *offy;
-		if (my < win->work.y)
-			dy = win->work.y - my;
-		if (my > (win->work.y + win->work.h - Y_OFFSET))
-			dy = win->work.y + win->work.h - Y_OFFSET - my;
+		if (my < win->work.g_y)
+			dy = win->work.g_y - my;
+		if (my > (win->work.g_y + win->work.g_h - Y_OFFSET))
+			dy = win->work.g_y + win->work.g_h - Y_OFFSET - my;
 		if (dy) {
 			if (dy / 2)
 				dy /= 2;
 			(rubbox)(n, pxy);
 			win_slide(win, S_PABS, 0, dy * conf.scroll);
-			evnt_timer(20, 0);
+			evnt_timer(20L);
 			(rubbox)(n, pxy);
 		}
 		return (*offy != old_offy);

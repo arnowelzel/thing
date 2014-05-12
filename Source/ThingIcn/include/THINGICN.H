@@ -40,9 +40,9 @@
 
 typedef struct asinfo /* Icon-Zuordnung */
 {
-	int class;			/* Art: 0 = Datei, 1 = Ordner, 2 = Laufwerk */
+	short class;			/* Art: 0 = Datei, 1 = Ordner, 2 = Laufwerk */
 	char txt;			/* Text-Kennzeichnung */
-	int tcol;			/* Textfarbe (-1 = normale Zeichenfarbe) */
+	short tcol;			/* Textfarbe (-1 = normale Zeichenfarbe) */
 	char wildcard[33];	/* Wildcard */
 	struct asinfo *prev, *next; /* Verkettung */
 } ASINFO;
@@ -59,76 +59,76 @@ typedef struct comment {
 } COMMENT;
 
 typedef struct {
-	int use3d,			/* 3d-Look verwenden */
+	short use3d,			/* 3d-Look verwenden */
 	backwin,			/* Fenster vor Schliessen nach hinten stellen */
 	tver;				/* Thing Versionsnummer */
-	int done,			/* Programm beendet */
+	short done,			/* Programm beendet */
 	menu,				/* Menuezeile aktiv */
 	change;				/* Aenderungen gemacht? */
-	int numassign, numicon;
-	int multiple, missing, illegal;
+	short numassign, numicon;
+	short multiple, missing, illegal;
 	OBJECT *rtree;
 	RSINFO rinfo;
 	char rname[MAX_PLEN], iname[MAX_PLEN], lname[MAX_PLEN], bname[MAX_PLEN];
 	WININFO *rwin;
-	int avid, tid;
-	int avflags;
+	short avid, tid;
+	short avflags;
 	ICONINFO *icon;
 	COMMENT *comments;
-	int scroll, rclick;
-	int offx, offy, focus, fdraw;
-	int mx, my, iw, ih, ny;
-	int autoplace, interactive;
-	int fleft, fupper, fright, flower, fhor, fvert;
+	short scroll, rclick;
+	short offx, offy, focus, fdraw;
+	short mx, my, iw, ih, ny;
+	short autoplace, interactive;
+	short fleft, fupper, fright, flower, fhor, fvert;
 	/* Desktop-Hintergrund */
-	int d_fill, d_color;
+	short d_fill, d_color;
 } GLOB;
 
-int add_comment(char *line);
-void mn_istate(int item, int enable);
+short add_comment(char *line);
+void mn_istate(short item, short enable);
 void mn_disable(void);
 void mn_update(void);
-void av_wopen(int handle);
-void av_wclose(int handle);
+void av_wopen(short handle);
+void av_wclose(short handle);
 void di_about(void);
-void de_about(int mode, int ret);
+void de_about(short mode, short ret);
 void dl_nextwin(void);
 void dl_quit(void);
 void dl_freeas(ASINFO *as);
-int dl_editlist(ICONINFO * icon);
+short dl_editlist(ICONINFO * icon);
 void dl_edit(void);
-void dl_selinit(int i);
-void de_edit(int mode, int ret);
-void dl_find(int icon);
-void de_find(int mode, int ret);
+void dl_selinit(short i);
+void de_edit(short mode, short ret);
+void dl_find(short icon);
+void de_find(short mode, short ret);
 void key_clr(void);
-void handle_menu(int title, int item, int ks);
-void handle_win(int handle, int msg, int f1, int f2, int f3, int f4, int ks);
-void handle_button(int mx, int my, int but, int ks, int br);
-void handle_key(int ks, int kr);
+void handle_menu(short title, short item, short ks);
+void handle_win(short handle, short msg, short f1, short f2, short f3, short f4, short ks);
+void handle_button(short mx, short my, short but, short ks, short br);
+void handle_key(short ks, short kr);
 void handle_fmsg(EVENT *mevent, FORMINFO *fi);
 void w_draw(WININFO *win);
 void w_showsel(void);
 void w_update(struct wininfo *win);
 void w_prepare(struct wininfo *win);
-void w_redraw(struct wininfo *win, RECT *area);
-void w_slide(struct wininfo *win, int mode, int h, int v);
+void w_redraw(struct wininfo *win, GRECT *area);
+void w_slide(struct wininfo *win, short mode, short h, short v);
 void ic_tree(void);
 void ic_fdraw(void);
-void ic_sel(int obj);
-void ic_move(int dir);
+void ic_sel(short obj);
+void ic_move(short dir);
 ASINFO *as_add(ICONINFO *icon);
 void as_remove(ICONINFO *icon, ASINFO *as);
 ICONINFO *as_findic(char *name);
-ICONINFO *as_findas(char *name, int class);
+ICONINFO *as_findas(char *name, short class);
 void mw_info(void);
-void mw_change(int changed);
-int mw_init(void);
-int loadAssignments(void);
+void mw_change(short changed);
+short mw_init(void);
+short loadAssignments(void);
 void mw_exit(void);
 void put_text(FILE *fh, char *str);
-int get_buf_entry(char *buf, char *name, char **newpos);
-int is_stdicon(ICONINFO *icon);
-int main_init(void);
+short get_buf_entry(char *buf, char *name, char **newpos);
+short is_stdicon(ICONINFO *icon);
+short main_init(void);
 void main_loop(void);
 void main_exit(void);

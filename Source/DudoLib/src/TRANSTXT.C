@@ -57,16 +57,16 @@ WORD cdecl transtext(PARMBLK *parmblock) {
 	vswr_mode(userdef->vdi_handle, MD_TRANS);
 	vst_alignment(userdef->vdi_handle, ubparm->te_just, TA_TOP, &du, &du);
 
-	if (get3dLook() == TRUE && (parmblock->pb_currstate & DISABLED)) {
+	if (get3dLook() == TRUE && (parmblock->pb_currstate & OS_DISABLED)) {
 		text_effects = TF_LIGHTENED;
-		parmblock->pb_currstate &= ~DISABLED;
+		parmblock->pb_currstate &= ~OS_DISABLED;
 		v_xgtext(tx, parmblock->pb_y, text_effects, ubparm, parmblock);
 	} else {
 		text_effects = TF_NORMAL;
 		v_xgtext(tx, parmblock->pb_y, text_effects, ubparm, parmblock);
 	}
 
-	if (parmblock->pb_currstate & CHECKED) {
+	if (parmblock->pb_currstate & OS_CHECKED) {
 		BYTE *p;
 		WORD pos;
 
@@ -78,23 +78,23 @@ WORD cdecl transtext(PARMBLK *parmblock) {
 		v_xgtext(parmblock->pb_x + 1, parmblock->pb_y, text_effects, ubparm, parmblock);
 		ubparm->text = p;
 		ubparm->uline_pos = pos;
-		parmblock->pb_currstate &= ~CHECKED;
+		parmblock->pb_currstate &= ~OS_CHECKED;
 	}
 
-	if (parmblock->pb_currstate & SELECTED) {
+	if (parmblock->pb_currstate & OS_SELECTED) {
 		WORD pxy[4];
 
 		vswr_mode(userdef->vdi_handle, MD_XOR);
 		vsf_perimeter(userdef->vdi_handle, 0);
 		vsf_interior(userdef->vdi_handle, FIS_SOLID);
-		vsf_color(userdef->vdi_handle, BLACK);
+		vsf_color(userdef->vdi_handle, G_BLACK);
 		pxy[0] = parmblock->pb_x;
 		pxy[1] = parmblock->pb_y;
 		pxy[2] = pxy[0] + parmblock->pb_w - 1;
 		pxy[3] = pxy[1] + parmblock->pb_h - 1;
 		v_bar(userdef->vdi_handle, pxy);
 		vswr_mode(userdef->vdi_handle, MD_REPLACE);
-		parmblock->pb_currstate &= ~SELECTED;
+		parmblock->pb_currstate &= ~OS_SELECTED;
 	}
 
 	clipping(parmblock, FALSE);
