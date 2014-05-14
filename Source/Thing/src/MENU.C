@@ -32,6 +32,7 @@
 #include "..\include\types.h"
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
+#include <errno.h>
 #undef TIMER
 #ifdef TIMER
 #include <time.h>
@@ -481,7 +482,10 @@ void mn_update(void) {
 	mn_istate(MFIND, *conf.finder);
 	mn_istate(MQUIT, !((tb.sys & SY_MSHELL) && !(tb.sys & SY_SHUT)));
 	mn_istate(MCHANGEREZ, !(!(tb.sys & SY_MSHELL) && (getenv("RSMASTER") == 0L)));
-	mn_istate(MCONSOLE, getCookie('T2GM', NULL));
+  if ( Getcookie('T2GM', NULL) == E_OK )
+	  mn_istate(MCONSOLE, TRUE);
+	else
+	  mn_istate(MCONSOLE, FALSE);
 	mn_redraw(objectTree);
 
 	wind_update (END_UPDATE);

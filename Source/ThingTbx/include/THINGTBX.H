@@ -450,7 +450,6 @@ short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong);
  * 'toolbox.c'
  *-------------------------------------------------------------------------*/
 void mybeep(void);
-short getCookie(long cookie, long *p_value);
 unsigned short normkey(short ks, short kr);
 short rel2abs(char *path, char **dest);
 short menu_key(OBJECT *tree, short key, short *title, short *item);

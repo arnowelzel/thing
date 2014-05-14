@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <slectric.h>
 #define TOOLBOX_LIB
 #define _TOOLBOX_
@@ -120,39 +121,6 @@ unsigned short normkey(short ks, short kr) {
 		nkc_ret |= nkc_special;
 	}
 	return (nkc_ret);
-}
-
-/**
- * Cookie abfragen
- *
- * @param cookie
- * @param *p_value
- * @return
- */
-static long getCookiePointer(void) {
-	return (*(long *) 0x5a0L);
-}
-
-short getCookie(long cookie, long *p_value) {
-	long *cookiejar;
-
-	cookiejar = (long *) Supexec(getCookiePointer);
-
-	if (cookiejar == 0L)
-		return (FALSE);
-
-	do {
-		if (cookiejar[0] == cookie) {
-			if (p_value)
-				*p_value = cookiejar[1];
-
-			return (TRUE);
-		} else {
-			cookiejar = &(cookiejar[2]);
-		}
-	} while (cookiejar[-2]);
-
-	return (FALSE);
 }
 
 /**
@@ -668,20 +636,20 @@ short tool_init(char *apname) {
 	pop_offy = rs_trindex[0]->ob_height - pop_offy;
 
 	/* Aktuelle Systemkonfiguration */
-	if (getCookie('MagX', (long *) &tb.magx))
+	if (Getcookie('MagX', (long *) &tb.magx) == E_OK )
 		tb.sys |= SY_MAGX;
 	else
 		tb.magx = 0L;
-	if (getCookie('nAES', 0L))
+	if (Getcookie('nAES', 0L) == E_OK )
 		tb.sys |= SY_NAES;
-	if (getCookie('Gnva', 0L))
+	if (Getcookie('Gnva', 0L) == E_OK )
 		tb.sys |= SY_GNVA;
 	if (_AESnumapps != 1) {
 		tb.sys |= SY_MULTI; /* Multitasking */
 		if (_AESversion >= 0x400)
 			tb.sys |= SY_MTOS; /* Und MultiTOS */
 	}
-	if (getCookie('MiNT', &ldummy))
+	if (Getcookie('MiNT', &ldummy) == E_OK)
 		tb.sys |= SY_MINT; /* MiNT */
 
 	if (Sysconf(-1) != -32L)
@@ -5644,7 +5612,7 @@ short fselect(char *fs_einpath, char *fs_einsel, short *fs_eexbutton, char *elab
 		strcpy(&fpath[(short) strlen(fpath) + 1], "?Fdm");
 
 	/* FSEL-Cookie ermitteln */
-	if (!getCookie('FSEL', (long *) &selectric))
+	if (Getcookie('FSEL', (long *) &selectric) != E_OK)
 		selectric = NULL;
 
 	/* Aufrufen */

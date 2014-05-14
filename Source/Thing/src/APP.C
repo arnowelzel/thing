@@ -32,6 +32,7 @@
 #include "..\include\types.h"
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
+#include <errno.h>
 
 #ifdef __MINT__
 #include <basepage.h>
@@ -797,7 +798,7 @@ app_start1:
 			/* Jammern, falls shel_write() notwendig ist, aber das Multitasking-
 			 System kein ARGV untersttzt */
 			if (tb.sys & SY_MULTI && !glob.argv
-					&& ((aptr->conwin && !getCookie('T2GM', &ldummy)
+					&& ((aptr->conwin && (Getcookie('T2GM', &ldummy) != E_OK)
 					&& conf.uset2g) || !aptr->conwin)) {
 				pfree(cmd);
 				if (env) {

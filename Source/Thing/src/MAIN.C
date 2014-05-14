@@ -39,6 +39,7 @@
 #include <math.h>
 #include <pwd.h>
 #include <grp.h>
+#include <errno.h>
 
 #define _str(x)		__str(x)
 #define __str(x)	#x
@@ -357,7 +358,7 @@ DEBUGLOG((1, "main_init: Toolbox initialised, logging enabled\n"));
 #endif
 
 	/* NAES-Cookie holen */
-	if (!getCookie('nAES', (long *) &glob.naesinfo))
+	if (Getcookie('nAES', (long *) &glob.naesinfo) != E_OK )
 		glob.naesinfo = 0L;
 
 #ifdef _DEBUG
@@ -1195,7 +1196,7 @@ DEBUGLOG((1, "..3\n"));
 
 	/* Bei Alice anmelden */
 	glob.alice = 0L;
-	if (getCookie('ALIC', (long *)&glob.alice)) {
+	if (Getcookie('ALIC', (long *)&glob.alice) == E_OK ) {
 		if (glob.alice->magic == 'ALIC')
 			glob.alice->redraw_ap_id = tb.app_id;
 	}

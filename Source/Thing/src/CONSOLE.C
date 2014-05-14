@@ -32,6 +32,7 @@
 #include "..\include\types.h"
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
+#include <errno.h>
 
 /* Von Thomas Binder */
 
@@ -534,7 +535,7 @@ short cwin_open(void) {
 	}
 
 	/* TOS2GEM vorhanden? */
-	if (!getCookie('T2GM', (long *) &con.tos2gem))
+	if (Getcookie('T2GM', (long *) &con.tos2gem) != E_OK)
 		return (-1);
 	if (!con.tos2gem)
 		return (-1);

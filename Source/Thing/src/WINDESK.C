@@ -33,6 +33,7 @@
 #include "rsrc\thgtxt.h"
 #include <ctype.h>
 #include <time.h>
+#include <errno.h>
 
 #ifdef TIMER
 static clock_t timer;
@@ -781,7 +782,7 @@ DEBUGLOG((0, "wpath_update(%s)\n", wpath->path));
 	}
 
 wpath_update2:
-	if (getCookie('MgMc', 0L) && getCookie('SCSI', 0L)) {
+	if ( (Getcookie('MgMc', 0L) == E_OK) && (Getcookie('SCSI', 0L) == E_OK) ) {
 		_DISKINFO dummy;
 
 		Dfree(&dummy, (wpath->path[0] & ~32) - 'A');

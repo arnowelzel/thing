@@ -22,6 +22,7 @@
  */
 
 #include <portab.h>
+#include <errno.h>
 #include <string.h>
 #include "..\include\thingtbx.h"
 
@@ -37,9 +38,9 @@ short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 		value = (LONG) out[0];
   else
   {
-		if (getCookie('_AKP', &value))
+		if (Getcookie('_AKP', &value) == E_OK)
 			value >>= 8;
-	}
+  }
 
 	switch ( (int) value )
 	{

@@ -36,6 +36,7 @@
 #include "..\include\jobid.h"
 #include <new_rsc.h>
 #include <basepage.h>
+#include <errno.h>
 #include <mt_gemx.h>
 #include "..\xhdi\xhdi.h"
 
@@ -110,11 +111,11 @@ void di_ainfo1(void) {
 	iview = getObjectText(objectTree, AIDISPLAY);
 	it2g = getObjectText(objectTree, AITOS2GEM);
 	if (tb.sys & SY_MAGX) {
-		if (getCookie('MgMc', &dummy))
+		if (Getcookie('MgMc', &dummy) == E_OK )
 			strcpy(ios, "MagiC Mac");
-		else if (getCookie('MgMx', &dummy))
+		else if (Getcookie('MgMx', &dummy) == E_OK )
 			strcpy(ios, "MagiC Mac X");
-		else if (getCookie('MgPC', &dummy))
+		else if (Getcookie('MgPC', &dummy) == E_OK )
 			strcpy(ios, "MagiC PC");
 		else
 			sprintf(ios, "MagiC %x", (tb.magx->aesvars->version >> 8) & 0xff);
@@ -166,7 +167,7 @@ void di_ainfo1(void) {
 		sprintf(iview, rs_trindex[LANGUAGE][LANGSCR2].ob_spec.free_string, tb.resx, tb.resy, tb.planes);
 
 	/* System-Infos eintragen - TOS2GEM */
-	if (getCookie('T2GM', (long *) &t2g)) {
+	if (Getcookie('T2GM', (long *) &t2g) == E_OK) {
 		sprintf(it2g, rs_trindex[LANGUAGE][LANGT2GVER].ob_spec.free_string,
 				t2g->date & 0x001f, (t2g->date & 0x1e0) >> 5,
 				1980 + ((t2g->date & 0xfe00) >> 9));
