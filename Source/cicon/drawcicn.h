@@ -24,12 +24,11 @@
 #ifndef _DRAWCICN_H_INCLUDED
 #define _DRAWCICN_H_INCLUDED
 
-#include <gem.h>
+#include <mt_gemx.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <portab.h>
-
-#define _G_CICON	33
 
 typedef struct _cicon_data
 {
