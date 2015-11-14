@@ -85,19 +85,11 @@ static void objc_create(OBJECT *objectTree, WORD obj, WORD next, WORD head, WORD
 		WORD h);
 #endif
 static void transformImages(void);
-static BOOLEAN get_cookie(LONG cookie, LONG *value);
 
 /*------------------------------------------------------------------*/
 /*  local definitions                                               */
 /*------------------------------------------------------------------*/
-/* AES-Font Cookie-Struktur */
-typedef struct {
-	LONG af_magic;		/* AES-Font ID (AFnt) */
-	WORD version;		/* Highbyte Cookieversion (BCD-Format) */
-	/* Lowbyte Programmversion (BCD-Format) */
-	WORD installed;		/* Flag fuer Fonts angemeldet */
-	WORD cdecl (*afnt_getinfo)(WORD af_gtype, WORD *af_gout1, WORD *af_gout2, WORD *af_gout3, WORD *af_gout4);
-} AFNT;
+
 
 /**
  * Diese Routine initialisiert die userdefinierten Objekte und oeffnet
@@ -136,11 +128,11 @@ WORD initDudolib(void) {
 	}
 
 	/* AES Font ermitteln und in dieser Groesse fuer die virtuelle Workstation setzen. */
-	if (vq_gdos() != 0 && appl_xgetinfo(0, &fontheight, &fontid, &fonttype, &du) > 0) {
+	if (vq_gdos() != 0 && appl_getinfo(0, &fontheight, &fontid, &fonttype, &du) > 0) {
 		/* Workaround fuer WDIALOG-Problem mit N.AES */
 		while ((fontid == 0) && (fontheight == 0)) {
 			evnt_timer(100L);
-			appl_xgetinfo(0, &fontheight, &fontid, &fonttype, &du);
+			appl_getinfo(0, &fontheight, &fontid, &fonttype, &du);
 		}
 		if (fontid != vst_font(userdef->vdi_handle, fontid)) {
 			vst_load_fonts(userdef->vdi_handle, 0);
@@ -289,7 +281,7 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 			/*
 			 * MagiC kompatible Objekttypen auf meine umbiegen, aber
 			 * nur wenn noch kein erweiterter Objekttyp eingetragen
-			 * wurde.
+			 * wurde.
 			 */
 			if ((objectTree[i].ob_state & WHITEBAK) && (objectTree[i].ob_type & 0xFF00) == 0) {
 				switch (objectTree[i].ob_type & 0xff) {
@@ -1247,35 +1239,4 @@ static void transformImages(void) {
 	arrt_sel = checkbox_selected;
 	arrt_sel.fd_addr = temp.fd_addr = (void *)arrtsel;
 	vr_trnfm(userdef->vdi_handle, &temp, &arrt_sel);
-}
-
-/**
- *
- */
-static BOOLEAN get_cookie(LONG cookie, LONG *value) {
-	LONG oldstack, *cookiejar;
-
-	/* Zeiger auf Cookiejar holen */
-	if (Super((void *) 1L) == 0L) {
-		oldstack = Super(0L);
-		cookiejar = *((LONG **) 0x5a0L);
-		Super((void *) oldstack);
-	} else
-		cookiejar = *(LONG **) 0x5a0;
-
-	/* Ist der Cookiejar vorhanden ? */
-	if (cookiejar == 0L)
-		return (FALSE);
-
-	do {
-		if (cookiejar[0] == cookie) {
-			if (value != NULL)
-				*value = cookiejar[1];
-
-			return (TRUE);
-		} else
-			cookiejar = &(cookiejar[2]);
-	} while (cookiejar[-2]);
-
-	return (FALSE);
 }
