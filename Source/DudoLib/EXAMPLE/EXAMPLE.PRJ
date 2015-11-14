@@ -31,7 +31,9 @@ mintlib.lib
 
 ; PureC Lib
 pcstdlib.lib
-pcgemlib.lib
+
+;GEMLib
+gem.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
-memdebug.lib
+; memdebug.lib

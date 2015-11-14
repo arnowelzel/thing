@@ -21,8 +21,7 @@
  * @license    LGPL
  */
 
-#include <aes.h>
-#include <vdi.h>
+#include <gem.h>
 
 #include "example.h"
 #include "..\include\dudolib.h"
@@ -143,7 +142,7 @@ void main(void) {
 	} while (objectExitIdx != ENDE);
 
 	form_dial(FMD_FINISH, size.g_x, size.g_y, size.g_w, size.g_h, size.g_x, size.g_y, size.g_w, size.g_h);
-	setObjectState(example, objectExitIdx, SELECTED, FALSE);
+	setObjectState(example, objectExitIdx, OS_SELECTED, FALSE);
 
 	wind_update(END_UPDATE);
 	wind_update(END_MCTRL);
