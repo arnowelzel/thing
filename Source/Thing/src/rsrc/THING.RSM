@@ -1,10 +1,10 @@
-ResourceMaster v4.0 ž   
+ResourceMaster v3.65   
 #C 52@0@0@0@
 #N 99@0@AZAaza___  _@AZAaza090___  _@@_@
 #FoHRD@rsm2out@HRD@hrd@@@[HRD-File@0@
 #FoC-Header@rsm2out@C-Header@h@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 00013100@17741@7728@67@
+#M 00013000@17741@7728@74@
 #L 4@german@english@french@italy@
 #T 0@2@LANGUAGE@@16@@@@@
 #O 1@28@LANGFONT@@@@@
@@ -121,7 +121,7 @@ ResourceMaster v4.0 ž
 #O 20@26@MAHELP@@@@@
 #O 21@26@MAOK@@@@@
 #O 22@26@MACANCEL@@@@@
-#T 7@2@FONT@@42@@@@@
+#T 7@2@FONT@@41@@@@@
 #O 1@28@FOTITLE@@@@@
 #O 2@25@FOSAMPLE@@@@@
 #O 3@21@FOID@@@@@
@@ -135,27 +135,26 @@ ResourceMaster v4.0 ž
 #O 14@25@FOFCOL@@@@@
 #O 15@28@FOBCOLS@@@@@
 #O 17@25@FOBCOL@@@@@
-#O 18@25@FOSUB@@@@@
-#O 19@25@FOSATTR@@@@@
-#O 21@26@FOATTR1@@@@@
-#O 22@26@FOATTR2@@@@@
-#O 23@26@FOATTR3@@@@@
-#O 24@26@FOATTR4@@@@@
-#O 25@26@FOATTR5@@@@@
-#O 26@26@FOATTR6@@@@@
-#O 27@26@FOATTR7@@@@@
-#O 28@25@FOSVIEW@@@@@
-#O 30@26@FOVSIZE@@@@@
-#O 31@26@FOVDATE@@@@@
-#O 32@26@FOVTIME@@@@@
-#O 33@26@FOVFLAG@@@@@
-#O 34@28@FOBPATS@@@@@
-#O 36@25@FOBPAT@@@@@
-#O 37@26@FOIMGF@@@@@
-#O 38@21@FOIMG@@@@@
-#O 39@26@FOHELP@@@@@
-#O 40@26@FOOK@@@@@
-#O 41@26@FOCANCEL@@@@@
+#O 18@28@FOBPATS@@@@@
+#O 20@25@FOBPAT@@@@@
+#O 21@26@FOIMGF@@@@@
+#O 22@21@FOIMG@@@@@
+#O 23@26@FOHELP@@@@@
+#O 24@26@FOOK@@@@@
+#O 25@26@FOCANCEL@@@@@
+#O 26@25@FOSATTR@@@@@
+#O 28@26@FOATTR1@@@@@
+#O 29@26@FOATTR2@@@@@
+#O 30@26@FOATTR3@@@@@
+#O 31@26@FOATTR4@@@@@
+#O 32@26@FOATTR5@@@@@
+#O 33@26@FOATTR6@@@@@
+#O 34@26@FOATTR7@@@@@
+#O 35@25@FOSVIEW@@@@@
+#O 37@26@FOVSIZE@@@@@
+#O 38@26@FOVDATE@@@@@
+#O 39@26@FOVTIME@@@@@
+#O 40@26@FOVFLAG@@@@@
 #T 8@2@FORMAT@@16@@@@@
 #O 4@26@FMDRIVEA@@@@@
 #O 5@26@FMDRIVEB@@@@@
@@ -656,4 +655,4 @@ ResourceMaster v4.0 ž
 #O 22@26@HKCHANGE@@@@@
 #O 23@26@HKDELETE@@@@@
 #T 51@2@CHOOSEHOTKEY@@2@@@@@
-#c 26633@
+#c 26350@

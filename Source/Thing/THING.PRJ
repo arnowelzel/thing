@@ -34,6 +34,8 @@ src\config.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thg
 src\console.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h)
 src\desk.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h, ..\thingimg\include\thingimg.h) [ -T- ]
 src\dialog.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h)
+src\dlabout.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h, include\jobid.h, ..\xhdi\xhdi.h) [ -T- ]
+src\dlfont.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h, include\jobid.h, ..\xhdi\xhdi.h) [ -T- ]
 src\dlmenu.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h, include\jobid.h, ..\xhdi\xhdi.h) [ -T- ]
 src\dragdrop.c (include\dragdrop.h) [ -T- ]
 src\gemdos.c (include\globdef.h, include\types.h, src\rsrc\thing.h, src\rsrc\thgtxt.h)
@@ -90,7 +92,7 @@ gem.lib
 devlock.lib
 
 ; Memdebug - only used when enabled (with -DMEMDEBUG)
-;memdebug.lib
+memdebug.lib
 
 ; NVDI 5 Bindings - only used when enabled (with -DWITH_NVDI5)
 ;nvdi5.lib
