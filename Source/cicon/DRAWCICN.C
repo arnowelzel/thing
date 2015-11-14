@@ -67,7 +67,7 @@
 #include <memdebug.h>
 #endif
 #ifdef WITH_NVDI5
-#include "..\nvdi5\include\vdicol.h"
+/* #include "..\nvdi5\include\vdicol.h" */
 #endif
 #include <dudolib.h>
 #ifdef USE_PMALLOC
@@ -98,7 +98,7 @@ static WORD			fonts_loaded;
 static WORD			font_id;
 static WORD			font_size;
 #ifdef WITH_NVDI5
-static WORD			has_vr_transfer_bits;
+  static WORD			has_vr_transfer_bits;
 #endif
 static void			*ctab;
 
@@ -159,8 +159,9 @@ short init_cicon(void)
   src.fd_stand = 0;
   vr_trnfm(handle, &src, &dst);
   truecolor = black[0] == 0;
+
 /* Get ID and size of the small system font */
-  if (appl_xgetinfo(1, &font_size, &font_id, &d, &d) != 0)
+  if (appl_getinfo(1, &font_size, &font_id, &d, &d) != 0)
   {
    if (vst_font(handle, font_id) != font_id)
    {
@@ -203,7 +204,7 @@ short init_cicon_with_palette(WORD *pal)
 #ifdef WITH_NVDI5
 	static COLOR_TAB256	table;
 	WORD				i;
-	short16				idx;
+	WORD				idx;
 
 	if (!init_cicon())
 		return(0);
@@ -405,7 +406,7 @@ static WORD change_cicons(OBJECT *tree, WORD obj, DCINFO *dinfo)
 	WORD		(*reuse)(WORD *, WORD *, WORD, WORD, WORD, WORD,
 					void *);
 
-	if ((tree[obj].ob_type & 0x00ff) != _G_CICON)
+	if ((tree[obj].ob_type & 0x00ff) != G_CICON)
 		return(0);
 	block = (_CICONBLK *)tree[obj].ob_spec.free_string;
 /*
@@ -436,11 +437,12 @@ static WORD change_cicons(OBJECT *tree, WORD obj, DCINFO *dinfo)
 	act->next = last;
 	act->original = block;
 	ptu = nplanes;
+
 /* Check if we can find icon-data that fits the current resolution */
 	for (i = block->mainlist; (i != NULL) && (i->num_planes !=
 		nplanes); i = i->next_res);
 #ifdef WITH_NVDI5
-	if ((i == NULL) || (has_vr_transfer_bits  && (nplanes == 8)))
+	if ((i == NULL) || (has_vr_transfer_bits && (nplanes == 8)))
 #else
 	if (i == NULL)
 #endif
@@ -606,6 +608,7 @@ static WORD change_cicons(OBJECT *tree, WORD obj, DCINFO *dinfo)
  * be used in any color-depth).
  */
 check_oneplane:
+
 		for (i = block->mainlist; (i != NULL) && (i->num_planes != 1);
 			i = i->next_res);
 		if (i == NULL)
@@ -669,6 +672,7 @@ fill_struct:
 		return(0);
 	}
 make_monoicon:
+
 	if (act)
 	{
 		dinfo->first = last;
@@ -928,9 +932,11 @@ static WORD reuse_bitmap(WORD *source, WORD *dest, WORD w, WORD h,
 	xy[3] = xy[7] = h - 1;
 	memset(copy, 0, psize * 16);
 	wdwxh = (LONG)wdw * h;
+/*
 #ifdef __PUREC__
 	convert_data(copy, plane_used, source, pixel_mult, wdwxh);
 #else
+*/
 	dpos = copy;
 	for (i = 0; i < 16; i++)
 	{
@@ -963,7 +969,10 @@ static WORD reuse_bitmap(WORD *source, WORD *dest, WORD w, WORD h,
 		}
 		dpos++;
 	}
+/*
 #endif
+*/
+
 /*
  * After that conversion, the single-plane-bitmaps are transformed
  * into device-dependent format and copied into the destination-area
@@ -1017,17 +1026,18 @@ static WORD reuse_bitmap_nvdi5(WORD *source, WORD *dest,
 {
 	GCBITMAP	src,
 				dst;
-	int16		xy[8];
+	short		xy[8];
 
 /* Fill the source and destination bitmap structure */
 	src.magic = CBITMAP_MAGIC;
-	src.length = 64;
+	src.length = sizeof (GCBITMAP);
 	src.format = 0;
 	src.reserved = 0;
-	src.addr = (uint8 *)source;
-	src.width = ((int32)w * snp) >> 3;
+	src.addr = (unsigned char *)source;
+	src.width = ((long)w * snp) >> 3;
 	src.bits = snp;
 	src.px_format = PX_PLANES + PX_1COMP;
+
 	switch (snp)
 	{
 		case 2:
@@ -1053,8 +1063,8 @@ static WORD reuse_bitmap_nvdi5(WORD *source, WORD *dest,
 	src.itab = 0L;
 	src.reserved0 = src.reserved1 = 0;
 	dst = src;
-	dst.addr = (uint8 *)dest;
-	dst.width = ((int32)w * dnp) >> 3;
+	dst.addr = (unsigned char *)dest;
+	dst.width = ((long)w * dnp) >> 3;
 	dst.bits = dnp;
 	vq_px_format(handle, &dst.px_format);
 	dst.ctab = 0L;

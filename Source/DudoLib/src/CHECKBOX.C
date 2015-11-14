@@ -130,8 +130,7 @@ WORD cdecl checkbox(PARMBLK *parmblock) {
 
 		vswr_mode(userdef->vdi_handle, MD_TRANS);
 		vst_color(userdef->vdi_handle, G_BLACK);
-		text_effects = TF_NORMAL;
-		v_xgtext(parmblock->pb_x + userdef->img_width + userdef->spaceChar_w, parmblock->pb_y, text_effects, ubparm, parmblock);
+		v_xgtext(parmblock->pb_x + userdef->img_width + userdef->spaceChar_w, parmblock->pb_y, TF_NORMAL, ubparm, parmblock);
 
 		clipping(parmblock, FALSE);
 

@@ -525,7 +525,7 @@ static void get_objects(RSINFO *rinfo)
 					(ICONBLK *)((LONG)rinfo->rsc_file +
 					(LONG)rinfo->rs_object[i].ob_spec.iconblk);
 				break;
-			case _G_CICON:
+			case G_CICON:
 				rinfo->rs_object[i].ob_spec.free_string = (char *)
 					rinfo->rs_ciconblk[(LONG)rinfo->rs_object[i].ob_spec.iconblk];
 				break;
