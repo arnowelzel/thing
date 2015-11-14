@@ -431,6 +431,12 @@ DEBUGLOG((1, "..3\n"));
 		strcpy(glob.cpath, p);
 	}
 
+	p = getenv("THINGDIR_BETA");
+	if (p) {
+		strcpy(tb.homepath, p);
+		strcpy(glob.cpath, p);
+	}
+
 	/* Startverzeichnis mit abschliessendem '\' versehen */
 	l = (short) strlen(tb.homepath) - 1;
 	if ((l > 0) && (tb.homepath[l] != '\\'))
