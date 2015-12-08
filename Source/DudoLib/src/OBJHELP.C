@@ -35,7 +35,7 @@ WORD getObjectParent(OBJECT *objectTree, WORD objectIdx) {
 
 	/* Root-Objekt hat kein Eltern-Object */
 	if (objectIdx == 0)
-		return (NIL);
+		return (-1); /* NIL */
 
 	for (i = objectIdx;; i = objectTree[i].ob_next) {
 		/* Falls ob_tail des naechsten Objekts das aktuelle ist, so ist dies das Eltern-Objekt */

@@ -793,7 +793,7 @@ static void fixPopup(OBJECT *objectTree, WORD objectIdx) {
 	WORD j;
 
 	j = objectTree[objectIdx].ob_head;
-	if (j == NIL)
+	if (j == -1 ) /* NIL */
 		return;
 
 	do {

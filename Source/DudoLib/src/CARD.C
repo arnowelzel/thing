@@ -215,7 +215,7 @@ short getActiveCardBodyIdx(CARD *card) {
 
 	activeCard = getActiveCard(card);
 	if (activeCard == NULL)
-		return (NIL);
+		return (-1); /* NIL */
 
 	return (activeCard->body);
 }
@@ -326,9 +326,9 @@ void handleEditfields(CARD *card, WORD objectIdx, BOOLEAN show) {
 	 * Laeuft ueber alle Kindobjeckte, der aktuellen Ebene.
 	 * Abbruchbedingung:
 	 *   i == objectIndex (i = letztes Objekt, ob_head = parent)
-	 *   i == NIL (es gibt kein Kind)
+	 *   i == NIL (-1) (es gibt kein Kind)
 	 */
-	for (i = card->objectTree[objectIdx].ob_head; (i != objectIdx) && (i != NIL); i = card->objectTree[i].ob_next) {
+	for (i = card->objectTree[objectIdx].ob_head; (i != objectIdx) && (i != -1); i = card->objectTree[i].ob_next) {
 		/* editierbare Objekte finden: */
 		if (show) {
 			if (card->savedObjectFlags[i] & OF_EDITABLE) {
