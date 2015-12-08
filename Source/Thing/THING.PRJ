@@ -3,7 +3,7 @@
 
 app\Thing.app
 
-.C [ -J -Z -M -P -Y -G -V]
+.C [ -J -Z -M -P -Y -G- -V]
 ;.C [ -T ]
 .C [ -DDIRCH ]
 ;.C [ -DTB_EXTENSIONS ]
@@ -15,7 +15,9 @@ app\Thing.app
 ;.C [ -DWITH_NVDI5 ]	; NVDI support for Color Icon Routines
 
 .S [ -Y ]
-.L [ -S=65536 ]
+
+.L [ -S=65536 -V]
+.L [ -G -L -Y]				; add debug info
 
 =
 

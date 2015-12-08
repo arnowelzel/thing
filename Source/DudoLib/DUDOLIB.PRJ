@@ -3,11 +3,12 @@
 
 lib\dudolib.lib
 
-.C [ -P -C -Y ]
+.C [ -P -C -Y -Z -J -M]
 .C [ -D-_USR_EDITFIELD_ ]	; include 'editfields'
-.C [ -D-MEMDEBUG ]			; Memdebug support for debugging memory leaks
+; .C [ -DMEMDEBUG ]			; Memdebug support for debugging memory leaks
 
 .L [ -J ]
+.L [ -G -L -Y]				; add debug info
 
 =
 
