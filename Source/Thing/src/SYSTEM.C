@@ -52,7 +52,7 @@ void title_update(short drive);
 /*------------------------------------------------------------------*/
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
-extern BYTE *aesBuffer;
+extern BYTE *aesbuf;
 
 /**
  put_text()
@@ -737,7 +737,7 @@ void show_help(char *ref) {
 				app_default(&app);
 				app.overlay = 0;
 				app.single = 0;
-				app_start(&app, aesBuffer, 0L, &rex);
+				app_start(&app, aesbuf, 0L, &rex);
 			}
 		}
 		if (!ok)

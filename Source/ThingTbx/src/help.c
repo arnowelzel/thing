@@ -34,7 +34,7 @@
 /*------------------------------------------------------------------*/
 /*  external variables                                              */
 /*------------------------------------------------------------------*/
-extern BYTE *aesBuffer;
+extern BYTE *aesbuf;
 
 /**
  show_help()
@@ -49,13 +49,13 @@ WORD showSTGuideHelp(BYTE *helpfile, BYTE *reference) {
 	if (ap_id < 0)
 		return (FALSE);
 
-	strcpy(aesBuffer, "*:\\");
-	strcat(aesBuffer, helpfile);
+	strcpy(aesbuf, "*:\\");
+	strcat(aesbuf, helpfile);
 	if (reference) {
-		strcat(aesBuffer, " ");
-		strcat(aesBuffer, reference);
+		strcat(aesbuf, " ");
+		strcat(aesbuf, reference);
 	}
-	appl_send(ap_id, VA_START, PT34, (long) aesBuffer, 0, 0, 0, 0);
+	appl_send(ap_id, VA_START, PT34, (long) aesbuf, 0, 0, 0, 0);
 
 	return (TRUE);
 }

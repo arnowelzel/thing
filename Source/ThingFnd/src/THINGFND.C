@@ -52,6 +52,7 @@
 /*------------------------------------------------------------------*/
 char *aesapname, *altitle = "ThingFnd", almsg[256];
 short aesmsg[8];
+char *aesbuf;
 EVENT mevent;
 GLOB glob;
 RSINFO rinfo;
@@ -66,7 +67,6 @@ FORMINFO fi_status = { 0L, STATUS, 0, ROOT, 0, 0, 0, 0, 0L, 0L, 0, "%status", SC
 /*------------------------------------------------------------------*/
 /*  external variables                                              */
 /*------------------------------------------------------------------*/
-extern BYTE *aesBuffer;
 
 /*------------------------------------------------------------------*/
 /*  local functions                                                 */
@@ -680,8 +680,8 @@ dfg_parseerr:
 		frm_alert(1, rinfo.rs_frstr[ALFAILURE], altitle, 1, 0L);
 	} else {
 		if (glob.tid >= 0) {
-			strcpy(aesBuffer, glob.rname);
-			appl_send(glob.tid, AV_STARTPROG, PT34, (long) aesBuffer, 0L, 0L, 0L, 0L);
+			strcpy(aesbuf, glob.rname);
+			appl_send(glob.tid, AV_STARTPROG, PT34, (long) aesbuf, 0L, 0L, 0L, 0L);
 		} else
 			frm_alert(1, rinfo.rs_frstr[ALNOTHING], altitle, 1, 0L);
 	}
@@ -1309,7 +1309,7 @@ BOOLEAN main_init(void) {
 	Psignal(SIGQUIT, 1L);
 	Psignal(SIGHUP, 1L);
 
-	aesBuffer = 0L;
+	aesbuf = 0L;
 	aesapname = 0L;
 	glob.menu = 0;
 	glob.avid = -1;
@@ -1381,7 +1381,7 @@ BOOLEAN main_init(void) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
 		return (FALSE);
 	}
-	aesBuffer = &aesapname[9];
+	aesbuf = &aesapname[9];
 	/* Sonst initialisieren */
 	strcpy(aesapname, "THINGFND");
 

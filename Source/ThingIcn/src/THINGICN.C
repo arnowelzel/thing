@@ -51,6 +51,7 @@
 /*  global variables                                                */
 /*------------------------------------------------------------------*/
 char *aesapname, *altitle = "ThingIcn", almsg[256], *edas, **edlist;
+char *aesbuf;
 short aesmsg[8], edobj;
 EVENT mevent;
 ICONINFO *edicon;
@@ -67,8 +68,6 @@ RSINFO rinfo;
 /*------------------------------------------------------------------*/
 /*  external variables                                              */
 /*------------------------------------------------------------------*/
-extern BYTE *aesBuffer;
-
 /*------------------------------------------------------------------*/
 /*  local functions                                                 */
 /*------------------------------------------------------------------*/
@@ -1040,8 +1039,8 @@ void drag_on_window(short handle, short mx, short my, char *buf) {
 	ASINFO *as, *q;
 
 	graf_mkstate(&d, &d, &d, &ks);
-	aesBuffer[MAX_AVLEN - 1] = 0;
-	strncpy(aesBuffer, buf, MAX_AVLEN - 1);
+	aesbuf[MAX_AVLEN - 1] = 0;
+	strncpy(aesbuf, buf, MAX_AVLEN - 1);
 	if (handle != glob.rwin->handle) {
 		if (!fi_asedit.open || (handle != fi_asedit.win.handle)) {
 			mybeep();
@@ -1062,7 +1061,7 @@ void drag_on_window(short handle, short mx, short my, char *buf) {
 		for (q = icon->as; q != NULL; q = q->next)
 			assigns++;
 	}
-	buf = aesBuffer;
+	buf = aesbuf;
 	while (get_buf_entry(buf, fname, &buf)) {
 		class = 0; /* Datei */
 		p = strrchr(fname, '\\');
@@ -2764,7 +2763,7 @@ short main_init(void) {
 	char *p, aname[9], rsrcName[13];
 	OBJECT *tree;
 
-	aesBuffer = 0L;
+	aesbuf = 0L;
 	aesapname = 0L;
 	glob.menu = glob.change = 0;
 	glob.numassign = glob.numicon = glob.multiple = 0;
@@ -2847,7 +2846,7 @@ short main_init(void) {
 		frm_alert(1, rinfo.rs_frstr[ALNOMEM], altitle, 1, 0L);
 		return (0);
 	}
-	aesBuffer = &aesapname[9];
+	aesbuf = &aesapname[9];
 	/* Sonst initialisieren */
 	strcpy(aesapname, "THINGICN");
 
