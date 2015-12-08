@@ -143,19 +143,20 @@
 #define FOHELP 23  /* BUTTON in tree FONT */
 #define FOOK 24  /* BUTTON in tree FONT */
 #define FOCANCEL 25  /* BUTTON in tree FONT */
-#define FOSATTR 26  /* IBOX in tree FONT */
-#define FOATTR1 28  /* BUTTON in tree FONT */
-#define FOATTR2 29  /* BUTTON in tree FONT */
-#define FOATTR3 30  /* BUTTON in tree FONT */
-#define FOATTR4 31  /* BUTTON in tree FONT */
-#define FOATTR5 32  /* BUTTON in tree FONT */
-#define FOATTR6 33  /* BUTTON in tree FONT */
-#define FOATTR7 34  /* BUTTON in tree FONT */
-#define FOSVIEW 35  /* IBOX in tree FONT */
-#define FOVSIZE 37  /* BUTTON in tree FONT */
-#define FOVDATE 38  /* BUTTON in tree FONT */
-#define FOVTIME 39  /* BUTTON in tree FONT */
-#define FOVFLAG 40  /* BUTTON in tree FONT */
+#define FOSUB 32  /* IBOX in tree FONT */
+#define FOSVIEW 26  /* IBOX in tree FONT */
+#define FOVSIZE 28  /* BUTTON in tree FONT */
+#define FOVDATE 29  /* BUTTON in tree FONT */
+#define FOVTIME 30  /* BUTTON in tree FONT */
+#define FOVFLAG 31  /* BUTTON in tree FONT */
+#define FOSATTR 33  /* IBOX in tree FONT */
+#define FOATTR1 35  /* BUTTON in tree FONT */
+#define FOATTR2 36  /* BUTTON in tree FONT */
+#define FOATTR3 37  /* BUTTON in tree FONT */
+#define FOATTR4 38  /* BUTTON in tree FONT */
+#define FOATTR5 39  /* BUTTON in tree FONT */
+#define FOATTR6 40  /* BUTTON in tree FONT */
+#define FOATTR7 41  /* BUTTON in tree FONT */
 
 #define FORMAT 8  /* form/dial */
 #define FMDRIVEA 4  /* BUTTON in tree FORMAT */
