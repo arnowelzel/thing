@@ -507,7 +507,7 @@ static void de_find_go(OBJECT *objectTree) {
 	temp = find;
 	temp.drvbits = 0L;
 	if (isObjectSelected(objectTree, FON)) {
-		fprintf(stderr, "1.1 ");
+/*		fprintf(stderr, "1.1 "); */
 		p = getObjectText(objectTree, FDRIVES);
 		start = -1;
 		while (*p) {
@@ -612,7 +612,7 @@ dfg_parseerr:
 		temp.minsize = 0L;
 		temp.maxsize = 0x7fffffffL;
 	}
-	fprintf(stderr, "5 ");
+/*	fprintf(stderr, "5 "); */
 	temp.grep = isObjectSelected(objectTree, FCONTENTS);
 	temp.cm_case = isObjectSelected(objectTree, FCCASE);
 	temp.cm_binary = isObjectSelected(objectTree, FCBINARY);
