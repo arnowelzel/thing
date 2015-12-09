@@ -45,7 +45,7 @@ short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 	switch ( (int) value )
 	{
 		case 0:
-	     strcpy ( sysLanguageCode, "en" );
+	      strcpy ( sysLanguageCode, "en" );
         strcpy ( sysLanguageCodeLong, "english" );
 		break;
 		case 1:
@@ -60,8 +60,12 @@ short getSystemLanguage(BYTE *sysLanguageCode, BYTE *sysLanguageCodeLong )
 	     strcpy ( sysLanguageCode, "it" );
 	     strcpy ( sysLanguageCodeLong, "italy" );
 		break;
+		case 14:
+	     strcpy ( sysLanguageCode, "du" );
+	     strcpy ( sysLanguageCodeLong, "dutch" );
+		break;
 		default:
-		  strcpy ( sysLanguageCode, "en" );
+		   strcpy ( sysLanguageCode, "en" );
 	     strcpy ( sysLanguageCodeLong, "english" );
 		break;
 	}
