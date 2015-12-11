@@ -6290,4 +6290,21 @@ short win_update(short mode) {
 	return (1);
 }
 
+
+/**
+ * Ermitteln des aktiven Fensters - liefert auch unter MagiC 2 das richtige
+ * Handle!
+ */
+
+void get_twin(short *handle)
+{
+	short twin, magictop, dummy;
+
+	wind_get(0, WF_TOP, &twin, &dummy, &dummy, &magictop);
+	if (twin == -2)
+		*handle = magictop;
+	else
+		*handle = twin;
+}
+ 
 /* EOF */

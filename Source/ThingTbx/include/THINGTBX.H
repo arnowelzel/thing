@@ -530,11 +530,11 @@ char *appl_name(short id, char *deflt);
 void appl_send(short id, short message, short pointers, long par1, long par2, long par3, long par4, long par5);
 short calc_small_text_width(char *text);
 short win_update(short mode);
+void get_twin(short *handle);
 
 /*-------------------------------------------------------------------------
  Aus TOOLMCOD.S
  -------------------------------------------------------------------------*/
 extern OSHEADER *get_oshdr(void);
-extern void get_twin(short *handle);
 
 #endif
