@@ -157,10 +157,10 @@ BOOLEAN getObjectFlags(OBJECT *objectTree, WORD objectIdx, BOOLEAN objectFlags) 
  * @param *objectTree Zeiger auf Objekt-Baum
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt oder geloescht werden sollen
  * @param ob_flags der zu setzende oder loeschende Wert
- * @param set TRUE - setzen, FALSE loeschen
+ * @param set FALSE loeschen, sonst setzen
  */
 void setObjectFlags(OBJECT *objectTree, WORD objectIdx, WORD objectFlags, BOOLEAN set) {
-	if (set == TRUE)
+	if (set)
 		objectTree[objectIdx].ob_flags |= objectFlags;
 	else
 		objectTree[objectIdx].ob_flags &= ~objectFlags;
@@ -210,10 +210,10 @@ BOOLEAN isObjectDisabled(OBJECT *objectTree, WORD objectIdx) {
  * @param *objectTree Zeiger auf Objekt-Baum
  * @param objectIdx Objekt-Index des Objekts, dessen Werte gesetzt  werden sollen
  * @param objectState die zu setzenden Werte
- * @param set TRUE - objectState wird gesetzt, FALSE - objectState wird geloescht
+ * @param set FALSE - objectState wird geloescht, sonst - objectState wird gesetzt
  */
 void setObjectState(OBJECT *objectTree, WORD objectIdx, WORD objectState, BOOLEAN set) {
-	if (set == TRUE)
+	if (set)
 		objectTree[objectIdx].ob_state |= objectState;
 	else
 		objectTree[objectIdx].ob_state &= ~objectState;
