@@ -494,6 +494,7 @@ DEBUGLOG((1, "..3\n"));
 		sprintf(rsrcName, "%s%s\\thgtxt\\english.rsc", tb.homepath, PNAME_RSC);
 		if (!rsc_load(rsrcName, &rinfo2)) {
 			frm_alert(1, "[3][THINGTXT.RSC nicht gefunden!|THINGTXT.RSC not found!][ OK ]", altitle, 1, 0L);
+			conf.userdef = 0;							/* Keine RSC, dann muss auch kein USERDEF freigeben werden */
 			return (FALSE);
 		}
 	}
