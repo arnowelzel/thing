@@ -5,7 +5,7 @@ ResourceMaster v3.65
 #FoC-Header@rsm2out@C-Header@h@@@[C-Header@0@
 #FoBGH@rsm2out@BGH@bgh@@@[BubbleGEM HELP-File@1@
 #R 0@0@1@1@1@1@
-#M 00013000@17741@7728@84@
+#M 00013000@17741@7728@85@
 #L 5@german@english@french@italy@dutch@
 #T 0@2@LANGUAGE@@16@@@@@@
 #O 1@28@LANGFONT@@@@@@
@@ -657,4 +657,4 @@ ResourceMaster v3.65
 #O 22@26@HKCHANGE@@@@@@
 #O 23@26@HKDELETE@@@@@@
 #T 51@2@CHOOSEHOTKEY@@2@@@@@@
-#c 17169@
+#c 16235@
