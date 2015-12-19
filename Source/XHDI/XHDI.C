@@ -9,62 +9,38 @@
     Important:
     
     Do calls only if XHGetVersion() was successful
+    
+    Modifiy for used with MiNTLib. Gerhard Stoll, 2015-12-01
+    
 */
 
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <tos.h>
+#include <mintbind.h>
 
 #include "xhdi.h"
 
 #define XHDIMAGIC 0x27011992L
 
-typedef LONG cdecl (*cookie_fun)(UWORD opcode,...);
-
-static long
-cookieptr (void)
-{
-	return *((long *)0x5a0);
-}
-
-static int
-getcookie (long cookie, long *p_value)
-{
-	long *cookiejar = (long *)Supexec (cookieptr);
-
-	if (!cookiejar) return 0;
-
-	do
-	{
-		if (cookiejar[0] == cookie)
-		{
-			if (p_value) *p_value = cookiejar[1];
-			return 1;
-		}
-		else
-			cookiejar = &(cookiejar[2]);
-	} while (cookiejar[-2]);
-
-	return 0;
-}
+typedef long cdecl (*cookie_fun)(unsigned short opcode,...);
 
 static cookie_fun
 get_fun_ptr (void)
 {
 	static cookie_fun XHDI = NULL;
-	static int have_it = 0;
+	static short have_it = 0;
 	
 	if (!have_it)
 	{
-		LONG *magic_test;
+		long *magic_test;
 	
-		getcookie ('XHDI', (LONG *)&XHDI);
+		Getcookie ('XHDI', (long *)&XHDI);
 		have_it = 1;
 
 		/* check magic */
 		
-		magic_test = (LONG *)XHDI;
+		magic_test = (long *)XHDI;
 		if (magic_test && (magic_test[-1] != XHDIMAGIC))
 			XHDI = NULL;
 	}
@@ -73,29 +49,29 @@ get_fun_ptr (void)
 }
 
 
-UWORD
+unsigned short
 XHGetVersion (void)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	UWORD ret = 0;		/* 0: kein Cookie da */
+	long oldstack = 0;
+	unsigned short ret = 0;		/* 0: kein Cookie da */
 
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
 	if (XHDI)
-		ret = (UWORD) XHDI (0);
+		ret = (unsigned short) XHDI (0);
 		
 	if (oldstack) Super ((void *)oldstack);
 	return ret;
 }
 
-LONG
-XHInqTarget (UWORD major, UWORD minor, ULONG *block_size,
-             ULONG *device_flags, char *product_name)
+long
+XHInqTarget (unsigned short major, unsigned short minor, unsigned long *block_size,
+             unsigned long *device_flags, char *product_name)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -106,12 +82,12 @@ XHInqTarget (UWORD major, UWORD minor, ULONG *block_size,
 	return ret;
 }
 
-LONG
-XHReserve (UWORD major, UWORD minor, UWORD do_reserve, UWORD key)
+long
+XHReserve (unsigned short major, unsigned short minor, unsigned short do_reserve, unsigned short key)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -121,12 +97,12 @@ XHReserve (UWORD major, UWORD minor, UWORD do_reserve, UWORD key)
 	return ret;
 }
 
-LONG
-XHLock (UWORD major, UWORD minor, UWORD do_lock, UWORD key)
+long
+XHLock (unsigned short major, unsigned short minor, unsigned short do_lock, unsigned short key)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -136,12 +112,12 @@ XHLock (UWORD major, UWORD minor, UWORD do_lock, UWORD key)
 	return ret;
 }
 
-LONG
-XHStop (UWORD major, UWORD minor, UWORD do_stop, UWORD key)
+long
+XHStop (unsigned short major, unsigned short minor, unsigned short do_stop, unsigned short key)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -151,12 +127,12 @@ XHStop (UWORD major, UWORD minor, UWORD do_stop, UWORD key)
 	return ret;
 }
 
-LONG
-XHEject (UWORD major, UWORD minor, UWORD do_eject, UWORD key)
+long
+XHEject (unsigned short major, unsigned short minor, unsigned short do_eject, unsigned short key)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -166,12 +142,12 @@ XHEject (UWORD major, UWORD minor, UWORD do_eject, UWORD key)
 	return ret;
 }
 
-ULONG
+unsigned long
 XHDrvMap (void)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -181,13 +157,13 @@ XHDrvMap (void)
 	return ret;
 }
 
-LONG
-XHInqDev (UWORD bios_device, UWORD *major, UWORD *minor,
-          ULONG *start_sector, BPB *bpb)
+long
+XHInqDev (unsigned short bios_device, unsigned short *major, unsigned short *minor,
+          unsigned long *start_sector, _BPB *bpb)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -197,13 +173,13 @@ XHInqDev (UWORD bios_device, UWORD *major, UWORD *minor,
 	return ret;
 }
 
-LONG
-XHInqDriver (UWORD bios_device, char *name, char *version,
-	char *company, UWORD *ahdi_version, UWORD *maxIPL)
+long
+XHInqDriver (unsigned short bios_device, char *name, char *version,
+	char *company, unsigned short *ahdi_version, unsigned short *maxIPL)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -214,12 +190,12 @@ XHInqDriver (UWORD bios_device, char *name, char *version,
 	return ret;
 }
 
-LONG
+long
 XHNewCookie (void *newcookie)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -229,13 +205,13 @@ XHNewCookie (void *newcookie)
 	return ret;
 }
 
-LONG
-XHReadWrite (UWORD major, UWORD minor, UWORD rwflag,
-             ULONG recno, UWORD count, void *buf)
+long
+XHReadWrite (unsigned short major, unsigned short minor, unsigned short rwflag,
+             unsigned long recno, unsigned short count, void *buf)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -245,14 +221,14 @@ XHReadWrite (UWORD major, UWORD minor, UWORD rwflag,
 	return ret;
 }
 
-LONG
-XHInqTarget2 (UWORD major, UWORD minor, ULONG *block_size,
-              ULONG *device_flags, char *product_name,
-              UWORD stringlen)
+long
+XHInqTarget2 (unsigned short major, unsigned short minor, unsigned long *block_size,
+              unsigned long *device_flags, char *product_name,
+              unsigned short stringlen)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -263,14 +239,14 @@ XHInqTarget2 (UWORD major, UWORD minor, ULONG *block_size,
 	return ret;
 }
 
-LONG
-XHInqDev2 (UWORD bios_device, UWORD *major, UWORD *minor,
-           ULONG *start_sector, BPB *bpb, ULONG *blocks,
+long
+XHInqDev2 (unsigned short bios_device, unsigned short *major, unsigned short *minor,
+           unsigned long *start_sector, _BPB *bpb, unsigned long *blocks,
            char *partid)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -281,12 +257,12 @@ XHInqDev2 (UWORD bios_device, UWORD *major, UWORD *minor,
 	return ret;
 }
 
-LONG
-XHDriverSpecial (ULONG key1, ULONG key2, UWORD subopcode, void *data)
+long
+XHDriverSpecial (unsigned long key1, unsigned long key2, unsigned short subopcode, void *data)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -296,12 +272,12 @@ XHDriverSpecial (ULONG key1, ULONG key2, UWORD subopcode, void *data)
 	return ret;
 }
 
-LONG
-XHGetCapacity (UWORD major, UWORD minor, ULONG *blocks, ULONG *bs)
+long
+XHGetCapacity (unsigned short major, unsigned short minor, unsigned long *blocks, unsigned long *bs)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -311,12 +287,12 @@ XHGetCapacity (UWORD major, UWORD minor, ULONG *blocks, ULONG *bs)
 	return ret;
 }
 
-LONG
-XHMediumChanged (UWORD major, UWORD minor)
+long
+XHMediumChanged (unsigned short major, unsigned short minor)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -326,12 +302,12 @@ XHMediumChanged (UWORD major, UWORD minor)
 	return ret;
 }
 
-LONG
-XHMiNTInfo (UWORD opcode, void *data)
+long
+XHMiNTInfo (unsigned short opcode, void *data)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -341,12 +317,12 @@ XHMiNTInfo (UWORD opcode, void *data)
 	return ret;
 }
 
-LONG
-XHDOSLimits (UWORD which, ULONG limit)
+long
+XHDOSLimits (unsigned short which, unsigned long limit)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -356,12 +332,12 @@ XHDOSLimits (UWORD which, ULONG limit)
 	return ret;
 }
 
-LONG
-XHLastAccess (UWORD major, UWORD minor, ULONG *ms)
+long
+XHLastAccess (unsigned short major, unsigned short minor, unsigned long *ms)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -371,12 +347,12 @@ XHLastAccess (UWORD major, UWORD minor, ULONG *ms)
 	return ret;
 }
 
-LONG
-XHReaccess (UWORD major, UWORD minor)
+long
+XHReaccess (unsigned short major, unsigned short minor)
 {
 	cookie_fun XHDI = get_fun_ptr ();
-	LONG oldstack = 0;
-	LONG ret;
+	long oldstack = 0;
+	long ret;
 	
 	if (!Super ((void *)1L)) oldstack = Super (0L);
 	
@@ -389,7 +365,7 @@ XHReaccess (UWORD major, UWORD minor)
 
 
 void
-XHMakeName (UWORD major, UWORD minor, ULONG start_sector, char *name)
+XHMakeName (unsigned short major, unsigned short minor, unsigned long start_sector, char *name)
 {
 	if (major < 8)
 	{

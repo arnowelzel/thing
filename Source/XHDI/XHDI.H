@@ -14,20 +14,8 @@
 #ifndef __XHDI__
 #define __XHDI__
 
-#ifndef BPB
-#include <tos.h>
-#endif
-
-#ifndef UWORD
-#define UWORD unsigned int
-#endif
-
-#ifndef LONG
-#define LONG long
-#endif
-
-#ifndef ULONG
-#define ULONG unsigned long
+#ifndef _BPB
+#include <mintbind.h>
 #endif
 
 #define XH_TARGET_STOPPABLE     0x00000001L
@@ -57,96 +45,96 @@
 
 
 /* Inquire protocol version number */
-UWORD
+unsigned short
 XHGetVersion (void);
 
 /* Inquire informations about one target */
-LONG
-XHInqTarget (UWORD major, UWORD minor, ULONG *block_size,
-             ULONG *device_flags, char *product_name);
+long
+XHInqTarget (unsigned short major, unsigned short minor, unsigned long *block_size,
+             unsigned long *device_flags, char *product_name);
 
 /* Reserve or release a target */
-LONG
-XHReserve (UWORD major, UWORD minor, UWORD do_reserve, UWORD key);
+long
+XHReserve (unsigned short major, unsigned short minor, unsigned short do_reserve, unsigned short key);
 
 /* Lock or unlock a target with removable media */
-LONG
-XHLock (UWORD major, UWORD minor, UWORD do_lock, UWORD key);
+long
+XHLock (unsigned short major, unsigned short minor, unsigned short do_lock, unsigned short key);
 
 /* Stop or start target */
-LONG
-XHStop (UWORD major, UWORD minor, UWORD do_stop, UWORD key);
+long
+XHStop (unsigned short major, unsigned short minor, unsigned short do_stop, unsigned short key);
 
 /* Eject medium */
-LONG
-XHEject (UWORD major, UWORD minor, UWORD do_eject, UWORD key);
+long
+XHEject (unsigned short major, unsigned short minor, unsigned short do_eject, unsigned short key);
 
 /* Get bit mask of available XHDI devices */
-ULONG
+unsigned long
 XHDrvMap (void);
 
 /* Get major device number (eg. target), minor device number (eg.
    LUN), starting sector and BPB */
-LONG
-XHInqDev (UWORD bios_device, UWORD *major, UWORD *minor,
-          ULONG *start_sector, BPB *bpb);
+long
+XHInqDev (unsigned short bios_device, unsigned short *major, unsigned short *minor,
+          unsigned long *start_sector, _BPB *bpb);
 
 /* Get informations about the driver */
-LONG
-XHInqDriver (UWORD bios_device, char *name, char *version,
-             char *company, UWORD *ahdi_version,
-             UWORD *maxIPL);
+long
+XHInqDriver (unsigned short bios_device, char *name, char *version,
+             char *company, unsigned short *ahdi_version,
+             unsigned short *maxIPL);
 
 /* Install additional XHDI handler */
-LONG
+long
 XHNewCookie (void *newcookie);
 
 /* Do a physical access */
-LONG
-XHReadWrite (UWORD major, UWORD minor, UWORD rwflag,
-             ULONG recno, UWORD count, void *buf);
+long
+XHReadWrite (unsigned short major, unsigned short minor, unsigned short rwflag,
+             unsigned long recno, unsigned short count, void *buf);
 
 /* Make printable device name */
 void
-XHMakeName (UWORD major, UWORD minor, ULONG start_sector, char *name);
+XHMakeName (unsigned short major, unsigned short minor, unsigned long start_sector, char *name);
 
 /* New version of XHInqTarget */
-LONG
-XHInqTarget2 (UWORD major, UWORD minor, ULONG *block_size,
-              ULONG *device_flags, char *product_name,
-              UWORD stringlen);
+long
+XHInqTarget2 (unsigned short major, unsigned short minor, unsigned long *block_size,
+              unsigned long *device_flags, char *product_name,
+              unsigned short stringlen);
               
 /* New version of XHInqDev */
-LONG
-XHInqDev2 (UWORD bios_device, UWORD *major, UWORD *minor,
-           ULONG *start_sector, BPB *bpb, ULONG *blocks, char *partid);
+long
+XHInqDev2 (unsigned short bios_device, unsigned short *major, unsigned short *minor,
+           unsigned long *start_sector, _BPB *bpb, unsigned long *blocks, char *partid);
 
 /* Special opcode for custom driver extensions */
-LONG
-XHDriverSpecial (ULONG key1, ULONG key2, UWORD subopcode, void *data);
+long
+XHDriverSpecial (unsigned long key1, unsigned long key2, unsigned short subopcode, void *data);
 
 /* Inquire drive capacity */
-LONG
-XHGetCapacity (UWORD major, UWORD minor, ULONG *blocks, ULONG *bs);
+long
+XHGetCapacity (unsigned short major, unsigned short minor, unsigned long *blocks, unsigned long *bs);
 
 /* Inform driver about media change */
-LONG
-XHMediumChanged (UWORD major, UWORD minor);
+long
+XHMediumChanged (unsigned short major, unsigned short minor);
 
 /* Get/set MiNT kernel information */
-LONG
-XHMiNTInfo (UWORD opcode, void *data);
+long
+XHMiNTInfo (unsigned short opcode, void *data);
 
 /* Get/set DOS limits */
-LONG
-XHDOSLimits (UWORD which, ULONG limit);
+long
+XHDOSLimits (unsigned short which, unsigned long limit);
 
 /* Get ms since last access */
-LONG
-XHLastAccess (UWORD major, UWORD minor, ULONG *ms);
+long
+XHLastAccess (unsigned short major, unsigned short minor, unsigned long *ms);
 
 /* Force reaccess of device */
-LONG
-XHReaccess (UWORD major, UWORD minor);
+long
+XHReaccess (unsigned short major, unsigned short minor);
 
 #endif
