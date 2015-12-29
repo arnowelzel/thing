@@ -33,6 +33,7 @@
 #include "rsrc\thing.h"
 #include "rsrc\thgtxt.h"
 #include <errno.h>
+#include <.\sys\cookie.h>
 #undef TIMER
 #ifdef TIMER
 #include <time.h>
@@ -482,7 +483,7 @@ void mn_update(void) {
 	mn_istate(MFIND, *conf.finder);
 	mn_istate(MQUIT, !((tb.sys & SY_MSHELL) && !(tb.sys & SY_SHUT)));
 	mn_istate(MCHANGEREZ, !(!(tb.sys & SY_MSHELL) && (getenv("RSMASTER") == 0L)));
-  if ( Getcookie('T2GM', NULL) == E_OK )
+  if ( Getcookie(C_T2GM /*'T2GM'*/, NULL) == E_OK )
 	  mn_istate(MCONSOLE, TRUE);
 	else
 	  mn_istate(MCONSOLE, FALSE);

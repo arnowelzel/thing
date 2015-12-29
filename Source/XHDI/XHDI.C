@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <mintbind.h>
+#include <.\sys\cookie.h>
 
 #include "xhdi.h"
 
@@ -35,7 +36,7 @@ get_fun_ptr (void)
 	{
 		long *magic_test;
 	
-		Getcookie ('XHDI', (long *)&XHDI);
+		Getcookie (C_XHDI /*'XHDI'*/, (long *)&XHDI);
 		have_it = 1;
 
 		/* check magic */

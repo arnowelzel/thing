@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <errno.h>
+#include <.\sys\cookie.h>
 
 #ifdef TIMER
 static clock_t timer;
@@ -782,7 +783,7 @@ DEBUGLOG((0, "wpath_update(%s)\n", wpath->path));
 	}
 
 wpath_update2:
-	if ( (Getcookie('MgMc', 0L) == E_OK) && (Getcookie('SCSI', 0L) == E_OK) ) {
+	if ( (Getcookie(C_MgMc /*'MgMc'*/, 0L) == E_OK) && (Getcookie(C_SCSI /*'SCSI'*/, 0L) == E_OK) ) {
 		_DISKINFO dummy;
 
 		Dfree(&dummy, (wpath->path[0] & ~32) - 'A');
@@ -1536,6 +1537,7 @@ short wpath_open(char *path, char *wildcard, short rel, char *relname, short tex
 		win->flags |= BACKDROP;
 	if (!conf.nohotcloser && (tb.sys & SY_MAGX))
 		win->flags |= HOTCLOSEBOX;
+
 
 	win->state = WSDESKSIZE;
 	win->update = pwin_update;

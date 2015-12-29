@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <.\sys\cookie.h>
 #include <slectric.h>
 #define TOOLBOX_LIB
 #define _TOOLBOX_
@@ -635,20 +636,20 @@ short tool_init(char *apname) {
 	pop_offy = rs_trindex[0]->ob_height - pop_offy;
 
 	/* Aktuelle Systemkonfiguration */
-	if (Getcookie('MagX', (long *) &tb.magx) == E_OK )
+	if (Getcookie(C_MagX /*'MagX'*/, (long *) &tb.magx) == E_OK )
 		tb.sys |= SY_MAGX;
 	else
 		tb.magx = 0L;
-	if (Getcookie('nAES', 0L) == E_OK )
+	if (Getcookie(C_nAES /*'nAES'*/, 0L) == E_OK )
 		tb.sys |= SY_NAES;
-	if (Getcookie('Gnva', 0L) == E_OK )
+	if (Getcookie(C_Gnva /*'Gnva'*/, 0L) == E_OK )
 		tb.sys |= SY_GNVA;
 	if (_AESnumapps != 1) {
 		tb.sys |= SY_MULTI; /* Multitasking */
 		if (_AESversion >= 0x400)
 			tb.sys |= SY_MTOS; /* Und MultiTOS */
 	}
-	if (Getcookie('MiNT', &ldummy) == E_OK)
+	if (Getcookie(C_MiNT /*'MiNT'*/, &ldummy) == E_OK)
 		tb.sys |= SY_MINT; /* MiNT */
 
 	if (Sysconf(-1) != -32L)
@@ -5611,7 +5612,7 @@ short fselect(char *fs_einpath, char *fs_einsel, short *fs_eexbutton, char *elab
 		strcpy(&fpath[(short) strlen(fpath) + 1], "?Fdm");
 
 	/* FSEL-Cookie ermitteln */
-	if (Getcookie('FSEL', (long *) &selectric) != E_OK)
+	if (Getcookie(C_FSEL /*'FSEL'*/, (long *) &selectric) != E_OK)
 		selectric = NULL;
 
 	/* Aufrufen */

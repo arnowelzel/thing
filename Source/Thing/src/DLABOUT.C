@@ -31,6 +31,7 @@
 #include "..\include\globdef.h"
 #include "rsrc\thing.h"
 #include <errno.h>
+#include <.\sys\cookie.h>
 
 /**-------------------------------------------------------------------------
  dl_about()
@@ -88,11 +89,11 @@ void di_ainfo1(void) {
 	iview = getObjectText(objectTree, AIDISPLAY);
 	it2g = getObjectText(objectTree, AITOS2GEM);
 	if (tb.sys & SY_MAGX) {
-		if (Getcookie('MgMc', &dummy) == E_OK )
+		if (Getcookie(C_MgMc /*'MgMc'*/, &dummy) == E_OK )
 			strcpy(ios, "MagiC Mac");
-		else if (Getcookie('MgMx', &dummy) == E_OK )
+		else if (Getcookie(C_MgMx /*'MgMx'*/, &dummy) == E_OK )
 			strcpy(ios, "MagiC Mac X");
-		else if (Getcookie('MgPC', &dummy) == E_OK )
+		else if (Getcookie(C_MgPC /*'MgPC'*/, &dummy) == E_OK )
 			strcpy(ios, "MagiC PC");
 		else
 			sprintf(ios, "MagiC %x", (tb.magx->aesvars->version >> 8) & 0xff);
@@ -144,7 +145,7 @@ void di_ainfo1(void) {
 		sprintf(iview, rs_trindex[LANGUAGE][LANGSCR2].ob_spec.free_string, tb.resx, tb.resy, tb.planes);
 
 	/* System-Infos eintragen - TOS2GEM */
-	if (Getcookie('T2GM', (long *) &t2g) == E_OK) {
+	if (Getcookie(C_T2GM /*'T2GM'*/, (long *) &t2g) == E_OK) {
 		sprintf(it2g, rs_trindex[LANGUAGE][LANGT2GVER].ob_spec.free_string,
 				t2g->date & 0x001f, (t2g->date & 0x1e0) >> 5,
 				1980 + ((t2g->date & 0xfe00) >> 9));
