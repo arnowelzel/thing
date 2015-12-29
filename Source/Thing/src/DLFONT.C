@@ -541,8 +541,8 @@ void dl_font(short *msg) {
 	glob.sm_fontsel = 1; /* Semaphore setzen */
 
 	/* Spezielle Attribute komplett abschalten */
-	objectTree[FOSUB].ob_head = -1; /* NIL */
-	objectTree[FOSUB].ob_tail = -1; /* NIL */
+  objectTree[FOSATTR].ob_flags |= HIDETREE;
+  objectTree[FOSVIEW].ob_flags |= HIDETREE;
 	for (i = FOATTR1; i <= FOATTR7; i++) {
 		objectTree[i].ob_state |= DISABLED;
 		objectTree[i].ob_flags &= ~(SELECTABLE | TOUCHEXIT);
@@ -630,10 +630,7 @@ void dl_font(short *msg) {
 			break;
 
 		case WCPATH: /* Verzeichnis */
-			objectTree[FOSUB].ob_head = FOSVIEW;
-			objectTree[FOSUB].ob_tail = FOSVIEW;
-			objectTree[FOSVIEW].ob_next = FOSUB;
-
+		  objectTree[FOSVIEW].ob_flags &= ~HIDETREE;
 			objectTree[FOIMG].ob_flags &= ~HIDETREE;
 			objectTree[FOIMGF].ob_flags &= ~HIDETREE;
 
@@ -695,10 +692,7 @@ void dl_font(short *msg) {
 	} else {
 		/* Auswahl durch Font-Protokoll */
 		dfont->intern = 0;
-
-		objectTree[FOSUB].ob_head = FOSATTR;
-		objectTree[FOSUB].ob_tail = FOSATTR;
-		objectTree[FOSATTR].ob_next = FOSUB;
+	  objectTree[FOSATTR].ob_flags &= ~HIDETREE;
 		for (i = FOATTR1; i <= FOATTR7; i++) {
 			unsetObjectDisabled(objectTree, i);
 			objectTree[i].ob_flags |= (SELECTABLE | TOUCHEXIT);
