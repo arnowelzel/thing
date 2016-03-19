@@ -71,11 +71,7 @@ static void fix_editfield(OBJECT *objectTree);
 static void fixPopup(OBJECT *objectTree, WORD objectIdx);
 static WORD set_BOX(OBJECT *objectTree, WORD object, UBPARM *ubparm);
 static WORD set_BUTTON(OBJECT *objectTree, WORD object, UBPARM *ubparm);
-#ifdef _USR_EDITFIELD_
-static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield);
-#else
 static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm);
-#endif
 static void set_arrowbut(OBJECT *objectTree, WORD object, USERBLK *userblk, UBPARM *ubparm);
 static void set_dcrbutton(OBJECT *objectTree, WORD object, USERBLK *userblk, UBPARM *ubparm);
 static void set_underline(OBJECT *objectTree, WORD object, UBPARM *ubparm);
@@ -233,9 +229,6 @@ void releaseDudolib(void) {
  *   USR_OUTOFMEMORY   - kein Speicher mehr frei.
  */
 WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
-#ifdef _USR_EDITFIELD_
-	BOOLEAN isEditfield = FALSE;
-#endif
 	WORD i = -1;
 	USERBLK *userblk;
 	UBPARM *ubparm;
@@ -306,22 +299,11 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 				objectTree[i].ob_type |= BACKGRDBOX << 8;
 			}
 
-#ifdef _USR_EDITFIELD_
-			if ((objectTree[i].ob_flags & EDITABLE) && (objectTree[i].ob_type >> 8) > 0)
-				isEditfield = TRUE;
-			else
-				isEditfield = FALSE;
-#endif
-	
 			/*
 			 * Ist ein erweiterter Objekttyp eingetragen? Wenn, so
 			 * wird ueberprueft, welcher Userdef gesetzt werden muss.
 			 */
-#ifdef _USR_EDITFIELD_
-			if ((objectTree[i].ob_type >> 8) > 0 || isEditfield == TRUE) {
-#else
-			if ((objectTree[i].ob_type >> 8) > 0) {
-#endif
+			if ((objectTree[i].ob_type >> 8) > 0 ) {
 				userblk = (USERBLK *) malloc(sizeof(USERBLK));
 				if (userblk == NULL)
 					return (USR_OUTOFMEMORY);
@@ -379,11 +361,7 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 				case G_BOXTEXT:
 				case G_FTEXT:
 				case G_FBOXTEXT:
-#ifdef _USR_EDITFIELD_
-					if (set_TEXT(objectTree, i, ubparm, isEditfield) == USR_OUTOFMEMORY) {
-#else
 					if (set_TEXT(objectTree, i, ubparm) == USR_OUTOFMEMORY) {
-#endif
 						free(userblk);
 						free(ubparm);
 						return (USR_OUTOFMEMORY);
@@ -406,15 +384,6 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 				/*
 				 * Nun noch die Zeichenroutinen einhaengen.
 				 */
-#ifdef _USR_EDITFIELD_
-				if (isEditfield == TRUE) {
-					printf("editfield\n");
-					ubparm->scrollOffset = 0;
-					ubparm->cursorIndex = 0;
-					objectTree[i].ob_flags &= ~EDITABLE;
-					userblk->ub_code = backgrdbox;
-				} else {
-#endif
 					switch (ubparm->ob_type >> 8) {
 					case BACKGRDBOX:
 						if (objectTree[i].ob_state & SHADOWED) {
@@ -494,9 +463,6 @@ WORD setUserdefs(OBJECT *objectTree, BOOLEAN isMenu) {
 						free(userblk);
 						free(ubparm);
 					} /* switch */
-#ifdef _USR_EDITFIELD_
-				}
-#endif
 			}
 		} while (!(objectTree[i].ob_flags & LASTOB));
 	}
@@ -896,26 +862,12 @@ static WORD set_BUTTON(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
 /**
  *
  */
-#ifdef _USR_EDITFIELD_
-static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm, BOOLEAN isEditfield) {
-	if (isEditfield == TRUE) {
-		ubparm->text = (BYTE *) malloc((ubparm->ob_type >> 8) + 1);
-		if (ubparm->text == NULL)
-			return (USR_OUTOFMEMORY);
-
-		ubparm->ob_spec.tedinfo->te_ptext = ubparm->text;
-	} else {
-#else
 static WORD set_TEXT(OBJECT *objectTree, WORD object, UBPARM *ubparm) {
-#endif
-		ubparm->text = (BYTE *) malloc(strlen(objectTree[object].ob_spec.tedinfo->te_ptext) + 1);
-		if (ubparm->text == NULL)
-			return (USR_OUTOFMEMORY);
+	ubparm->text = (BYTE *) malloc(strlen(objectTree[object].ob_spec.tedinfo->te_ptext) + 1);
+	if (ubparm->text == NULL)
+		return (USR_OUTOFMEMORY);
 
-		strcpy(ubparm->text, objectTree[object].ob_spec.tedinfo->te_ptext);
-#ifdef _USR_EDITFIELD_
-	}
-#endif
+	strcpy(ubparm->text, objectTree[object].ob_spec.tedinfo->te_ptext);
 
 	switch (objectTree[object].ob_spec.tedinfo->te_just) {
 	case TE_LEFT:

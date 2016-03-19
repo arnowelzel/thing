@@ -16,67 +16,116 @@
  * License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * @copyright  Dirk Klemmt 1994-2012
- * @author     Dirk Klemmt
+ * @copyright  Dirk Klemmt 1994-2016
+ * @author     Dirk Klemmt, Gerhard Stoll
  * @license    LGPL
  */
 
+#include "string.h"
 #include "..\include\dudolib.h"
 
-#ifdef _USR_EDITFIELD_
-WORD getScrollOffset(OBJECT *tree, WORD object) {
-	UBPARM *ubparm;
+/**
+ * Wandelt ein Objekt in ein scrollbares Edit-Feld
+ *
+ * Rueckgabe-Variablen:
+ *
+ * Typ WORD:
+ *   als Return-Code werden folgende Werte zurueckgegeben:
+ *
+ *   USR_NOERROR       - kein Fehler/alles Ok
+ *   USR_OUTOFMEMORY   - kein Speicher mehr frei.
+ */
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return(0);
+WORD setSrcollEditfield(OBJECT *objectTree, WORD object, WORD len) {
 
-	ubparm = (UBPARM *)tree[object].ob_spec.userblk->ub_parm;
-	if (ubparm->magic == 'DIRK')
-		return(ubparm->scrollOffset);
+	/* TEDINFO-Object in XTED fr scrollbares Edit-Feld umwandeln */
+	XTEDINFO	*xt;
 
-	return(0);
+	xt=(XTEDINFO*)malloc(sizeof(XTEDINFO));
+	if (xt == NULL)
+		return (USR_OUTOFMEMORY);
+	
+	xt->te_ptext = (BYTE *) calloc(len + 1, 1);
+	if (xt->te_ptext == NULL) {
+		free(xt);
+		return (USR_OUTOFMEMORY);
+	}
+
+	objectTree[object].ob_spec.tedinfo->te_ptext[0]=0;	/* String l”schen */
+	objectTree[object].ob_spec.tedinfo->te_ptext[objectTree[object].ob_spec.tedinfo->te_txtlen-1]=0;	/* String terminieren, damit das bei objc_edit nicht dauernd gemacht werden muž */
+	objectTree[object].ob_spec.tedinfo->te_just = TE_LEFT;
+	xt->ti=*(objectTree[object].ob_spec.tedinfo);
+	xt->magic='XTED';
+	xt->maxlen=len;
+	xt->offset=0;
+	*((XTEDINFO**)&(objectTree[object].ob_spec.tedinfo))=xt;
+
+	return (USR_NOERROR);
 }
 
-void setScrollOffset(OBJECT *tree, WORD object, WORD scrollOffset) {
-	UBPARM *ubparm;
+/**
+ *	Rueckwandlung eines scrollbares Edit-Feld in ein normales Edit-Feld
+ */
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return;
+VOID unsetSrcollEditfield(OBJECT *objectTree, WORD object) {
+	XTEDINFO	*xt;
 
-	ubparm = (UBPARM *)tree[object].ob_spec.userblk->ub_parm;
-	if (ubparm->magic == 'DIRK')
-		ubparm->scrollOffset = scrollOffset;
+	if (xted(objectTree, object)->magic == 'XTED') {
+		xt=*((XTEDINFO**)&(objectTree[object].ob_spec.tedinfo));
+		*(objectTree[object].ob_spec.tedinfo)=xt->ti;
+		free (xt->te_ptext);
+		free (xt);
+	}
 }
 
-WORD pixel2index() {
-	return (0);
+
+/**
+ *	Kopiert die vergoesserte Zeichenkette ins Edit-Feld
+ */
+
+VOID strcpySrcollEditfield(OBJECT *tree, WORD ob) {
+	BYTE	*src, *dst;
+	WORD	len;
+	
+	dst=tree[ob].ob_spec.tedinfo->te_ptext;
+	src=&(xted(tree, ob)->te_ptext[xted(tree, ob)->offset]);
+
+	len=(WORD)strlen(xted(tree, ob)->te_ptext)-xted(tree, ob)->offset;
+
+	if(len > tree[ob].ob_spec.tedinfo->te_txtlen-1)
+		len=tree[ob].ob_spec.tedinfo->te_txtlen-1;
+	while(len--)
+		*dst++=*src++;
 }
 
-WORD index2pixel() {
-	return (0);
+/**
+ *	Erstmaliges setzen des Edit-Feld
+ */
+
+VOID firstsetSrcollEditfield (OBJECT *tree, WORD ob, BYTE *text) {
+	xted(tree, ob)->te_ptext=text;
+	xted(tree, ob)->offset=0;
+	strcpySrcollEditfield(tree, ob);
 }
 
-WORD getCursorIndex(OBJECT *tree, WORD object) {
-	UBPARM *ubparm;
+/**
+ *	Text ins Edit-Feld kopieren
+ */
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return(0);
-
-	ubparm = (UBPARM *)tree[object].ob_spec.userblk->ub_parm;
-	if (ubparm->magic == 'DIRK')
-		return(ubparm->cursorIndex);
-
-	return(0);
+VOID cpyEditfield(OBJECT *tree, WORD ob, BYTE *text) {
+	strncpy(xted(tree, ob)->te_ptext,text,xted(tree, ob)->maxlen);
+	xted(tree, ob)->offset=0;
+	strcpySrcollEditfield(tree, ob);
 }
 
-void setCursorIndex(OBJECT *tree, WORD object, WORD cursorIndex) {
-	UBPARM *ubparm;
 
-	if ((tree[object].ob_type & 0xFF) != G_USERDEF)
-		return;
+/**
+ *	Ermittelt die Laenge des Strings des Edit-Feld
+ */
 
-	ubparm = (UBPARM *)tree[object].ob_spec.userblk->ub_parm;
-	if (ubparm->magic == 'DIRK')
-		ubparm->cursorIndex = cursorIndex;
+LONG getlenSrcollEditfield(OBJECT *tree, WORD ob) {
+	if(xted(tree, ob)->magic != 'XTED')
+		return(strlen(tree[ob].ob_spec.tedinfo->te_ptext));
+
+	return(strlen(xted(tree, ob)->te_ptext));
 }
-#endif

@@ -4,7 +4,6 @@
 lib\dudolib.lib
 
 .C [ -P -C -Y -Z -J -M]
-.C [ -D-_USR_EDITFIELD_ ]	; include 'editfields'
 ; .C [ -DMEMDEBUG ]			; Memdebug support for debugging memory leaks
 
 .L [ -J ]

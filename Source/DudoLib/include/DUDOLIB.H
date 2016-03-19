@@ -124,18 +124,18 @@ extern USERDEF *userdef;
 typedef struct {
 	LONG		magic;				/* 'DIRK' ist Magic value */
 #ifdef __GNUC__
-	U_OB_SPEC	ob_spec;			/* alter Wert von ob_spec */
+	U_OB_SPEC	ob_spec;		/* alter Wert von ob_spec */
 #else
-	OBSPEC		ob_spec;			/* alter Wert von ob_spec */
+	OBSPEC		ob_spec;		/* alter Wert von ob_spec */
 #endif
-	UWORD		ob_type;			/* alter Objekttyp */
+	UWORD		ob_type;			/* alter Objekttyp 		*/
 	GRECT		ob_size;			/* alte Objektgroesse */
 	WORD		te_just,			/* VDI-Textjustierung */
-				te_rahmencol,		/* VDI-Rahmenfarbe */
-				te_textcol,			/* VDI-Textfarbe */
-				te_thickness;		/* Rahmendicke */
-    BYTE		*text;				/* enthaelt den Text des Objektes */
-	WORD		uline_pos;			/* Buchstabenposition der unterstrichen werden muss */
+					te_rahmencol,	/* VDI-Rahmenfarbe 		*/
+					te_textcol,		/* VDI-Textfarbe 			*/
+					te_thickness;	/* Rahmendicke 				*/
+    BYTE		*text;			/* enthaelt den Text des Objektes */
+	WORD		uline_pos;		/* Buchstabenposition der unterstrichen werden muss */
 
 	/* Variablen fuer die Dialoghintergrund-Box */
 	WORD		backgrdoffset[4],	/* Offset in Pixeln der entsprechenden Richtungen */
@@ -145,23 +145,37 @@ typedef struct {
 	/* Variablen fuer Separatoren */
 	BOOLEAN		isMenu,				/* kennzeichnet, ob dieser Separator in der Menueleiste ist */
 				separator3d;		/* 3D-Effekt */
-#ifdef _USR_EDITFIELD_
+
 	/* Variablen fuer scrollbare Editfelder */
 	WORD		scrollOffset,
 				cursorIndex;		/* Position des Cursors im Editfeld */
-#endif
 } UBPARM;
+
+
+/*
+ * Struktur fuer scrollende Eingabefelder
+ */
+typedef struct
+{
+	TEDINFO	ti;
+	LONG		magic;			/* Muž 'XTED' sein 		*/
+	BYTE		*te_ptext;	/* Pointer auf String */
+	WORD			maxlen;			/* Maximale L„nge (String muž eins l„nger sein, wg. 0-Zeichen) */
+	WORD			offset;			/* Aktueller Offset im Editobjekt */
+}XTEDINFO;
+
+#define xted(a, b) (*((XTEDINFO**)&(a[b].ob_spec.tedinfo)))
 
 /*
  * Die lineare Liste, in der alle tastaturbedienbaren Objekte aufge-
  * fuehrt sind.
  */
 typedef struct dial {
-	BYTE		key[20];			/* Klartext der gedrueckten Taste */
-	WORD		object,				/* Nummer des zugehoerigen Objekts */
+	BYTE	key[20];			/* Klartext der gedrueckten Taste */
+	WORD	object,				/* Nummer des zugehoerigen Objekts */
 				title;
 
-	struct dial	*next;				/* Zeiger auf das naechste tastaturbedienbare Objekt */
+	struct dial	*next;		/* Zeiger auf das naechste tastaturbedienbare Objekt */
 } DIALKEYS;
 
 /*
@@ -171,7 +185,7 @@ typedef struct dial {
 #define MAXOBJECTS	256
 
 typedef struct card {
-	BOOLEAN		top;				/* TRUE, wenn aktiv */
+	BOOLEAN	top;				/* TRUE, wenn aktiv */
 	WORD		head,				/* Kartenreiter + */
 				body;				/* Karte, die zusammen gehoeren */
 	OBJECT		*objectTree;
@@ -284,11 +298,11 @@ CARD *getActiveCard(CARD *card);
 short getActiveCardBodyIdx(CARD *card);
 void setActiveCard(CARD *card, short objectHeadIdx, BOOLEAN redraw);
 
-#ifdef _USR_EDITFIELD_
-WORD getScrollOffset(OBJECT *tree, WORD object);
-void setScrollOffset(OBJECT *tree, WORD object, WORD scrollOffset);
-WORD getCursorIndex(OBJECT *tree, WORD object);
-void setCursorIndex(OBJECT *tree, WORD object, WORD cursorIndex);
-#endif
+/* Module 'editfld.c' */
+WORD setSrcollEditfield(OBJECT *objectTree, WORD object, WORD len);
+VOID unsetSrcollEditfield(OBJECT *objectTree, WORD object);
+VOID firstsetSrcollEditfield (OBJECT *tree, WORD ob, BYTE *text);
+VOID cpyEditfield(OBJECT *tree, WORD ob, BYTE *text);
+LONG getlenSrcollEditfield(OBJECT *tree, WORD ob);
 
 #endif
