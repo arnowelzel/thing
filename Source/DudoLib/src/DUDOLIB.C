@@ -22,6 +22,8 @@
  */
 
 #define USERDEF_LIB
+
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 #include <stdio.h>

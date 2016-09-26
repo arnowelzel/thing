@@ -22,6 +22,8 @@
  */
 
 #include <string.h>
+
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 /**
@@ -72,6 +74,7 @@ BYTE *getObjectText(OBJECT *objectTree, WORD objectIdx) {
 	case G_BOXTEXT:
 	case G_FTEXT:
 	case G_FBOXTEXT:
+	
 		return (objectTree[objectIdx].ob_spec.tedinfo->te_ptext);
 
 	case G_USERDEF:

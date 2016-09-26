@@ -21,6 +21,7 @@
  * @license    LGPL
  */
 
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 extern UWORD RadioButtonNormal[64], RadioButtonSelected[64];

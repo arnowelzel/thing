@@ -22,6 +22,8 @@
  */
 
 #include "string.h"
+
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 /**
@@ -128,4 +130,16 @@ LONG getlenSrcollEditfield(OBJECT *tree, WORD ob) {
 		return(strlen(tree[ob].ob_spec.tedinfo->te_ptext));
 
 	return(strlen(xted(tree, ob)->te_ptext));
+}
+
+/**
+ *	Gibt den Zeiger auf den langen Text zurueck, falls es sich 
+ * um ein scrollbares Edit-Feld handelt. Sonst den normalen
+ */
+
+BYTE *getTextLongSrcollEditfield(OBJECT *tree, WORD ob) {
+	if(xted(tree, ob)->magic != 'XTED')
+		return( tree[ob].ob_spec.tedinfo->te_ptext );
+
+	return( xted(tree, ob)->te_ptext );
 }

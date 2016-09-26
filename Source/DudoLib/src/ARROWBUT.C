@@ -21,6 +21,7 @@
  * @license    LGPL
  */
 
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 extern UWORD arupnorm[64], arupnormdis[64], arupsel[64], ardnnorm[64],

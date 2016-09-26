@@ -128,7 +128,7 @@ short cdecl dl_font_usr(PARMBLK *parmblock) {
 			ty -= ch;
 		}
 		vst_effects(tb.vdi_handle, font->attr & 0x001f);
-		v_gtext(tb.vdi_handle, tx, ty, sample);
+		udef_v_gtext(tb.vdi_handle, tx, ty, sample);
 
 		/* Mauszeiger einschalten, Clipping aus */
 		vs_clip(tb.vdi_handle, 0, pxy);

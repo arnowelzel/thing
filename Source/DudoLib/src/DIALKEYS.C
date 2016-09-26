@@ -21,6 +21,7 @@
  * @license    LGPL
  */
 
+#define FORCE_GEMLIB_UDEF
 #include "..\include\dudolib.h"
 
 #include <string.h>

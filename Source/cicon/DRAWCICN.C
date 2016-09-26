@@ -1216,16 +1216,16 @@ static WORD cdecl draw_coloricon(PARMBLK *parms)
 	vswr_mode(handle, MD_TRANS);
 	if (strlen(block->original->monoblk.ib_ptext))
 	{
-		vqt_extent(handle, block->original->monoblk.ib_ptext, dim);
+		udef_vqt_extent(handle, block->original->monoblk.ib_ptext, dim);
 		x = (block->original->monoblk.ib_wtext - (dim[2] - dim[0])) / 2;
 		x += parms->pb_x + block->original->monoblk.ib_xtext;
 		y = (block->original->monoblk.ib_htext - (dim[7] - dim[1])) / 2;
 		y += parms->pb_y + block->original->monoblk.ib_ytext;
-		v_gtext(handle, x, y, block->original->monoblk.ib_ptext);
+		udef_v_gtext(handle, x, y, block->original->monoblk.ib_ptext);
 	}
 	out[0] = block->original->monoblk.ib_char & 0xff;
 	out[1] = 0;
-	v_gtext(handle, parms->pb_x + block->original->monoblk.ib_xicon +
+	udef_v_gtext(handle, parms->pb_x + block->original->monoblk.ib_xicon +
 		block->original->monoblk.ib_xchar,
 		parms->pb_y + block->original->monoblk.ib_yicon +
 		block->original->monoblk.ib_ychar, out);
