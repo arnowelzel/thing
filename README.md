@@ -4,7 +4,7 @@ The alternative desktop for Atari ST/TT/Falcon (and compatible machines).
 
 Originally created by Arno Welzel.
 
-Thanks to Thomas Binder and many others contributed to this project.
+Thanks to Thomas Binder and the many others who contributed to this project.
 
 Thing is free software. If you want to use the shareware version 1.09 or older you can use the following key:
 
