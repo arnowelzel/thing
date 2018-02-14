@@ -13,7 +13,6 @@ Key: `xh4aaz4v`
 
 ## About this repository
 
-This repository was created in January 2018 to preserve the existing sources formerly available on http://atariforge.org/gf/project/thing/scmsvn/.
+This repository was created in February 2018 to preserve the existing sources formerly available on http://atariforge.org/gf/project/thing/scmsvn/.
 
-At the time this repository was created, the SVN server on atariforge was not available so there is no commit history, sorry.
-
+It also contains contributions from Dirk Klemmt and Gerhard Stoll (see their respective branches).
