@@ -2497,6 +2497,9 @@ void dl_open(short new) {
 
  Anzeigen/Drucken der aktuell selektierten Datei (Menuepunkt "Anzeigen",
  bzw. Menuepunkt "Drucken")
+ 
+ mode: 0 = anzeigen, 1 = drucken
+ 
  -------------------------------------------------------------------------*/
 short dl_show(short mode, char *buf) {
 	char full[MAX_CLEN + MAX_PLEN];
