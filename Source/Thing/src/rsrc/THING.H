@@ -601,6 +601,8 @@
 #define POPCCOPY 12  /* STRING in tree POPCONTEXT */
 #define POPCCUT 13  /* STRING in tree POPCONTEXT */
 #define POPCAPPL 15  /* STRING in tree POPCONTEXT */
+#define POPBIGLETTER 17  /* STRING in tree POPCONTEXT */
+#define POPSMALLETTER 18  /* STRING in tree POPCONTEXT */
 
 #define POPICONTEXT 37  /* form/dial */
 #define POPICOPEN 1  /* STRING in tree POPICONTEXT */
