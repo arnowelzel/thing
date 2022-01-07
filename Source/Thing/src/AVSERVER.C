@@ -1775,11 +1775,23 @@ short avp_checkbuf(short id, short msg, char *tmsg, char *buf, short write) {
 	AVINFO *ainfo;
 
 	old_sigbus = (long) Psignal(SIGBUS, (long) handle_sigbus);
+	/* Wenn es Psignal nicht gibt, kann man nix machen ... */
 	if (old_sigbus == -32L)
 		return (1);
 	origbuf = buf;
 	ok = 1;
+    /*
+     * Ohne setjmp()/longjmp() geht es nicht, weil bei RÅckkehr
+     * aus einem Signalhandler fÅr SIGBUS und SIGSEGV an genau
+     * der Stelle weitergemacht wird, die den Fehler verursacht
+     * hatte -> das Signal wÅrde also gleich nochmal ausgelîst
+     */
 	if (setjmp(check)) {
+        /*
+         * Wenn dieser Teil der Routine erreicht wird, wurde der
+         * Signalhandler aktiviert und ist mit longjmp() hierher
+         * zurÅckgekehrt, um den Fehler zu melden
+         */
 		ok = 0;
 		ainfo = avp_get(id);
 		if (ainfo)
@@ -1793,6 +1805,13 @@ short avp_checkbuf(short id, short msg, char *tmsg, char *buf, short write) {
 			frm_alert(1, almsg, altitle, conf.wdial, 0L);
 		}
 	} else {
+        /*
+         * Dieser Teil wird direkt nach dem Aufruf von setjmp()
+         * erreicht. Hier wird der Puffer geprÅft, wobei die
+         * Abfrage auf Ende des Puffers erst in der Schleife
+         * stattfindet, um ggf. auch diese Speicherstelle
+         * testweise zu beschreiben
+         */
 		for (;; buf++) {
 			d = *buf;
 			if (write)
@@ -1801,6 +1820,10 @@ short avp_checkbuf(short id, short msg, char *tmsg, char *buf, short write) {
 				break;
 		}
 	}
+    /*
+     * Den alten Signalhandler restaurieren und das Ergebnis des
+     * Tests liefern
+     */
 	Psignal(SIGBUS, (long) old_sigbus);
 	return (ok);
 }

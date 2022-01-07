@@ -5,7 +5,7 @@ ResourceMaster v3.65
 #FoC-Header@rsm2out@C-Header@h@@@[C-Header@0@
 #FoBGH@rsm2out@BGH@bgh@@@[BubbleGEM HELP-File@1@
 #R 0@0@1@1@1@1@
-#M 00013000@17741@7728@97@
+#M 00013000@17741@7728@99@
 #L 5@german@english@french@italy@dutch@
 #T 0@2@LANGUAGE@@16@@@@@@
 #O 1@28@LANGFONT@@@@@@
@@ -561,7 +561,7 @@ ResourceMaster v3.65
 #T 33@2@POPPAT@@17@@@@@@
 #T 34@2@POPSHORT@@11@@@@@@
 #T 35@2@POPFSHORT@@45@@@@@@
-#T 36@2@POPCONTEXT@@16@@@@@@
+#T 36@2@POPCONTEXT@@19@@@@@@
 #O 1@28@POPCOPEN@@@@@@
 #O 2@28@POPCDIROPEN@@@@@@
 #O 3@28@POPCINFO@@@@@@
@@ -572,6 +572,8 @@ ResourceMaster v3.65
 #O 12@28@POPCCOPY@@@@@@
 #O 13@28@POPCCUT@@@@@@
 #O 15@28@POPCAPPL@@@@@@
+#O 17@28@POPBIGLETTER@@@@@@
+#O 18@28@POPSMALLETTER@@@@@@
 #T 37@2@POPICONTEXT@@9@@@@@@
 #O 1@28@POPICOPEN@@@@@@
 #O 2@28@POPICINFO@@@@@@
@@ -656,4 +658,4 @@ ResourceMaster v3.65
 #O 22@26@HKCHANGE@@@@@@
 #O 23@26@HKDELETE@@@@@@
 #T 51@2@CHOOSEHOTKEY@@2@@@@@@
-#c 11806@
+#c 30298@

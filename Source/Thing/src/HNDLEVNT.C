@@ -3318,6 +3318,10 @@ void handle_context(short mx, short my, WININFO *win) {
 			case POPCAPPL:
 			dl_appl();
 			break;
+			case POPBIGLETTER:
+			case POPSMALLETTER:
+			dl_rename(pitem);
+			break;
 		}
 	}
 	if (count)

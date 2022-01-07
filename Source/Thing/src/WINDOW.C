@@ -385,9 +385,11 @@ static void winRedraw(struct wininfo *win, short type, GRECT *area) {
 								tchar[0] = WPentry->tchar;
 							else /* Nein */
 							{
+/*
 								if (WPentry->aptype)
 									tchar[0] = '.'; /* ausfÅhrbares Programm */
 								else
+*/
 									tchar[0] = ' '; /* normale Datei */
 							}
 						} else {
