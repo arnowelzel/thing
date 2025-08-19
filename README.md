@@ -2,19 +2,12 @@
 
 The alternative desktop for Atari ST/TT/Falcon (and compatible machines).
 
-Originally created by Arno Welzel.
+## Move to Codeberg
 
-Thanks to Thomas Binder and the many others who contributed to this project.
+On 2025-08-19 this project was migrated to Codeberg and can now be found at https://codeberg.org/askaaron/thing.
 
-Thing is free software. If you want to use the shareware version 1.09 or older you can use the following key:
+All existing issues and pull requests have been migrated to Codeberg. If you want to contribute or create an issue, please continue there.
 
-Name: `OpenSource`  
-Key: `xh4aaz4v`
+More about the reasons for this decision see here: https://giveupgithub.org/
 
-## About this repository
-
-This repository was created in February 2018 to preserve the existing sources formerly available on http://atariforge.org/gf/project/thing/scmsvn/.
-
-It also contains contributions from Dirk Klemmt and Gerhard Stoll (see their respective branches).
-
-Thanks to Miro Kropáček for his support in preserving the commit history from the old SVN repository.
+The existing Github repository for Thing will remain as archive for a while but may be removed in the future.
